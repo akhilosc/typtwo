@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Cpu, ShieldCheck, Lock, Terminal, Database, FileText, CheckCircle2, Play, Search } from 'lucide-react';
+import { Cpu, ShieldCheck, Lock, Terminal, Database, FileText, CheckCircle2, Search } from 'lucide-react';
 
 export const TechFeaturesV9 = () => {
   const [activeTab, setActiveTab] = useState<'features' | 'rag' | 'security'>('features');
@@ -11,36 +11,42 @@ export const TechFeaturesV9 = () => {
     {
       code: "T-01",
       title: "AI Implementation",
-      summary: "We take AI from slide deck to production — scoping the use case, choosing the model, and wiring it into the systems your teams already live in.",
+      img: "/images/tech_infra.png",
+      summary: "We take AI from slide deck to production — scoping the use case, choosing the model, and wiring it into the systems your teams live in.",
       points: ["Use-case discovery and ROI modelling", "Model selection & benchmarking", "Retrieval pipelines over internal data", "Human-in-the-loop guardrails"]
     },
     {
       code: "T-02",
       title: "Private AI & On-Prem VPC",
+      img: "/images/private_ai_vpc.png",
       summary: "Open-weight models deployed inside your perimeter. Your data never leaves the building, and no third party trains on it.",
       points: ["On-premise & VPC model hosting", "Private inference gateways with audit logs", "Role-scoped access & data residency", "Fine-tuning on proprietary corpora"]
     },
     {
       code: "T-03",
       title: "Process Automation",
+      img: "/images/mission_manifesto.jpg",
       summary: "The unglamorous work that pays for itself. We find repetitive loops across your operations and remove the manual step.",
       points: ["Document and invoice processing", "Back-office workflow orchestration", "Support triage & routing agents", "System-to-system integration"]
     },
     {
       code: "T-04",
       title: "Technology Maintenance",
+      img: "/images/tech_infra.png",
       summary: "Long-term ownership of the stack we build — and often the stack you inherited from someone else.",
       points: ["Monitoring & incident response", "Model drift & regression tracking", "Security patching & hygiene", "Quarterly architecture reviews"]
     },
     {
       code: "T-05",
       title: "Data Engineering",
+      img: "/images/private_ai_vpc.png",
       summary: "AI is only as good as the pipes feeding it. We build the ingestion, cleaning and storage layer underneath.",
       points: ["Warehouse & lakehouse design", "ETL / streaming pipelines", "Vector store architecture", "Data quality contracts"]
     },
     {
       code: "T-06",
       title: "AI Advisory & Governance",
+      img: "/images/mission_manifesto.jpg",
       summary: "For leadership teams who need a straight answer about what is real, what is hype, and what it will cost.",
       points: ["Capability audits & readiness scoring", "Build-vs-buy assessments", "Internal AI policy & governance", "Team enablement & training"]
     }
@@ -59,68 +65,105 @@ Grounded retrieval context fetched from 4,200 indexed claims documents:
   };
 
   return (
-    <section className="py-28 bg-[#09090C] border-t border-white/10 text-white relative">
-      <div className="container mx-auto px-6">
-        <div className="text-center max-w-3xl mx-auto mb-16">
-          <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-cyan-500/10 border border-cyan-400/50 text-cyan-300 text-xs font-extrabold tracking-widest uppercase mb-4">
-            <Cpu className="w-4 h-4" /> TYPTWO TECH • COMPLETE FEATURE MATRIX
+    <section style={{ padding: '100px 0', backgroundColor: '#09090C', borderTop: '1px solid rgba(255,255,255,0.1)' }}>
+      <div style={{ maxWidth: '1200px', margin: '0 auto', padding: '0 24px' }}>
+        
+        <div style={{ textAlign: 'center', maxWidth: '800px', margin: '0 auto 64px' }}>
+          <div style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', padding: '6px 16px', borderRadius: '9999px', backgroundColor: 'rgba(0,229,255,0.1)', border: '1px solid rgba(0,229,255,0.4)', fontSize: '11px', fontWeight: 800, letterSpacing: '0.15em', color: '#00E5FF', textTransform: 'uppercase', marginBottom: '16px' }}>
+            <Cpu size={16} /> TYPTWO TECH • COMPLETE FEATURE MATRIX
           </div>
-          <h2 className="text-4xl sm:text-6xl font-extrabold tracking-tight text-white mb-4">
+          <h2 style={{ fontSize: 'clamp(36px, 5vw, 64px)', fontWeight: 800, color: '#FFFFFF', letterSpacing: '-0.03em', marginBottom: '16px' }}>
             Engineering Intelligent Operations
           </h2>
-          <p className="text-slate-400 text-base sm:text-lg leading-relaxed">
-            All 6 core technology modules built for sovereign enterprise scale.
+          <p style={{ fontSize: '16px', color: '#908F9D', lineHeight: 1.6 }}>
+            All 6 core technology modules with 3D visual representations & sovereign data guardrails.
           </p>
 
           {/* Interactive Mode Switcher */}
-          <div className="flex justify-center gap-3 mt-8">
+          <div style={{ display: 'flex', justifyContent: 'center', gap: '12px', marginTop: '32px', flexWrap: 'wrap' }}>
             <button
               onClick={() => setActiveTab('features')}
-              className={`px-5 py-2.5 rounded-full text-xs font-bold transition-all ${
-                activeTab === 'features' ? 'bg-cyan-500 text-black shadow-[0_0_20px_rgba(0,229,255,0.4)]' : 'bg-white/5 text-slate-400 hover:text-white'
-              }`}
+              style={{
+                padding: '10px 20px',
+                borderRadius: '9999px',
+                fontSize: '12px',
+                fontWeight: 700,
+                cursor: 'pointer',
+                border: 'none',
+                backgroundColor: activeTab === 'features' ? '#00E5FF' : 'rgba(255,255,255,0.05)',
+                color: activeTab === 'features' ? '#040404' : '#908F9D',
+                boxShadow: activeTab === 'features' ? '0 0 20px rgba(0,229,255,0.5)' : 'none',
+                transition: 'all 0.3s ease'
+              }}
             >
-              All 6 Tech Services (T-01..T-06)
+              All 6 Tech Services (3D Renders)
             </button>
 
             <button
               onClick={() => setActiveTab('rag')}
-              className={`px-5 py-2.5 rounded-full text-xs font-bold transition-all ${
-                activeTab === 'rag' ? 'bg-cyan-500 text-black shadow-[0_0_20px_rgba(0,229,255,0.4)]' : 'bg-white/5 text-slate-400 hover:text-white'
-              }`}
+              style={{
+                padding: '10px 20px',
+                borderRadius: '9999px',
+                fontSize: '12px',
+                fontWeight: 700,
+                cursor: 'pointer',
+                border: 'none',
+                backgroundColor: activeTab === 'rag' ? '#00E5FF' : 'rgba(255,255,255,0.05)',
+                color: activeTab === 'rag' ? '#040404' : '#908F9D',
+                boxShadow: activeTab === 'rag' ? '0 0 20px rgba(0,229,255,0.5)' : 'none',
+                transition: 'all 0.3s ease'
+              }}
             >
               Live Vector RAG Simulator
             </button>
 
             <button
               onClick={() => setActiveTab('security')}
-              className={`px-5 py-2.5 rounded-full text-xs font-bold transition-all ${
-                activeTab === 'security' ? 'bg-cyan-500 text-black shadow-[0_0_20px_rgba(0,229,255,0.4)]' : 'bg-white/5 text-slate-400 hover:text-white'
-              }`}
+              style={{
+                padding: '10px 20px',
+                borderRadius: '9999px',
+                fontSize: '12px',
+                fontWeight: 700,
+                cursor: 'pointer',
+                border: 'none',
+                backgroundColor: activeTab === 'security' ? '#00E5FF' : 'rgba(255,255,255,0.05)',
+                color: activeTab === 'security' ? '#040404' : '#908F9D',
+                boxShadow: activeTab === 'security' ? '0 0 20px rgba(0,229,255,0.5)' : 'none',
+                transition: 'all 0.3s ease'
+              }}
             >
               Zero-Trust Security Matrix
             </button>
           </div>
         </div>
 
-        {/* TAB 1: ALL 6 TECH SERVICES */}
+        {/* TAB 1: ALL 6 TECH SERVICES WITH 3D RENDERS */}
         {activeTab === 'features' && (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: '24px' }}>
             {techServices.map((s) => (
-              <div key={s.code} className="p-8 rounded-2xl bg-[#111115] border border-white/10 hover:border-cyan-400/50 transition-all duration-300 group flex flex-col justify-between hover:-translate-y-1">
-                <div>
-                  <span className="text-xs font-extrabold tracking-widest text-cyan-400 block mb-3">{s.code}</span>
-                  <h3 className="text-2xl font-bold text-white mb-3 group-hover:text-cyan-300 transition-colors">{s.title}</h3>
-                  <p className="text-slate-400 text-sm leading-relaxed mb-6">{s.summary}</p>
+              <div key={s.code} style={{ backgroundColor: '#111115', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '16px', overflow: 'hidden', display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
+                <div style={{ position: 'relative', height: '180px', width: '100%' }}>
+                  <img src={s.img} alt={s.title} style={{ width: '100%', height: '100%', objectFit: 'cover', filter: 'brightness(0.7) contrast(1.1)' }} />
+                  <div style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, background: 'linear-gradient(to top, #111115 0%, transparent 60%)' }} />
+                  <span style={{ position: 'absolute', top: '16px', left: '16px', fontSize: '11px', fontWeight: 800, color: '#00E5FF', backgroundColor: 'rgba(17,17,21,0.85)', border: '1px solid rgba(0,229,255,0.4)', padding: '4px 10px', borderRadius: '9999px' }}>
+                    {s.code}
+                  </span>
                 </div>
-                <ul className="space-y-2.5 border-t border-white/5 pt-4">
-                  {s.points.map((pt, idx) => (
-                    <li key={idx} className="flex items-center gap-2.5 text-xs text-slate-300">
-                      <CheckCircle2 className="w-3.5 h-3.5 text-cyan-400 shrink-0" />
-                      <span>{pt}</span>
-                    </li>
-                  ))}
-                </ul>
+
+                <div style={{ padding: '24px', flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
+                  <div>
+                    <h3 style={{ fontSize: '20px', fontWeight: 800, color: '#FFFFFF', marginBottom: '8px' }}>{s.title}</h3>
+                    <p style={{ fontSize: '14px', color: '#908F9D', lineHeight: 1.6, marginBottom: '20px' }}>{s.summary}</p>
+                  </div>
+                  <ul style={{ listStyle: 'none', display: 'flex', flexDirection: 'column', gap: '8px', borderTop: '1px solid rgba(255,255,255,0.05)', paddingTop: '16px' }}>
+                    {s.points.map((pt, idx) => (
+                      <li key={idx} style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '13px', color: '#FFFFFF' }}>
+                        <CheckCircle2 size={14} color="#00E5FF" />
+                        <span>{pt}</span>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
               </div>
             ))}
           </div>
@@ -128,30 +171,30 @@ Grounded retrieval context fetched from 4,200 indexed claims documents:
 
         {/* TAB 2: LIVE VECTOR RAG SIMULATOR */}
         {activeTab === 'rag' && (
-          <div className="max-w-4xl mx-auto p-8 rounded-2xl bg-[#111115] border border-cyan-400/40 shadow-[0_0_40px_rgba(0,229,255,0.15)]">
-            <div className="flex items-center gap-3 text-cyan-400 text-sm font-bold mb-6">
-              <Search className="w-5 h-5" />
+          <div style={{ maxWidth: '800px', margin: '0 auto', padding: '32px', backgroundColor: '#111115', border: '1px solid rgba(0,229,255,0.4)', borderRadius: '24px', boxShadow: '0 0 40px rgba(0,229,255,0.15)' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '10px', color: '#00E5FF', fontSize: '14px', fontWeight: 700, marginBottom: '24px' }}>
+              <Search size={20} />
               <span>INTERACTIVE PRIVATE VECTOR RAG SIMULATOR</span>
             </div>
 
-            <div className="flex gap-3 mb-6">
+            <div style={{ display: 'flex', gap: '12px', marginBottom: '24px', flexWrap: 'wrap' }}>
               <input
                 type="text"
                 value={ragQuery}
                 onChange={(e) => setRagQuery(e.target.value)}
-                className="flex-1 px-4 py-3 rounded-xl bg-black border border-white/15 text-white text-sm focus:outline-none focus:border-cyan-400"
+                style={{ flex: 1, minWidth: '240px', padding: '12px 16px', borderRadius: '12px', backgroundColor: '#000000', border: '1px solid rgba(255,255,255,0.15)', color: '#FFFFFF', fontSize: '14px', outline: 'none' }}
               />
               <button
                 onClick={handleRunQuery}
                 disabled={isQuerying}
-                className="px-6 py-3 rounded-xl bg-cyan-500 text-black font-bold text-sm hover:bg-cyan-400 transition-all flex items-center gap-2"
+                style={{ padding: '12px 24px', borderRadius: '12px', backgroundColor: '#00E5FF', color: '#040404', fontWeight: 800, fontSize: '14px', border: 'none', cursor: 'pointer' }}
               >
                 {isQuerying ? 'Querying Vector Engine...' : 'Run Query'}
               </button>
             </div>
 
             {ragResult && (
-              <div className="p-6 rounded-xl bg-black/80 border border-cyan-500/30 text-xs font-mono text-cyan-300 leading-relaxed whitespace-pre-line animate-fade-in">
+              <div style={{ padding: '24px', borderRadius: '12px', backgroundColor: 'rgba(0,0,0,0.8)', border: '1px solid rgba(0,229,255,0.3)', fontSize: '13px', fontFamily: 'monospace', color: '#00E5FF', lineHeight: 1.6, whitespace: 'pre-line' }}>
                 {ragResult}
               </div>
             )}
@@ -160,26 +203,27 @@ Grounded retrieval context fetched from 4,200 indexed claims documents:
 
         {/* TAB 3: ZERO-TRUST SECURITY */}
         {activeTab === 'security' && (
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 max-w-5xl mx-auto">
-            <div className="p-8 rounded-2xl bg-[#111115] border border-white/10 text-center flex flex-col items-center">
-              <Lock className="w-10 h-10 text-cyan-400 mb-4" />
-              <h4 className="text-xl font-bold text-white mb-2">Air-Gapped VPC</h4>
-              <p className="text-slate-400 text-sm">0 KB data egress. Open-weight models running inside your cloud perimeter.</p>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '24px', maxWidth: '1000px', margin: '0 auto' }}>
+            <div style={{ padding: '32px', backgroundColor: '#111115', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '16px', textAlign: 'center', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+              <Lock size={36} color="#00E5FF" style={{ marginBottom: '16px' }} />
+              <h4 style={{ fontSize: '20px', fontWeight: 800, color: '#FFFFFF', marginBottom: '8px' }}>Air-Gapped VPC</h4>
+              <p style={{ fontSize: '14px', color: '#908F9D', lineHeight: 1.6 }}>0 KB data egress. Open-weight models running inside your cloud perimeter.</p>
             </div>
 
-            <div className="p-8 rounded-2xl bg-[#111115] border border-white/10 text-center flex flex-col items-center">
-              <ShieldCheck className="w-10 h-10 text-cyan-400 mb-4" />
-              <h4 className="text-xl font-bold text-white mb-2">ACL Permission Inheritance</h4>
-              <p className="text-slate-400 text-sm">Role-scoped vector search inherited directly from your identity provider.</p>
+            <div style={{ padding: '32px', backgroundColor: '#111115', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '16px', textAlign: 'center', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+              <ShieldCheck size={36} color="#00E5FF" style={{ marginBottom: '16px' }} />
+              <h4 style={{ fontSize: '20px', fontWeight: 800, color: '#FFFFFF', marginBottom: '8px' }}>ACL Permission Inheritance</h4>
+              <p style={{ fontSize: '14px', color: '#908F9D', lineHeight: 1.6 }}>Role-scoped vector search inherited directly from your identity provider.</p>
             </div>
 
-            <div className="p-8 rounded-2xl bg-[#111115] border border-white/10 text-center flex flex-col items-center">
-              <Terminal className="w-10 h-10 text-cyan-400 mb-4" />
-              <h4 className="text-xl font-bold text-white mb-2">Token Audit Logging</h4>
-              <p className="text-slate-400 text-sm">Every inference step logged and auditable for strict compliance standards.</p>
+            <div style={{ padding: '32px', backgroundColor: '#111115', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '16px', textAlign: 'center', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+              <Terminal size={36} color="#00E5FF" style={{ marginBottom: '16px' }} />
+              <h4 style={{ fontSize: '20px', fontWeight: 800, color: '#FFFFFF', marginBottom: '8px' }}>Token Audit Logging</h4>
+              <p style={{ fontSize: '14px', color: '#908F9D', lineHeight: 1.6 }}>Every inference step logged and auditable for strict compliance standards.</p>
             </div>
           </div>
         )}
+
       </div>
     </section>
   );
