@@ -44,35 +44,33 @@ function Index() {
 function Hero() {
   return (
     <section className="border-b-2 border-ink relative overflow-hidden">
-      <div className="grid grid-cols-12 gap-0">
-        <aside className="col-span-12 md:col-span-3 border-r-0 md:border-r-2 border-ink p-6 md:p-8 flex md:flex-col justify-between gap-6">
+      <div className="p-6 md:p-14 relative">
+        <div className="flex justify-between items-center mb-8 border-b-2 border-ink pb-6">
           <Eyebrow>Typtwo / 2026</Eyebrow>
           <div className="mono text-[10px] uppercase tracking-widest text-muted-foreground flex items-center gap-2">
-            <span className="inline-block h-2 w-2 bg-flame blink" /> Online
+            <span className="inline-block h-2.5 w-2.5 bg-flame blink" /> Online
           </div>
-        </aside>
+        </div>
 
-        <div className="col-span-12 md:col-span-9 p-6 md:p-14 relative">
-          <h1 className="display leading-[0.82] tracking-tighter text-[3.2rem] sm:text-[5rem] md:text-[8rem] lg:text-[11rem] rise">
-            <span className="block">Two worlds.</span>
-            <span className="block">
-              One{" "}
-              <span className="relative inline-block">
-                <span className="bg-flame text-paper px-4">force</span>
-                <span className="absolute -top-2 -right-3 h-3 w-3 bg-volt border-2 border-ink" />
-              </span>
-              .
+        <h1 className="display leading-[0.82] tracking-tighter text-[3.2rem] sm:text-[5rem] md:text-[8rem] lg:text-[11rem] rise">
+          <span className="block">Two worlds.</span>
+          <span className="block">
+            One{" "}
+            <span className="relative inline-block">
+              <span className="bg-flame text-paper px-4">force</span>
+              <span className="absolute -top-2 -right-3 h-3 w-3 bg-volt border-2 border-ink" />
             </span>
-          </h1>
+            .
+          </span>
+        </h1>
 
-          <div className="mt-12 flex flex-wrap gap-3">
-            <BruteButton to="/tech" variant="ink">Tech</BruteButton>
-            <BruteButton to="/studios" variant="flame">Studios</BruteButton>
-          </div>
+        <div className="mt-12 flex flex-wrap gap-3">
+          <BruteButton to="/tech" variant="ink">Tech</BruteButton>
+          <BruteButton to="/studios" variant="flame">Studios</BruteButton>
+        </div>
 
-          <div className="hidden md:block absolute right-8 top-8">
-            <RotatingSeal />
-          </div>
+        <div className="hidden md:block absolute right-8 bottom-8">
+          <RotatingSeal />
         </div>
       </div>
     </section>
