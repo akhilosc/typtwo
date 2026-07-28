@@ -1,6 +1,6 @@
 import { Link } from "@tanstack/react-router";
 import { type ReactNode, useState, useEffect } from "react";
-import { Sun, Moon } from "lucide-react";
+import { Sun, Moon, Menu, X } from "lucide-react";
 
 const NAV = [
   { to: "/tech", label: "Tech", n: "01" },
@@ -65,6 +65,7 @@ export function StatusBar() {
 
 export function SiteHeader() {
   const [theme, setTheme] = useState<'light' | 'dark'>('light');
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   useEffect(() => {
     const isDark = document.documentElement.classList.contains('dark') || localStorage.getItem('theme') === 'dark';
@@ -96,6 +97,7 @@ export function SiteHeader() {
         <div className="grid grid-cols-12 items-stretch">
           <Link
             to="/"
+            onClick={() => setMobileMenuOpen(false)}
             className="col-span-6 md:col-span-3 flex items-center gap-3 px-6 py-4 border-r-2 border-ink group"
           >
             <span
@@ -122,18 +124,26 @@ export function SiteHeader() {
             ))}
           </nav>
 
-          <div className="col-span-6 md:col-span-3 flex items-stretch">
+          <div className="col-span-6 md:col-span-3 flex items-stretch justify-end">
             <button
               onClick={toggleTheme}
               className="flex items-center justify-center px-4 hover:bg-ink hover:text-paper border-r-2 border-ink transition cursor-pointer text-ink bg-paper"
               title="Toggle theme mode"
-              style={{ minWidth: '56px' }}
+              style={{ minWidth: '48px' }}
             >
               {theme === 'light' ? <Moon size={16} /> : <Sun size={16} />}
             </button>
+            <button
+              onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+              className="flex md:hidden items-center justify-center px-4 hover:bg-ink hover:text-paper border-r-2 border-ink transition cursor-pointer text-ink bg-paper"
+              title="Toggle Menu"
+              style={{ minWidth: '48px' }}
+            >
+              {mobileMenuOpen ? <X size={20} /> : <Menu size={20} />}
+            </button>
             <Link
               to="/contact"
-              className="flex-1 flex items-center justify-between gap-2 px-6 py-4 bg-ink text-paper hover:bg-flame transition group"
+              className="hidden sm:flex flex-1 items-center justify-between gap-2 px-6 py-4 bg-ink text-paper hover:bg-flame transition group"
             >
               <span className="mono text-xs uppercase tracking-widest">
                 Start a project
@@ -144,6 +154,33 @@ export function SiteHeader() {
             </Link>
           </div>
         </div>
+
+        {/* Mobile Dropdown Menu Drawer */}
+        {mobileMenuOpen && (
+          <div className="md:hidden border-t-2 border-ink bg-paper w-full">
+            <nav className="flex flex-col items-stretch">
+              {NAV.map((n) => (
+                <Link
+                  key={n.to}
+                  to={n.to}
+                  onClick={() => setMobileMenuOpen(false)}
+                  className="px-6 py-4 border-b-2 border-ink mono text-sm uppercase tracking-widest text-ink hover:bg-ink hover:text-paper transition"
+                  activeProps={{ className: "bg-volt text-ink" }}
+                >
+                  <span className="opacity-60 mr-2">[{n.n}]</span>
+                  <span>{n.label}</span>
+                </Link>
+              ))}
+              <Link
+                to="/contact"
+                onClick={() => setMobileMenuOpen(false)}
+                className="px-6 py-5 bg-ink text-paper text-center font-bold mono text-sm uppercase tracking-widest hover:bg-flame transition"
+              >
+                Start a project →
+              </Link>
+            </nav>
+          </div>
+        )}
       </header>
     </>
   );
