@@ -5,8 +5,9 @@ import { Sun, Moon } from "lucide-react";
 const NAV = [
   { to: "/tech", label: "Tech", n: "01" },
   { to: "/studios", label: "Studios", n: "02" },
-  { to: "/about", label: "About", n: "03" },
-  { to: "/contact", label: "Contact", n: "04" },
+  { to: "/clients", label: "Clients", n: "03" },
+  { to: "/about", label: "About", n: "04" },
+  { to: "/contact", label: "Contact", n: "05" },
 ] as const;
 
 export function Ticker({
@@ -188,8 +189,9 @@ export function SiteFooter() {
             <FLink to="/studios">02 · Studios</FLink>
           </FooterCol>
           <FooterCol title="Company">
-            <FLink to="/about">03 · About</FLink>
-            <FLink to="/contact">04 · Contact</FLink>
+            <FLink to="/clients">03 · Clients</FLink>
+            <FLink to="/about">04 · About</FLink>
+            <FLink to="/contact">05 · Contact</FLink>
           </FooterCol>
           <FooterCol title="Contact">
             <a href="mailto:hello@typtwo.com" className="hover:bg-volt inline-block">

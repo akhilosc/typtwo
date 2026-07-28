@@ -11,6 +11,7 @@
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as AboutRouteImport } from './routes/about'
+import { Route as ClientsRouteImport } from './routes/clients'
 import { Route as ContactRouteImport } from './routes/contact'
 import { Route as StudiosRouteImport } from './routes/studios'
 import { Route as TechRouteImport } from './routes/tech'
@@ -23,6 +24,11 @@ const IndexRoute = IndexRouteImport.update({
 const AboutRoute = AboutRouteImport.update({
   id: '/about',
   path: '/about',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ClientsRoute = ClientsRouteImport.update({
+  id: '/clients',
+  path: '/clients',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ContactRoute = ContactRouteImport.update({
@@ -44,6 +50,7 @@ const TechRoute = TechRouteImport.update({
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/about': typeof AboutRoute
+  '/clients': typeof ClientsRoute
   '/contact': typeof ContactRoute
   '/studios': typeof StudiosRoute
   '/tech': typeof TechRoute
@@ -51,6 +58,7 @@ export interface FileRoutesByFullPath {
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/about': typeof AboutRoute
+  '/clients': typeof ClientsRoute
   '/contact': typeof ContactRoute
   '/studios': typeof StudiosRoute
   '/tech': typeof TechRoute
@@ -59,21 +67,24 @@ export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/about': typeof AboutRoute
+  '/clients': typeof ClientsRoute
   '/contact': typeof ContactRoute
   '/studios': typeof StudiosRoute
   '/tech': typeof TechRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/about' | '/contact' | '/studios' | '/tech'
+  fullPaths: '/' | '/about' | '/clients' | '/contact' | '/studios' | '/tech'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/about' | '/contact' | '/studios' | '/tech'
-  id: '__root__' | '/' | '/about' | '/contact' | '/studios' | '/tech'
+  to: '/' | '/about' | '/clients' | '/contact' | '/studios' | '/tech'
+  id:
+    '__root__' | '/' | '/about' | '/clients' | '/contact' | '/studios' | '/tech'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AboutRoute: typeof AboutRoute
+  ClientsRoute: typeof ClientsRoute
   ContactRoute: typeof ContactRoute
   StudiosRoute: typeof StudiosRoute
   TechRoute: typeof TechRoute
@@ -93,6 +104,13 @@ declare module '@tanstack/react-router' {
       path: '/about'
       fullPath: '/about'
       preLoaderRoute: typeof AboutRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/clients': {
+      id: '/clients'
+      path: '/clients'
+      fullPath: '/clients'
+      preLoaderRoute: typeof ClientsRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/contact': {
@@ -122,6 +140,7 @@ declare module '@tanstack/react-router' {
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AboutRoute: AboutRoute,
+  ClientsRoute: ClientsRoute,
   ContactRoute: ContactRoute,
   StudiosRoute: StudiosRoute,
   TechRoute: TechRoute,
