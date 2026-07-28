@@ -1,107 +1,86 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
-import { Section, Eyebrow } from "../components/site-chrome";
-import aboutAsset from "../assets/about.jpg.asset.json";
+import { createFileRoute } from "@tanstack/react-router";
+import {
+  BruteButton,
+  PageHeader,
+  Eyebrow,
+} from "../components/site-chrome";
 
 export const Route = createFileRoute("/about")({
   head: () => ({
     meta: [
       { title: "About — Typtwo" },
-      { name: "description", content: "Typtwo is a technology and creative company building the intelligent enterprise." },
-      { property: "og:title", content: "About — Typtwo" },
-      { property: "og:description", content: "Two divisions. One purpose. Building the intelligent enterprise." },
-      { property: "og:image", content: aboutAsset.url },
-      { name: "twitter:image", content: aboutAsset.url },
+      {
+        name: "description",
+        content: "Two divisions. One vision.",
+      },
+      { property: "og:title", content: "About Typtwo" },
+      { property: "og:description", content: "Two worlds. One force." },
+      { property: "og:type", content: "website" },
+      { name: "twitter:card", content: "summary_large_image" },
     ],
+    links: [{ rel: "canonical", href: "/about" }],
   }),
   component: AboutPage,
 });
 
-const PRINCIPLES = [
-  { title: "Clarity first.", body: "We name the problem before we solve it. Sharp thinking beats fancy decks." },
-  { title: "Craft, not clutter.", body: "Every pixel, every line of code, every frame — considered, then shipped." },
-  { title: "Intelligence, applied.", body: "AI and automation are tools, not stories. We use them where they matter." },
-  { title: "Long-term by default.", body: "We build for the next decade, not the next quarter." },
-];
-
 function AboutPage() {
   return (
     <>
-      {/* Cinematic hero */}
-      <section className="relative h-[88vh] min-h-[600px] w-full overflow-hidden">
-        <img src={aboutAsset.url} alt="" className="absolute inset-0 h-full w-full object-cover opacity-45" />
-        <div className="absolute inset-0 bg-gradient-to-b from-background/50 via-background/60 to-background" />
-        <div className="absolute inset-0 grain" />
-        <div className="relative mx-auto flex h-full max-w-[1400px] flex-col justify-end px-6 pb-20 lg:px-10 lg:pb-28">
-          <Eyebrow>About</Eyebrow>
-          <h1 className="rise-in mt-6 max-w-5xl font-display text-5xl leading-[0.98] tracking-tight sm:text-7xl lg:text-[120px]">
-            Not just another
-            <br />
-            <span className="gold-text italic">technology company.</span>
-          </h1>
+      <PageHeader
+        n="03"
+        kicker="About"
+        title={
+          <>
+            A new kind of<br />
+            <span className="italic">company.</span>
+          </>
+        }
+        lead="Tech and Studios. One team. One vision."
+        accent="flame"
+      />
+
+      <section className="border-b-2 border-ink p-6 md:p-14">
+        <div className="display text-4xl md:text-7xl leading-[1.05] max-w-5xl space-y-2">
+          <div>Every business has <span className="bg-volt px-2 italic">two sides</span>.</div>
+          <div className="text-muted-foreground">How it works.</div>
+          <div className="text-muted-foreground">How the world sees it.</div>
+          <div>
+            We transform <span className="bg-flame text-paper px-2">both</span>.
+          </div>
         </div>
       </section>
 
-      {/* Monolith manifesto */}
-      <section className="relative flex min-h-[80vh] items-center py-32 lg:py-48">
-        <div
-          className="pointer-events-none absolute right-[-10%] top-1/2 h-[600px] w-[600px] -translate-y-1/2 rounded-full bg-gold/10 blur-3xl"
-          aria-hidden
-        />
-        <Section>
-          <div className="max-w-6xl">
-            <Eyebrow>Manifesto</Eyebrow>
-            <p className="mt-10 font-display text-[38px] leading-[1.08] tracking-tight sm:text-[60px] lg:text-[88px]">
-              We help businesses become <span className="text-foreground/40">smarter, faster, more connected —</span>
-              <br />
-              and <span className="gold-text italic">ready for what's next.</span>
-            </p>
+      <section className="grid md:grid-cols-2 border-b-2 border-ink">
+        <div className="p-8 md:p-14 border-r-0 md:border-r-2 border-b-2 md:border-b-0 border-ink">
+          <div className="mono text-xs uppercase tracking-widest text-flame">
+            [ 01 / Tech ]
           </div>
-        </Section>
+          <h3 className="display text-4xl md:text-6xl mt-3 leading-[0.9]">
+            Makes you<br /><span className="italic">smart.</span>
+          </h3>
+        </div>
+        <div className="p-8 md:p-14 bg-ink text-paper">
+          <div className="mono text-xs uppercase tracking-widest text-flame">
+            [ 02 / Studios ]
+          </div>
+          <h3 className="display text-4xl md:text-6xl mt-3 leading-[0.9]">
+            Makes you<br /><span className="italic">matter.</span>
+          </h3>
+        </div>
       </section>
 
-      {/* Principles as editorial rows */}
-      <section className="hairline-t">
-        <Section className="py-24">
-          <div className="mb-16 max-w-3xl">
-            <Eyebrow>Principles</Eyebrow>
-            <h2 className="mt-4 font-display text-4xl tracking-tight sm:text-6xl">
-              How we <span className="gold-text italic">work.</span>
+      <section className="p-6 md:p-14">
+        <div className="grid md:grid-cols-12 gap-8 items-end">
+          <div className="md:col-span-8">
+            <Eyebrow>Work with us</Eyebrow>
+            <h2 className="display text-5xl md:text-7xl mt-4 leading-[0.9]">
+              Two divisions.<br />
+              <span className="italic text-flame">One conversation.</span>
             </h2>
           </div>
-          <div className="divide-y divide-hairline">
-            {PRINCIPLES.map((p, i) => (
-              <div
-                key={p.title}
-                className="grid grid-cols-12 items-baseline gap-6 py-10 lg:py-14"
-              >
-                <div className="col-span-2 font-mono text-xs text-gold lg:col-span-1">0{i + 1}</div>
-                <div className="col-span-10 lg:col-span-5">
-                  <h3 className="font-display text-2xl tracking-tight sm:text-4xl lg:text-5xl">{p.title}</h3>
-                </div>
-                <div className="col-span-12 text-base leading-relaxed text-foreground/70 lg:col-span-6">
-                  {p.body}
-                </div>
-              </div>
-            ))}
+          <div className="md:col-span-4 flex flex-wrap gap-3">
+            <BruteButton to="/contact" variant="ink">Start</BruteButton>
           </div>
-        </Section>
-      </section>
-
-      <section className="relative min-h-[60vh] overflow-hidden">
-        <div className="absolute inset-0 bg-gradient-to-b from-background to-card" />
-        <div className="relative mx-auto flex max-w-[1400px] flex-col items-start px-6 py-32 lg:px-10 lg:py-40">
-          <Eyebrow>Next</Eyebrow>
-          <h2 className="mt-8 max-w-4xl font-display text-4xl leading-[1.02] tracking-tight sm:text-6xl lg:text-[88px]">
-            Let's build something
-            <br />
-            that <span className="gold-text italic">lasts.</span>
-          </h2>
-          <Link
-            to="/contact"
-            className="mt-12 inline-flex items-center gap-3 rounded-full bg-gold px-8 py-4 text-sm font-medium text-background transition-transform hover:-translate-y-0.5"
-          >
-            Get in touch <span aria-hidden>→</span>
-          </Link>
         </div>
       </section>
     </>

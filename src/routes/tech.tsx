@@ -1,75 +1,104 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
-import { Cpu, ArrowRight } from "lucide-react";
-import { TechFeaturesV9 } from "@/components/v9/TechFeaturesV9";
+import { createFileRoute } from "@tanstack/react-router";
+import {
+  BruteButton,
+  PageHeader,
+  SectionLabel,
+  Eyebrow,
+} from "../components/site-chrome";
 
 export const Route = createFileRoute("/tech")({
   head: () => ({
     meta: [
-      { title: "Typtwo Tech — Sovereign Private AI & Enterprise Operations" },
-      { name: "description", content: "Modernise your organisation through intelligent systems, secure automation and connected technology." },
+      { title: "Typtwo Tech — Intelligent Operations" },
+      {
+        name: "description",
+        content:
+          "Intelligent systems, automation, AI, cloud, and security — engineered to run your business.",
+      },
+      { property: "og:title", content: "Typtwo Tech — Intelligent Operations" },
+      { property: "og:description", content: "Systems that run the business." },
+      { property: "og:type", content: "website" },
+      { name: "twitter:card", content: "summary_large_image" },
     ],
+    links: [{ rel: "canonical", href: "/tech" }],
   }),
   component: TechPage,
 });
 
+const CAPABILITIES = [
+  { n: "01", t: "AI & Automation" },
+  { n: "02", t: "Cloud" },
+  { n: "03", t: "Security" },
+  { n: "04", t: "Data" },
+  { n: "05", t: "Platforms" },
+  { n: "06", t: "Managed Ops" },
+];
+
 function TechPage() {
   return (
-    <div style={{ backgroundColor: "#040404", minHeight: "100vh", color: "#FFFFFF" }}>
-      {/* 3D Sovereign Tech Hero Section */}
-      <section style={{ position: "relative", minHeight: "85vh", display: "flex", alignItems: "center", paddingTop: "140px", paddingBottom: "80px", borderBottom: "1px solid rgba(255,255,255,0.1)", overflow: "hidden" }}>
-        <div style={{ position: "absolute", top: 0, left: 0, right: 0, bottom: 0, background: "radial-gradient(circle at 70% 30%, rgba(0,229,255,0.12) 0%, transparent 60%)", pointerEvents: "none" }} />
-        
-        <div style={{ maxWidth: "1280px", margin: "0 auto", padding: "0 24px", width: "100%" }}>
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(340px, 1fr))", gap: "48px", alignItems: "center" }}>
-            
-            <div>
-              <div style={{ display: "inline-flex", alignItems: "center", gap: "8px", padding: "6px 16px", borderRadius: "9999px", backgroundColor: "rgba(0,229,255,0.1)", border: "1px solid rgba(0,229,255,0.4)", fontSize: "11px", fontWeight: 800, letterSpacing: "0.15em", color: "#00E5FF", textTransform: "uppercase", marginBottom: "24px" }}>
-                <Cpu size={16} /> ENGINE 01 • TYPTWO TECH
+    <>
+      <PageHeader
+        n="01"
+        kicker="Division 01 · Tech"
+        title={
+          <>
+            Intelligent<br />
+            <span className="italic">operations.</span>
+          </>
+        }
+        lead="Systems that run the business — quietly, securely, at scale."
+        accent="flame"
+      />
+
+      <section className="border-b-2 border-ink">
+        <SectionLabel n="02" label="Capabilities" />
+        <div className="grid grid-cols-2 md:grid-cols-3">
+          {CAPABILITIES.map((c, i) => (
+            <div
+              key={c.n}
+              className={`p-8 md:p-12 border-ink group hover:bg-ink hover:text-paper transition-colors ${
+                (i + 1) % 3 !== 0 ? "md:border-r-2" : ""
+              } ${i % 2 === 0 ? "border-r-2 md:border-r-2" : ""} ${
+                i < CAPABILITIES.length - 3 ? "border-b-2" : "border-b-2 md:border-b-0"
+              }`}
+            >
+              <div className="mono text-xs uppercase tracking-widest text-flame">
+                [{c.n}]
               </div>
-              <h1 style={{ fontSize: "clamp(44px, 5.5vw, 76px)", fontWeight: 800, letterSpacing: "-0.03em", lineHeight: 1.05, marginBottom: "24px" }}>
-                Engineering<br />
-                <span style={{ color: "#00E5FF" }}>Intelligent Operations.</span>
-              </h1>
-              <p style={{ fontSize: "18px", color: "#908F9D", lineHeight: 1.6, maxWidth: "560px", marginBottom: "40px" }}>
-                Imagine if your business could remember everything. Every document. Every conversation. Every process. Every customer. Every decision. We build on-prem, 0-egress private AI systems that make it happen.
-              </p>
-              <Link
-                to="/"
-                style={{
-                  display: "inline-flex",
-                  alignItems: "center",
-                  gap: "10px",
-                  padding: "16px 32px",
-                  borderRadius: "9999px",
-                  backgroundColor: "rgba(0,229,255,0.15)",
-                  border: "1px solid #00E5FF",
-                  color: "#00E5FF",
-                  fontWeight: 700,
-                  fontSize: "15px",
-                  textDecoration: "none",
-                  boxShadow: "0 0 30px rgba(0,229,255,0.3)"
-                }}
-              >
-                <span>Back to Flagship Experience</span>
-                <ArrowRight size={16} />
-              </Link>
+              <div className="display text-3xl md:text-5xl mt-4">{c.t}</div>
             </div>
-
-            {/* 3D Tech Monolith Hero Render */}
-            <div style={{ borderRadius: "24px", overflow: "hidden", border: "1px solid rgba(0,229,255,0.4)", boxShadow: "0 0 60px rgba(0,229,255,0.2)", height: "480px" }}>
-              <img 
-                src="/images/tech_hero_3d.png" 
-                alt="Typtwo Tech Sovereign 3D Monolith"
-                style={{ width: "100%", height: "100%", objectFit: "cover" }}
-              />
-            </div>
-
-          </div>
+          ))}
         </div>
       </section>
 
-      {/* Tech Features Component with 3D Image Cards */}
-      <TechFeaturesV9 />
-    </div>
+      <section className="border-b-2 border-ink overflow-hidden bg-volt">
+        <div className="ticker flex w-max whitespace-nowrap py-8 mono text-2xl md:text-3xl uppercase">
+          {Array.from({ length: 4 }).map((_, i) => (
+            <span key={i} className="mx-6 flex items-center gap-6">
+              <span>AWS</span><span className="text-flame">✱</span>
+              <span>OPENAI</span><span className="text-flame">✱</span>
+              <span>ANTHROPIC</span><span className="text-flame">✱</span>
+              <span>POSTGRES</span><span className="text-flame">✱</span>
+              <span>K8S</span><span className="text-flame">✱</span>
+            </span>
+          ))}
+        </div>
+      </section>
+
+      <section className="p-6 md:p-14 bg-ink text-paper">
+        <div className="grid md:grid-cols-12 gap-8 items-end">
+          <div className="md:col-span-8">
+            <Eyebrow color="flame">Next</Eyebrow>
+            <h2 className="display text-5xl md:text-7xl mt-4 leading-[0.9]">
+              Modernise<br />
+              <span className="italic text-flame">the engine.</span>
+            </h2>
+          </div>
+          <div className="md:col-span-4 flex flex-wrap gap-3">
+            <BruteButton to="/contact" variant="flame">Book a call</BruteButton>
+          </div>
+        </div>
+      </section>
+    </>
   );
 }

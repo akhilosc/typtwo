@@ -2,123 +2,302 @@ import { Link } from "@tanstack/react-router";
 import type { ReactNode } from "react";
 
 const NAV = [
-  { to: "/", label: "Home" },
-  { to: "/tech", label: "Tech" },
-  { to: "/studios", label: "Studios" },
-  { to: "/about", label: "About" },
-  { to: "/contact", label: "Contact" },
+  { to: "/tech", label: "Tech", n: "01" },
+  { to: "/studios", label: "Studios", n: "02" },
+  { to: "/about", label: "About", n: "03" },
+  { to: "/contact", label: "Contact", n: "04" },
 ] as const;
+
+export function Ticker({
+  items,
+  reverse = false,
+  className = "",
+}: {
+  items: string[];
+  reverse?: boolean;
+  className?: string;
+}) {
+  const loop = [...items, ...items, ...items];
+  return (
+    <div className={`relative overflow-hidden ${className}`}>
+      <div
+        className={`flex w-max whitespace-nowrap ${
+          reverse ? "ticker-reverse" : "ticker"
+        }`}
+      >
+        {loop.map((t, i) => (
+          <span key={i} className="mx-6 inline-flex items-center gap-6">
+            <span>{t}</span>
+            <span aria-hidden>✱</span>
+          </span>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+export function StatusBar() {
+  return (
+    <div className="hidden md:flex border-b-2 border-ink bg-paper text-ink mono text-[11px] uppercase tracking-widest">
+      <div className="px-4 py-1.5 border-r-2 border-ink flex items-center gap-2">
+        <span className="inline-block h-2 w-2 bg-flame" /> LIVE
+      </div>
+      <div className="px-4 py-1.5 border-r-2 border-ink">SYS/TYPTWO_v2.0</div>
+      <div className="px-4 py-1.5 border-r-2 border-ink flex-1">
+        <Ticker
+          items={[
+            "TWO WORLDS. ONE FORCE.",
+            "ENGINEERING INTELLIGENT OPERATIONS",
+            "ENGINEERING INTELLIGENT GROWTH",
+            "BUILT FOR WHAT'S NEXT",
+            "NOW ONBOARDING Q3 PARTNERS",
+          ]}
+        />
+      </div>
+      <div className="px-4 py-1.5 border-l-2 border-ink">
+        <span className="blink">█</span> ONLINE
+      </div>
+    </div>
+  );
+}
 
 export function SiteHeader() {
   return (
-    <header className="sticky top-0 z-40 bg-background/70 backdrop-blur-xl hairline-b">
-      <div className="mx-auto flex h-16 max-w-[1400px] items-center justify-between px-6 lg:px-10">
-        <Link to="/" className="flex items-baseline gap-2.5">
-          <span className="font-display text-[26px] leading-none tracking-tight">
-            Typ<span className="gold-text">two</span>
-          </span>
-        </Link>
-        <nav className="hidden items-center gap-1 md:flex">
-          {NAV.map((item) => (
-            <Link
-              key={item.to}
-              to={item.to}
-              className="px-3 py-2 text-sm text-foreground/60 transition-colors hover:text-foreground"
-              activeProps={{ className: "px-3 py-2 text-sm text-gold" }}
-              activeOptions={{ exact: item.to === "/" }}
-            >
-              {item.label}
-            </Link>
-          ))}
-        </nav>
-        <Link
-          to="/contact"
-          className="hidden items-center gap-2 rounded-full bg-gold px-5 py-2 text-xs font-medium text-background transition-transform hover:-translate-y-0.5 md:inline-flex"
-        >
-          Get in touch
-          <span aria-hidden>→</span>
-        </Link>
-      </div>
-    </header>
+    <>
+      <StatusBar />
+      <header className="sticky top-0 z-40 bg-paper border-b-2 border-ink">
+        <div className="grid grid-cols-12 items-stretch">
+          <Link
+            to="/"
+            className="col-span-6 md:col-span-3 flex items-center gap-3 px-6 py-4 border-r-2 border-ink group"
+          >
+            <span
+              aria-hidden
+              className="inline-block h-3 w-3 bg-flame group-hover:bg-ink transition"
+            />
+            <span className="display text-3xl leading-none tracking-tight">
+              TYP<span className="text-flame">TWO</span>
+              <span className="text-flame">.</span>
+            </span>
+          </Link>
+
+          <nav className="hidden md:flex col-span-6 items-stretch">
+            {NAV.map((n) => (
+              <Link
+                key={n.to}
+                to={n.to}
+                className="group flex-1 flex items-center gap-3 px-5 border-r-2 border-ink mono text-xs uppercase tracking-widest hover:bg-ink hover:text-paper transition"
+                activeProps={{ className: "bg-volt text-ink" }}
+              >
+                <span className="opacity-60">[{n.n}]</span>
+                <span>{n.label}</span>
+              </Link>
+            ))}
+          </nav>
+
+          <Link
+            to="/contact"
+            className="col-span-6 md:col-span-3 flex items-center justify-between gap-2 px-6 py-4 bg-ink text-paper hover:bg-flame transition group"
+          >
+            <span className="mono text-xs uppercase tracking-widest">
+              Start a project
+            </span>
+            <span className="text-xl group-hover:translate-x-1 transition-transform">
+              →
+            </span>
+          </Link>
+        </div>
+      </header>
+    </>
   );
 }
 
 export function SiteFooter() {
   return (
-    <footer className="hairline-t mt-24 bg-background">
-      <div className="mx-auto max-w-[1400px] px-6 py-20 lg:px-10">
-        <div className="grid gap-10 md:grid-cols-12">
-          <div className="md:col-span-5">
-            <div className="font-display text-5xl tracking-tight">
-              Typ<span className="gold-text">two</span>
-            </div>
-            <p className="mt-4 max-w-sm text-sm text-muted-foreground">
-              Two divisions. One purpose. Building the intelligent enterprise through technology and creativity.
-            </p>
+    <footer className="border-t-2 border-ink bg-paper">
+      <div className="border-b-2 border-ink bg-ink text-paper overflow-hidden">
+        <div className="ticker-slow flex w-max whitespace-nowrap py-6 display text-6xl md:text-8xl">
+          {Array.from({ length: 6 }).map((_, i) => (
+            <span key={i} className="mx-8 flex items-center gap-8">
+              <span>TWO WORLDS</span>
+              <span className="text-flame">✱</span>
+              <span className="italic">One force.</span>
+              <span className="text-volt">✱</span>
+            </span>
+          ))}
+        </div>
+      </div>
+
+      <div className="grid grid-cols-12 border-b-2 border-ink">
+        <div className="col-span-12 md:col-span-6 p-8 md:p-14 border-r-0 md:border-r-2 border-ink">
+          <div className="mono text-xs uppercase tracking-widest text-muted-foreground mb-6">
+            [ Let's build ]
           </div>
-          <FooterCol title="Divisions" items={[["Tech", "/tech"], ["Studios", "/studios"]]} />
-          <FooterCol title="Company" items={[["About", "/about"], ["Contact", "/contact"]]} />
-          <FooterCol title="Connect" items={[["LinkedIn", "#"], ["Instagram", "#"], ["Email", "mailto:hello@typtwo.com"]]} external />
+          <div className="display text-5xl md:text-7xl leading-[0.9]">
+            Something the <span className="bg-volt px-2">world</span>
+            <br /> hasn't seen yet.
+          </div>
+          <Link
+            to="/contact"
+            className="inline-flex items-center gap-3 mt-10 brute bg-flame text-paper px-6 py-4 mono uppercase tracking-widest text-sm"
+          >
+            Start a conversation
+            <span>→</span>
+          </Link>
         </div>
-        <div className="hairline-t mt-14 flex flex-col items-start justify-between gap-3 pt-6 text-xs text-muted-foreground md:flex-row md:items-center">
-          <div>© {new Date().getFullYear()} Typtwo — The Intelligent Enterprise.</div>
-          <div className="font-mono text-gold/70">hello@typtwo.com</div>
+
+        <div className="col-span-12 md:col-span-6 grid grid-cols-2">
+          <FooterCol title="Divisions">
+            <FLink to="/tech">01 · Tech</FLink>
+            <FLink to="/studios">02 · Studios</FLink>
+          </FooterCol>
+          <FooterCol title="Company">
+            <FLink to="/about">03 · About</FLink>
+            <FLink to="/contact">04 · Contact</FLink>
+          </FooterCol>
+          <FooterCol title="Contact">
+            <a href="mailto:hello@typtwo.com" className="hover:bg-volt inline-block">
+              hello@typtwo.com
+            </a>
+            <span className="text-muted-foreground">One thread. Two worlds.</span>
+          </FooterCol>
+          <FooterCol title="Signal">
+            <a href="#" className="hover:bg-volt inline-block">LinkedIn ↗</a>
+            <a href="#" className="hover:bg-volt inline-block">Instagram ↗</a>
+          </FooterCol>
         </div>
+      </div>
+
+      <div className="flex flex-wrap items-center justify-between gap-3 px-6 py-4 mono text-[11px] uppercase tracking-widest">
+        <span>© {new Date().getFullYear()} TYPTWO / ALL RIGHTS RESERVED</span>
+        <span className="flex items-center gap-2">
+          <span className="inline-block h-2 w-2 bg-flame blink" />
+          BUILT FOR WHAT'S NEXT
+        </span>
       </div>
     </footer>
   );
 }
 
-function FooterCol({
-  title,
-  items,
-  external,
-}: {
-  title: string;
-  items: readonly (readonly [string, string])[];
-  external?: boolean;
-}) {
+function FooterCol({ title, children }: { title: string; children: ReactNode }) {
   return (
-    <div className="md:col-span-2">
-      <div className="eyebrow mb-3">{title}</div>
-      <ul className="space-y-2 text-sm">
-        {items.map(([label, href]) =>
-          external ? (
-            <li key={label}>
-              <a href={href} className="text-foreground/80 hover:text-gold">{label}</a>
-            </li>
-          ) : (
-            <li key={label}>
-              <Link to={href} className="text-foreground/80 hover:text-gold">{label}</Link>
-            </li>
-          )
-        )}
-      </ul>
+    <div className="border-t-2 md:border-t-0 border-l-2 border-ink p-6">
+      <div className="mono text-[11px] uppercase tracking-widest text-muted-foreground mb-4">
+        // {title}
+      </div>
+      <ul className="space-y-2 text-sm">{splitChildren(children)}</ul>
     </div>
   );
 }
+function splitChildren(children: ReactNode) {
+  const arr = Array.isArray(children) ? children : [children];
+  return arr.map((c, i) => <li key={i}>{c}</li>);
+}
+function FLink({ to, children }: { to: (typeof NAV)[number]["to"]; children: ReactNode }) {
+  return (
+    <Link to={to} className="hover:bg-volt inline-block">
+      {children}
+    </Link>
+  );
+}
 
-export function Section({
+/* ------- Reusable brutalist primitives ------- */
+
+export function Eyebrow({
   children,
-  className = "",
-  id,
+  color = "ink",
 }: {
   children: ReactNode;
-  className?: string;
-  id?: string;
+  color?: "ink" | "flame" | "paper";
 }) {
+  const cls =
+    color === "flame"
+      ? "text-flame"
+      : color === "paper"
+      ? "text-paper"
+      : "text-ink";
   return (
-    <section id={id} className={`mx-auto max-w-[1400px] px-6 lg:px-10 ${className}`}>
+    <div className={`mono text-xs uppercase tracking-[0.25em] ${cls} flex items-center gap-3`}>
+      <span aria-hidden>[</span>
       {children}
-    </section>
+      <span aria-hidden>]</span>
+    </div>
   );
 }
 
-export function Eyebrow({ children }: { children: ReactNode }) {
+export function BruteButton({
+  to,
+  children,
+  variant = "ink",
+}: {
+  to: "/tech" | "/studios" | "/about" | "/contact" | "/";
+  children: ReactNode;
+  variant?: "ink" | "flame" | "volt" | "paper";
+}) {
+  const styles: Record<string, string> = {
+    ink: "bg-ink text-paper",
+    flame: "bg-flame text-paper",
+    volt: "bg-volt text-ink",
+    paper: "bg-paper text-ink",
+  };
   return (
-    <div className="eyebrow flex items-center gap-2">
-      <span className="h-px w-6 bg-gold/60" />
+    <Link
+      to={to}
+      className={`brute inline-flex items-center gap-3 px-6 py-4 mono uppercase tracking-widest text-sm ${styles[variant]}`}
+    >
       {children}
+      <span>→</span>
+    </Link>
+  );
+}
+
+export function SectionLabel({
+  n,
+  label,
+}: {
+  n: string;
+  label: string;
+}) {
+  return (
+    <div className="flex items-center justify-between border-b-2 border-ink py-3 mono text-xs uppercase tracking-widest">
+      <span className="flex items-center gap-3">
+        <span className="bg-ink text-paper px-2 py-1">{n}</span>
+        <span>{label}</span>
+      </span>
+      <span className="hidden md:inline text-muted-foreground">
+        ────────────── ✱
+      </span>
     </div>
+  );
+}
+
+export function PageHeader({
+  n,
+  kicker,
+  title,
+  lead,
+  accent = "flame",
+}: {
+  n: string;
+  kicker: string;
+  title: ReactNode;
+  lead: string;
+  accent?: "flame" | "volt";
+}) {
+  return (
+    <section className="border-b-2 border-ink">
+      <SectionLabel n={n} label={kicker} />
+      <div className="grid grid-cols-12 gap-0">
+        <div className="col-span-12 md:col-span-8 p-6 md:p-14 border-r-0 md:border-r-2 border-ink">
+          <h1 className="display text-6xl md:text-[10rem] leading-[0.85] tracking-tighter rise">
+            {title}
+          </h1>
+        </div>
+        <div className="col-span-12 md:col-span-4 p-6 md:p-14 flex flex-col justify-between gap-8">
+          <p className="text-lg leading-relaxed">{lead}</p>
+          <div className={`h-24 ${accent === "flame" ? "bg-flame" : "bg-volt"} brute`} />
+        </div>
+      </div>
+    </section>
   );
 }

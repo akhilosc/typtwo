@@ -1,47 +1,115 @@
-import { createFileRoute } from "@tanstack/react-router";
 import { useState } from "react";
-import { Section, Eyebrow } from "../components/site-chrome";
+import { createFileRoute } from "@tanstack/react-router";
+import {
+  PageHeader,
+  SectionLabel,
+  Eyebrow,
+} from "../components/site-chrome";
 
 export const Route = createFileRoute("/contact")({
   head: () => ({
     meta: [
-      { title: "Contact — Typtwo" },
-      { name: "description", content: "Start a conversation with Typtwo." },
-      { property: "og:title", content: "Contact — Typtwo" },
-      { property: "og:description", content: "Start a conversation with Typtwo." },
+      { title: "Contact — Typtwo. Start a project." },
+      {
+        name: "description",
+        content:
+          "Talk to Typtwo. One thread reaches both divisions — Tech and Studios — from the same team.",
+      },
+      { property: "og:title", content: "Contact Typtwo" },
+      {
+        property: "og:description",
+        content: "One thread. Two worlds. Start a conversation with Typtwo.",
+      },
+      { property: "og:type", content: "website" },
+      { name: "twitter:card", content: "summary_large_image" },
     ],
+    links: [{ rel: "canonical", href: "/contact" }],
   }),
   component: ContactPage,
 });
 
+const INTERESTS = [
+  "Tech · Systems",
+  "Tech · AI & Automation",
+  "Studios · Brand",
+  "Studios · Film",
+  "Both divisions",
+  "Just exploring",
+] as const;
+
 function ContactPage() {
   const [sent, setSent] = useState(false);
+  const [interest, setInterest] = useState<string>("Both divisions");
 
   return (
-    <Section className="pt-16 pb-32 lg:pt-24">
-      <div className="max-w-4xl">
-        <Eyebrow>Contact</Eyebrow>
-        <h1 className="rise-in mt-6 font-display text-5xl leading-[1.02] tracking-tight sm:text-7xl lg:text-[96px]">
-          Let's <span className="gold-text italic">talk.</span>
-        </h1>
-        <p className="mt-6 max-w-xl text-lg leading-relaxed text-foreground/70">
-          Tell us about your business and what you're trying to do next. We reply within one working day.
-        </p>
-      </div>
+    <>
+      <PageHeader
+        n="04"
+        kicker="Contact / One thread"
+        title={
+          <>
+            Say <span className="italic">hello</span>.<br />
+            We answer fast.
+          </>
+        }
+        lead="One email reaches both divisions. Tell us what you're building — or what's stuck — and we'll come back with people, not a form response."
+        accent="volt"
+      />
 
-      <div className="mt-16 grid gap-10 lg:grid-cols-12">
-        <div className="lg:col-span-5">
-          <ContactRow label="General" value="hello@typtwo.com" />
-          <ContactRow label="Tech" value="tech@typtwo.com" />
-          <ContactRow label="Studios" value="studios@typtwo.com" />
-          <ContactRow label="Press" value="press@typtwo.com" />
-        </div>
+      <section className="grid md:grid-cols-12 border-b-2 border-ink">
+        {/* Left column — info */}
+        <aside className="md:col-span-4 border-r-0 md:border-r-2 border-b-2 md:border-b-0 border-ink p-6 md:p-10 space-y-8">
+          <div>
+            <Eyebrow>Direct</Eyebrow>
+            <a
+              href="mailto:hello@typtwo.com"
+              className="mt-3 block display text-3xl md:text-4xl hover:bg-volt"
+            >
+              hello@typtwo.com
+            </a>
+          </div>
+          <div>
+            <div className="mono text-xs uppercase tracking-widest text-muted-foreground mb-2">
+              // Response time
+            </div>
+            <div>Within one working day.</div>
+          </div>
+          <div>
+            <div className="mono text-xs uppercase tracking-widest text-muted-foreground mb-2">
+              // Where
+            </div>
+            <div>Everywhere. Headquartered in Dubai.</div>
+          </div>
+          <div className="brute bg-volt text-ink p-6">
+            <div className="mono text-xs uppercase tracking-widest mb-2">
+              Fast track
+            </div>
+            <p className="text-sm leading-relaxed">
+              Founders and heads of teams — mention "fast track" and you'll
+              land on a call within 48 hours.
+            </p>
+          </div>
+        </aside>
 
-        <div className="lg:col-span-7">
+        {/* Form */}
+        <div className="md:col-span-8 p-6 md:p-10">
           {sent ? (
-            <div className="rounded-2xl gold-border bg-card p-10 text-center">
-              <div className="eyebrow">Message received</div>
-              <h3 className="mt-3 font-display text-2xl tracking-tight">Thanks — we'll be in touch <span className="gold-text italic">shortly.</span></h3>
+            <div className="brute p-10 bg-flame text-paper">
+              <Eyebrow color="paper">Message sent</Eyebrow>
+              <h3 className="display text-4xl md:text-5xl mt-4 leading-[0.9]">
+                Thanks.<br />
+                <span className="italic">We're on it.</span>
+              </h3>
+              <p className="mt-4 text-sm max-w-[42ch]">
+                You'll hear back from a real person at Typtwo within one
+                working day. Meanwhile: two worlds, one force.
+              </p>
+              <button
+                onClick={() => setSent(false)}
+                className="mt-8 mono text-xs uppercase tracking-widest underline underline-offset-4"
+              >
+                ← Send another
+              </button>
             </div>
           ) : (
             <form
@@ -49,42 +117,66 @@ function ContactPage() {
                 e.preventDefault();
                 setSent(true);
               }}
-              className="rounded-2xl gold-border bg-card p-8 space-y-6 lg:p-10"
+              className="space-y-8"
             >
-              <div className="grid gap-6 sm:grid-cols-2">
+              <SectionLabel n="01" label="Who's writing" />
+              <div className="grid md:grid-cols-2 gap-4">
                 <Field label="Name" name="name" required />
                 <Field label="Company" name="company" />
                 <Field label="Email" name="email" type="email" required />
-                <Field label="Division" name="division" as="select">
-                  <option>Not sure yet</option>
-                  <option>Typtwo Tech</option>
-                  <option>Typtwo Studios</option>
-                  <option>Both</option>
-                </Field>
+                <Field label="Role" name="role" placeholder="Founder, CTO, CMO…" />
               </div>
-              <Field label="Project" name="project" as="textarea" required />
-              <button
-                type="submit"
-                className="inline-flex items-center gap-2 rounded-full bg-gold px-6 py-3 text-sm font-medium text-background transition-transform hover:-translate-y-0.5"
-              >
-                Send message <span aria-hidden>→</span>
-              </button>
+
+              <SectionLabel n="02" label="What you need" />
+              <div>
+                <div className="mono text-xs uppercase tracking-widest mb-3">
+                  Interest
+                </div>
+                <div className="flex flex-wrap gap-2">
+                  {INTERESTS.map((i) => (
+                    <button
+                      type="button"
+                      key={i}
+                      onClick={() => setInterest(i)}
+                      className={`brute px-4 py-2 mono text-xs uppercase tracking-widest ${
+                        interest === i ? "bg-ink text-paper" : "bg-paper"
+                      }`}
+                    >
+                      {i}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              <div>
+                <div className="mono text-xs uppercase tracking-widest mb-2">
+                  Project brief
+                </div>
+                <textarea
+                  required
+                  name="message"
+                  rows={6}
+                  placeholder="Tell us what you're building, what's stuck, or what you want the world to see…"
+                  className="w-full bg-paper border-2 border-ink px-4 py-3 focus:outline-none focus:bg-volt/30 mono text-sm"
+                />
+              </div>
+
+              <div className="flex flex-wrap items-center justify-between gap-4 pt-4">
+                <div className="mono text-xs uppercase tracking-widest text-muted-foreground">
+                  ↳ One thread reaches both divisions
+                </div>
+                <button
+                  type="submit"
+                  className="brute bg-flame text-paper px-8 py-4 mono uppercase tracking-widest text-sm inline-flex items-center gap-3"
+                >
+                  Send message <span>→</span>
+                </button>
+              </div>
             </form>
           )}
         </div>
-      </div>
-    </Section>
-  );
-}
-
-function ContactRow({ label, value }: { label: string; value: string }) {
-  return (
-    <div className="hairline-b flex items-center justify-between py-5">
-      <div className="eyebrow">{label}</div>
-      <a href={`mailto:${value}`} className="font-display text-lg tracking-tight hover:text-gold">
-        {value}
-      </a>
-    </div>
+      </section>
+    </>
   );
 }
 
@@ -93,28 +185,27 @@ function Field({
   name,
   type = "text",
   required,
-  as = "input",
-  children,
+  placeholder,
 }: {
   label: string;
   name: string;
   type?: string;
   required?: boolean;
-  as?: "input" | "textarea" | "select";
-  children?: React.ReactNode;
+  placeholder?: string;
 }) {
-  const baseCls =
-    "mt-2 w-full border-0 border-b border-hairline bg-transparent px-0 py-2 text-base text-foreground outline-none placeholder:text-muted-foreground focus:border-gold";
   return (
     <label className="block">
-      <span className="eyebrow">{label}{required && " *"}</span>
-      {as === "textarea" ? (
-        <textarea name={name} required={required} rows={4} className={baseCls} />
-      ) : as === "select" ? (
-        <select name={name} required={required} className={`${baseCls} bg-card`}>{children}</select>
-      ) : (
-        <input name={name} type={type} required={required} className={baseCls} />
-      )}
+      <div className="mono text-xs uppercase tracking-widest mb-2">
+        {label}
+        {required && <span className="text-flame"> *</span>}
+      </div>
+      <input
+        name={name}
+        type={type}
+        required={required}
+        placeholder={placeholder}
+        className="w-full bg-paper border-2 border-ink px-4 py-3 focus:outline-none focus:bg-volt/30 mono text-sm"
+      />
     </label>
   );
 }
