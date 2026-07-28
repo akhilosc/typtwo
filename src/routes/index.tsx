@@ -184,6 +184,26 @@ function Numbers() {
 }
 
 function HomepageClientele() {
+  const row1 = [
+    "Startup Talky",
+    "Merino Industries",
+    "BitBNS",
+    "Somany Ceramics",
+    "BuyHatke!",
+    "Abhay Prabhavana"
+  ];
+  
+  const row2 = [
+    "SBI",
+    "Rehau",
+    "OKX",
+    "Bluehost",
+    "Clove Dental",
+    "Sugs Lloyd",
+    "Spinny",
+    "Percept Limited"
+  ];
+
   return (
     <section className="border-b-2 border-ink">
       <SectionLabel n="03" label="Clientele Network" />
@@ -194,8 +214,8 @@ function HomepageClientele() {
             <h2 className="display text-5xl md:text-7xl leading-none mt-4">
               The Brains & Brands Behind.
             </h2>
-            <p className="text-md text-muted-foreground mt-6 leading-relaxed">
-              We engineer intelligent systems and scale global narratives for pioneering startups, market-leading conglomerates, and state-level organizations.
+            <p className="text-sm text-muted-foreground mt-4 leading-relaxed">
+              We partner with industry-leading conglomerates, high-growth startups, and state departments to engineer intelligent operations and narrative growth.
             </p>
           </div>
           <div>
@@ -203,27 +223,40 @@ function HomepageClientele() {
               to="/clients"
               className="inline-flex items-center gap-3 brute bg-ink text-paper px-6 py-4 mono uppercase tracking-widest text-sm"
             >
-              View Full Client Roster
+              View Client Roster
               <span>→</span>
             </Link>
           </div>
         </div>
-        <div className="col-span-12 md:col-span-8 grid grid-cols-2">
-          {[
-            "Startup Talky", "Merino Industries",
-            "BitBNS", "Somany Ceramics",
-            "BuyHatke!", "Abhay Prabhavana",
-            "SBI", "Rehau",
-            "OKX", "Bluehost"
-          ].map((client, idx) => (
-            <div
-              key={client}
-              className={`p-8 border-b-2 ${idx % 2 === 0 ? "border-r-2" : ""} border-ink flex flex-col justify-between min-h-[160px] hover:bg-volt hover:text-ink transition-colors`}
-            >
-              <span className="mono text-[10px] text-muted-foreground">[ 0{idx + 1} // PARTNER ]</span>
-              <span className="display text-2xl md:text-4xl font-extrabold leading-none">{client}</span>
+        
+        <div className="col-span-12 md:col-span-8 flex flex-col justify-center gap-4 py-8 overflow-hidden bg-paper">
+          {/* Row 1 Marquee */}
+          <div className="relative overflow-hidden w-full py-2">
+            <div className="flex w-max gap-4 ticker">
+              {[...row1, ...row1, ...row1].map((brand, idx) => (
+                <div 
+                  key={idx} 
+                  className="px-8 py-4 border-2 border-ink display text-xl md:text-2xl font-bold bg-paper text-ink whitespace-nowrap hover:bg-volt hover:text-ink transition-colors cursor-pointer"
+                >
+                  {brand}
+                </div>
+              ))}
             </div>
-          ))}
+          </div>
+
+          {/* Row 2 Marquee */}
+          <div className="relative overflow-hidden w-full py-2">
+            <div className="flex w-max gap-4 ticker-reverse">
+              {[...row2, ...row2, ...row2].map((brand, idx) => (
+                <div 
+                  key={idx} 
+                  className="px-8 py-4 border-2 border-ink display text-xl md:text-2xl font-bold bg-paper text-ink whitespace-nowrap hover:bg-volt hover:text-ink transition-colors cursor-pointer"
+                >
+                  {brand}
+                </div>
+              ))}
+            </div>
+          </div>
         </div>
       </div>
     </section>
