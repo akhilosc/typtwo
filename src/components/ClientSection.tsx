@@ -1,6 +1,6 @@
 import React from "react";
 import { Link } from "@tanstack/react-router";
-import { Eyebrow, SectionLabel } from "./site-chrome";
+import { Eyebrow } from "./site-chrome";
 
 export const CLIENT_DATA = {
   brainsBehind: [
@@ -18,6 +18,14 @@ export const CLIENT_DATA = {
     { name: "Abhay Prabhavana", desc: "Cultural Museum IP & Heritage Digitalization", tag: "Museum IP" },
     { name: "Percept Limited", desc: "Media, Entertainment & Communications", tag: "PR & Media" },
     { name: "Government of Maharashtra", desc: "State Public Infrastructure Digitalization", tag: "Government" }
+  ],
+  gtmPilots: [
+    { name: "Bluehost", desc: "Global Web Hosting & Domain Ecosystem", tag: "Infrastructure" },
+    { name: "SBI", desc: "State Bank of India — Banking & Financial Operations", tag: "Fintech & Enterprise" },
+    { name: "SeizeLead", desc: "B2B Sales Automation & Lead Generation", tag: "SaaS Scale" },
+    { name: "OKX", desc: "Global Crypto Exchange & Web3 Operations", tag: "Web3 Ecosystem" },
+    { name: "Formica", desc: "Laminates & High-Pressure Architectural Surfaces", tag: "Surfaces & Materials" },
+    { name: "Rehau", desc: "Global Polymer Processing & Industrial Systems", tag: "Industrial Engineering" }
   ]
 };
 
@@ -31,7 +39,7 @@ export function ClientGrid() {
         <p className="mono text-xs text-muted-foreground mt-1">// Elite founders and core engineering collaborations</p>
       </div>
       
-      {CLIENT_DATA.brainsBehind.map((c, i) => (
+      {CLIENT_DATA.brainsBehind.map((c) => (
         <div 
           key={c.name}
           className="p-8 border-b-2 md:border-b-0 border-r-2 border-ink hover:bg-volt hover:text-ink transition-colors flex flex-col justify-between min-h-[200px]"
@@ -53,7 +61,29 @@ export function ClientGrid() {
         <p className="mono text-xs text-muted-foreground mt-1">// Marquee commercial enterprises, IP projects & state departments</p>
       </div>
 
-      {CLIENT_DATA.workedWith.map((c, i) => (
+      {CLIENT_DATA.workedWith.map((c) => (
+        <div 
+          key={c.name}
+          className="p-8 border-b-2 border-r-2 border-ink hover:bg-volt hover:text-ink transition-colors flex flex-col justify-between min-h-[220px]"
+        >
+          <div>
+            <div className="mono text-[10px] uppercase tracking-widest text-muted-foreground mb-4">
+              [ {c.tag} ]
+            </div>
+            <h4 className="display text-3xl leading-tight font-extrabold">{c.name}</h4>
+          </div>
+          <p className="text-sm mt-4 leading-relaxed opacity-95">{c.desc}</p>
+        </div>
+      ))}
+
+      {/* GTM Pilots Group */}
+      <div className="col-span-1 md:col-span-2 lg:col-span-4 p-8 border-t-2 border-b-2 border-ink bg-ink text-paper">
+        <Eyebrow color="flame">Group C</Eyebrow>
+        <h3 className="display text-4xl md:text-5xl mt-2 tracking-tight">Brands Fueled with GTM Pilots</h3>
+        <p className="mono text-xs text-muted-foreground mt-1">// Successful growth strategies, go-to-market executions and traction sprints</p>
+      </div>
+
+      {CLIENT_DATA.gtmPilots.map((c) => (
         <div 
           key={c.name}
           className="p-8 border-b-2 border-r-2 border-ink hover:bg-volt hover:text-ink transition-colors flex flex-col justify-between min-h-[220px]"

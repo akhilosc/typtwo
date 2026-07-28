@@ -213,7 +213,8 @@ function HomepageClientele() {
             "Startup Talky", "Merino Industries",
             "BitBNS", "Somany Ceramics",
             "BuyHatke!", "Abhay Prabhavana",
-            "MONEY MINDS8", "Percept Limited"
+            "SBI", "Rehau",
+            "OKX", "Bluehost"
           ].map((client, idx) => (
             <div
               key={client}
