@@ -5,7 +5,6 @@ import { TechFeaturesV9 } from '@/components/v9/TechFeaturesV9';
 import { StudiosFeaturesV9 } from '@/components/v9/StudiosFeaturesV9';
 import { VoiceCloningV9 } from '@/components/v9/VoiceCloningV9';
 import { MethodologyV9 } from '@/components/v9/MethodologyV9';
-import { VersionSwitcherV9 } from '@/components/v9/VersionSwitcherV9';
 
 export const Route = createFileRoute('/')({
   component: Index,
@@ -20,7 +19,6 @@ function Index() {
       <StudiosFeaturesV9 />
       <VoiceCloningV9 />
       <MethodologyV9 />
-      <VersionSwitcherV9 />
     </div>
   );
 }

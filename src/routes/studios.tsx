@@ -1,108 +1,75 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { Section, Eyebrow } from "../components/site-chrome";
-import studiosAsset from "../assets/studios.jpg.asset.json";
+import { Sparkles, ArrowRight } from "lucide-react";
+import { StudiosFeaturesV9 } from "@/components/v9/StudiosFeaturesV9";
 
 export const Route = createFileRoute("/studios")({
   head: () => ({
     meta: [
-      { title: "Typtwo Studios — Engineering Intelligent Growth" },
-      { name: "description", content: "Brands people trust, campaigns people remember and content people actually want to watch." },
-      { property: "og:title", content: "Typtwo Studios — Engineering Intelligent Growth" },
-      { property: "og:description", content: "Brand. Content. Campaigns. Growth." },
-      { property: "og:image", content: studiosAsset.url },
-      { name: "twitter:image", content: studiosAsset.url },
+      { title: "Typtwo Studios — Creative Intelligence & Brand Growth" },
+      { name: "description", content: "Create brands people trust, campaigns people remember, and content people actually want to watch." },
     ],
   }),
   component: StudiosPage,
 });
 
-const CAPABILITIES = [
-  { title: "Branding", body: "Identities that hold up under scrutiny and scale." },
-  { title: "Content", body: "Films, series and shortform that pull people in." },
-  { title: "Campaigns", body: "Ideas that land — measurable, memorable, moveable." },
-  { title: "Digital", body: "Sites and products that feel as good as they perform." },
-  { title: "Strategy", body: "Positioning built on evidence, not opinion." },
-  { title: "Production", body: "End-to-end delivery across every format." },
-];
-
 function StudiosPage() {
   return (
-    <>
-      <section className="relative h-[92vh] min-h-[640px] w-full overflow-hidden">
-        <img src={studiosAsset.url} alt="" className="absolute inset-0 h-full w-full object-cover opacity-55" />
-        <div className="absolute inset-0 bg-gradient-to-b from-background/40 via-background/60 to-background" />
-        <div className="absolute inset-0 grain" />
-        <div className="relative mx-auto flex h-full max-w-[1400px] flex-col justify-end px-6 pb-20 lg:px-10 lg:pb-28">
-          <div className="rise-in">
-            <Eyebrow>Division 02 · Typtwo Studios</Eyebrow>
-            <h1 className="mt-6 max-w-5xl font-display text-5xl leading-[0.98] tracking-tight sm:text-7xl lg:text-[128px]">
-              Intelligent <span className="gold-text italic">growth.</span>
-            </h1>
-          </div>
-        </div>
-      </section>
-
-      <section className="relative flex min-h-[70vh] items-center py-32 lg:py-40">
-        <Section>
-          <div className="max-w-5xl">
-            <Eyebrow>Manifesto · Studios</Eyebrow>
-            <p className="mt-10 font-display text-[36px] leading-[1.08] tracking-tight sm:text-[56px] lg:text-[80px]">
-              We build brands, films and campaigns that
-              <span className="text-foreground/40"> earn attention</span> and
-              <span className="gold-text italic"> keep it.</span>
-            </p>
-          </div>
-        </Section>
-      </section>
-
-      <section className="hairline-t">
-        <Section className="py-24">
-          <div className="mb-16 flex items-end justify-between">
+    <div style={{ backgroundColor: "#040404", minHeight: "100vh", color: "#FFFFFF" }}>
+      {/* 3D Creative Studios Hero Section */}
+      <section style={{ position: "relative", minHeight: "85vh", display: "flex", alignItems: "center", paddingTop: "140px", paddingBottom: "80px", borderBottom: "1px solid rgba(255,255,255,0.1)", overflow: "hidden" }}>
+        <div style={{ position: "absolute", top: 0, left: 0, right: 0, bottom: 0, background: "radial-gradient(circle at 70% 30%, rgba(212,175,55,0.15) 0%, transparent 60%)", pointerEvents: "none" }} />
+        
+        <div style={{ maxWidth: "1280px", margin: "0 auto", padding: "0 24px", width: "100%" }}>
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(340px, 1fr))", gap: "48px", alignItems: "center" }}>
+            
             <div>
-              <Eyebrow>Capabilities</Eyebrow>
-              <h2 className="mt-4 font-display text-4xl tracking-tight sm:text-6xl">
-                What we <span className="gold-text italic">create.</span>
-              </h2>
-            </div>
-            <div className="hidden font-mono text-[10px] uppercase tracking-[0.28em] text-foreground/50 md:block">
-              06 disciplines
-            </div>
-          </div>
-          <div className="divide-y divide-hairline">
-            {CAPABILITIES.map((c, i) => (
-              <div
-                key={c.title}
-                className="group grid grid-cols-12 items-baseline gap-6 py-8 transition-colors hover:bg-card/40 lg:py-12"
-              >
-                <div className="col-span-2 font-mono text-xs text-gold lg:col-span-1">
-                  0{i + 1}
-                </div>
-                <div className="col-span-10 lg:col-span-5">
-                  <h3 className="font-display text-2xl tracking-tight sm:text-4xl lg:text-5xl">
-                    {c.title}
-                  </h3>
-                </div>
-                <div className="col-span-12 text-base leading-relaxed text-foreground/70 lg:col-span-6">
-                  {c.body}
-                </div>
+              <div style={{ display: "inline-flex", alignItems: "center", gap: "8px", padding: "6px 16px", borderRadius: "9999px", backgroundColor: "rgba(212,175,55,0.1)", border: "1px solid rgba(212,175,55,0.4)", fontSize: "11px", fontWeight: 800, letterSpacing: "0.15em", color: "#D4AF37", textTransform: "uppercase", marginBottom: "24px" }}>
+                <Sparkles size={16} /> ENGINE 02 • TYPTWO STUDIOS
               </div>
-            ))}
+              <h1 style={{ fontSize: "clamp(44px, 5.5vw, 76px)", fontWeight: 800, letterSpacing: "-0.03em", lineHeight: 1.05, marginBottom: "24px" }}>
+                Engineering<br />
+                <span style={{ color: "#F5D77F" }}>Intelligent Growth.</span>
+              </h1>
+              <p style={{ fontSize: "18px", color: "#908F9D", lineHeight: 1.6, maxWidth: "560px", marginBottom: "40px" }}>
+                Great businesses deserve great stories. People don't remember advertisements. They remember moments, ideas, experiences, and conversations. We engineer brands people trust and short fiction people watch.
+              </p>
+              <Link
+                to="/"
+                style={{
+                  display: "inline-flex",
+                  alignItems: "center",
+                  gap: "10px",
+                  padding: "16px 32px",
+                  borderRadius: "9999px",
+                  backgroundColor: "rgba(212,175,55,0.15)",
+                  border: "1px solid #D4AF37",
+                  color: "#F5D77F",
+                  fontWeight: 700,
+                  fontSize: "15px",
+                  textDecoration: "none",
+                  boxShadow: "0 0 30px rgba(212,175,55,0.3)"
+                }}
+              >
+                <span>Back to Flagship Experience</span>
+                <ArrowRight size={16} />
+              </Link>
+            </div>
+
+            {/* 3D Studios Hero Render */}
+            <div style={{ borderRadius: "24px", overflow: "hidden", border: "1px solid rgba(212,175,55,0.4)", boxShadow: "0 0 60px rgba(212,175,55,0.2)", height: "480px" }}>
+              <img 
+                src="/images/studios_hero_3d.png" 
+                alt="Typtwo Studios Creative Intelligence 3D Prism"
+                style={{ width: "100%", height: "100%", objectFit: "cover" }}
+              />
+            </div>
+
           </div>
-        </Section>
+        </div>
       </section>
 
-      <Section className="py-32 lg:py-40">
-        <div className="hairline-t pt-16">
-          <Eyebrow>The other half</Eyebrow>
-          <Link to="/tech" className="mt-8 block group">
-            <h2 className="font-display text-4xl leading-[1.05] tracking-tight sm:text-6xl lg:text-[88px]">
-              Meet the engineered side —
-              <br />
-              <span className="gold-text italic underline decoration-gold/30 underline-offset-8 group-hover:decoration-gold">Typtwo Tech →</span>
-            </h2>
-          </Link>
-        </div>
-      </Section>
-    </>
+      {/* Studios Features Component with 3D Image Cards */}
+      <StudiosFeaturesV9 />
+    </div>
   );
 }
