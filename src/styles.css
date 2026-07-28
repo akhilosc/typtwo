@@ -1,0 +1,158 @@
+@import "tailwindcss" source(none);
+@source "../src";
+@import "tw-animate-css";
+
+@custom-variant dark (&:is(.dark *));
+
+@theme inline {
+  --radius-sm: 2px;
+  --radius-md: 4px;
+  --radius-lg: 8px;
+  --radius-xl: 14px;
+  --font-display: "Fraunces", ui-serif, Georgia, serif;
+  --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
+  --font-mono: "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+  --color-ink: var(--ink);
+  --color-paper: var(--paper);
+  --color-hairline: var(--hairline);
+  --color-gold: var(--gold);
+  --color-gold-soft: var(--gold-soft);
+  --color-brand: var(--gold);
+  --color-subtle: var(--subtle);
+}
+
+/* Noir & Gold — deep matte black with warm gold accent */
+:root {
+  --radius: 6px;
+
+  --paper: oklch(0.08 0.005 60);        /* near-black */
+  --ink: oklch(0.96 0.01 80);           /* warm off-white */
+  --gold: oklch(0.82 0.14 82);          /* rich gold */
+  --gold-soft: oklch(0.72 0.11 75);     /* darker gold */
+  --subtle: oklch(0.55 0.02 70);
+  --hairline: oklch(0.22 0.01 70);
+
+  --background: var(--paper);
+  --foreground: var(--ink);
+  --card: oklch(0.11 0.005 60);
+  --card-foreground: var(--ink);
+  --popover: var(--paper);
+  --popover-foreground: var(--ink);
+  --primary: var(--gold);
+  --primary-foreground: var(--paper);
+  --secondary: oklch(0.13 0.005 60);
+  --secondary-foreground: var(--ink);
+  --muted: oklch(0.13 0.005 60);
+  --muted-foreground: oklch(0.62 0.02 70);
+  --accent: var(--gold);
+  --accent-foreground: var(--paper);
+  --destructive: oklch(0.577 0.245 27.325);
+  --destructive-foreground: oklch(0.98 0 0);
+  --border: var(--hairline);
+  --input: var(--hairline);
+  --ring: var(--gold);
+}
+
+@layer base {
+  * {
+    border-color: var(--color-border);
+  }
+  html {
+    scroll-behavior: smooth;
+  }
+  html, body {
+    background-color: var(--color-background);
+    color: var(--color-foreground);
+    font-family: var(--font-sans);
+    -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
+  }
+  h1, h2, h3, h4 {
+    font-family: var(--font-display);
+    letter-spacing: -0.025em;
+    font-weight: 400;
+  }
+  ::selection {
+    background: var(--gold);
+    color: var(--paper);
+  }
+}
+
+@utility hairline-b { border-bottom: 1px solid var(--hairline); }
+@utility hairline-t { border-top: 1px solid var(--hairline); }
+@utility eyebrow {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--gold);
+}
+@utility gold-text {
+  background: linear-gradient(180deg, oklch(0.9 0.12 88) 0%, oklch(0.68 0.13 72) 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+@utility gold-border {
+  border: 1px solid color-mix(in oklab, var(--gold) 45%, transparent);
+}
+@utility gold-glow {
+  box-shadow: 0 30px 90px -30px color-mix(in oklab, var(--gold) 45%, transparent);
+}
+
+@keyframes rise {
+  from { opacity: 0; transform: translateY(24px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+@utility rise-in { animation: rise 1s cubic-bezier(0.2, 0.7, 0.2, 1) both; }
+
+@keyframes shimmer {
+  0%, 100% { opacity: 0.5; }
+  50% { opacity: 1; }
+}
+@utility shimmer { animation: shimmer 3s ease-in-out infinite; }
+
+@keyframes marquee {
+  from { transform: translateX(0); }
+  to { transform: translateX(-50%); }
+}
+@utility marquee-x { animation: marquee 40s linear infinite; }
+
+/* Fine film grain overlay */
+@utility grain {
+  position: relative;
+}
+.grain::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  opacity: 0.05;
+  mix-blend-mode: overlay;
+  background-image: url("data:image/svg+xml;utf8,<svg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/></filter><rect width='100%25' height='100%25' filter='url(%23n)' opacity='0.9'/></svg>");
+}
+
+/* Kinetic split panels — hover to expand */
+@utility split-panel {
+  transition: flex-grow 0.9s cubic-bezier(0.2, 0.8, 0.2, 1), filter 0.9s ease;
+}
+
