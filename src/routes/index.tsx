@@ -1,3 +1,4 @@
+import React from "react";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import {
   BruteButton,
@@ -31,15 +32,30 @@ export const Route = createFileRoute("/")({
 function Index() {
   return (
     <>
-      <Hero />
-      <Marquee />
-      <Duality />
-      <Numbers />
-      <HomepageClientele />
-      <Closer />
+      {/* Desktop Viewport */}
+      <div className="hidden md:block">
+        <Hero />
+        <Marquee />
+        <Duality />
+        <Numbers />
+        <HomepageClientele />
+        <Closer />
+      </div>
+
+      {/* Mobile Viewport Revamp */}
+      <div className="block md:hidden">
+        <MobileHero />
+        <MobileMarquee />
+        <MobileTabs />
+        <MobileStats />
+        <MobileClientele />
+        <MobileCloser />
+      </div>
     </>
   );
 }
+
+/* ==================== DESKTOP COMPONENTS ==================== */
 
 function Hero() {
   return (
@@ -275,6 +291,199 @@ function Closer() {
         </h2>
         <div className="mt-12 flex flex-wrap justify-center gap-3">
           <BruteButton to="/contact" variant="flame">Start a project</BruteButton>
+        </div>
+      </div>
+    </section>
+  );
+}
+
+/* ==================== MOBILE REVAMP COMPONENTS ==================== */
+
+function MobileHero() {
+  return (
+    <section className="border-b-2 border-ink bg-paper p-6 relative overflow-hidden">
+      {/* Mobile Top Status Grid */}
+      <div className="grid grid-cols-3 gap-2 border-2 border-ink p-3 mb-8 bg-paper font-mono text-[9px] uppercase tracking-wider text-muted-foreground">
+        <div className="flex items-center gap-1.5 border-r border-ink/30">
+          <span className="h-1.5 w-1.5 bg-flame rounded-full blink" />
+          <span>T2_LIVE</span>
+        </div>
+        <div className="flex items-center justify-center border-r border-ink/30">SYS_V2.0</div>
+        <div className="text-right">ONLINE</div>
+      </div>
+
+      {/* Mobile Title */}
+      <div className="my-6">
+        <Eyebrow color="flame">Typtwo / Core</Eyebrow>
+        <h1 className="display text-5xl leading-[0.85] font-extrabold tracking-tighter mt-4 text-ink">
+          Two worlds.<br />One <span className="bg-flame text-paper px-2 py-0.5 inline-block mt-1">force</span>.
+        </h1>
+      </div>
+
+      {/* Quick Dashboard Tiles */}
+      <div className="grid grid-cols-2 gap-3 mt-8">
+        <Link to="/tech" className="p-4 border-2 border-ink bg-ink text-paper hover:bg-volt hover:text-ink transition flex flex-col justify-between h-28">
+          <span className="mono text-[9px] opacity-70">[ 01 ]</span>
+          <span className="display text-lg font-bold">TECH →</span>
+        </Link>
+        <Link to="/studios" className="p-4 border-2 border-ink bg-flame text-paper hover:bg-volt hover:text-ink transition flex flex-col justify-between h-28">
+          <span className="mono text-[9px] opacity-70">[ 02 ]</span>
+          <span className="display text-lg font-bold">STUDIOS →</span>
+        </Link>
+        <Link to="/clients" className="p-4 border-2 border-ink bg-paper text-ink hover:bg-volt hover:text-ink transition flex flex-col justify-between h-28">
+          <span className="mono text-[9px] opacity-70">[ 03 ]</span>
+          <span className="display text-lg font-bold">CLIENTS →</span>
+        </Link>
+        <Link to="/about" className="p-4 border-2 border-ink bg-paper text-ink hover:bg-volt hover:text-ink transition flex flex-col justify-between h-28">
+          <span className="mono text-[9px] opacity-70">[ 04 ]</span>
+          <span className="display text-lg font-bold">ABOUT →</span>
+        </Link>
+      </div>
+    </section>
+  );
+}
+
+function MobileMarquee() {
+  return (
+    <section className="bg-ink text-paper border-b-2 border-ink overflow-hidden py-3">
+      <div className="ticker flex w-max whitespace-nowrap display text-xs uppercase tracking-wider">
+        {Array.from({ length: 6 }).map((_, i) => (
+          <span key={i} className="mx-4 flex items-center gap-2">
+            <span>OPERATIONS</span>
+            <span className="text-flame">◆</span>
+            <span>GROWTH</span>
+            <span className="text-volt">◆</span>
+          </span>
+        ))}
+      </div>
+    </section>
+  );
+}
+
+function MobileTabs() {
+  const [activeTab, setActiveTab] = React.useState<'tech' | 'studios'>('tech');
+
+  return (
+    <section className="border-b-2 border-ink bg-paper">
+      <div className="flex border-b-2 border-ink">
+        <button
+          onClick={() => setActiveTab('tech')}
+          className={`flex-1 py-4 mono text-[10px] uppercase tracking-widest font-bold border-r-2 border-ink ${
+            activeTab === 'tech' ? 'bg-ink text-paper' : 'bg-paper text-ink'
+          }`}
+        >
+          01 / Tech
+        </button>
+        <button
+          onClick={() => setActiveTab('studios')}
+          className={`flex-1 py-4 mono text-[10px] uppercase tracking-widest font-bold ${
+            activeTab === 'studios' ? 'bg-flame text-paper' : 'bg-paper text-ink'
+          }`}
+        >
+          02 / Studios
+        </button>
+      </div>
+
+      <div className="p-6">
+        {activeTab === 'tech' ? (
+          <div className="space-y-4">
+            <span className="mono text-[9px] text-muted-foreground">// DIVISION_01</span>
+            <h3 className="display text-3xl leading-none">Intelligent Operations.</h3>
+            <p className="text-xs text-muted-foreground leading-relaxed">
+              We build and deploy private AI infrastructure, local LLMs, and custom workflow automation systems inside your corporate perimeter.
+            </p>
+            <div className="pt-2">
+              <Link to="/tech" className="inline-block brute bg-ink text-paper px-6 py-3 mono text-[10px] uppercase tracking-widest">
+                Explore Tech →
+              </Link>
+            </div>
+          </div>
+        ) : (
+          <div className="space-y-4">
+            <span className="mono text-[9px] text-muted-foreground">// DIVISION_02</span>
+            <h3 className="display text-3xl leading-none">Intelligent Growth.</h3>
+            <p className="text-xs text-muted-foreground leading-relaxed">
+              We scale media channels, vertical short-form drama IPs, performance marketing pipelines, and exclusive PR relations to capture market share.
+            </p>
+            <div className="pt-2">
+              <Link to="/studios" className="inline-block brute bg-flame text-paper px-6 py-3 mono text-[10px] uppercase tracking-widest">
+                Explore Studios →
+              </Link>
+            </div>
+          </div>
+        )}
+      </div>
+    </section>
+  );
+}
+
+function MobileStats() {
+  const stats = [
+    { n: "02", l: "Divisions" },
+    { n: "01", l: "Vision" },
+    { n: "∞", l: "Ambition" },
+    { n: "24/7", l: "Momentum" },
+  ];
+  return (
+    <section className="border-b-2 border-ink grid grid-cols-2 bg-paper">
+      {stats.map((s, idx) => (
+        <div 
+          key={s.l} 
+          className={`p-6 border-ink flex flex-col justify-center ${
+            idx % 2 === 0 ? 'border-r-2' : ''
+          } ${idx < 2 ? 'border-b-2' : ''}`}
+        >
+          <span className="display text-4xl font-extrabold">{s.n}</span>
+          <span className="mono text-[9px] uppercase tracking-widest text-muted-foreground mt-1">{s.l}</span>
+        </div>
+      ))}
+    </section>
+  );
+}
+
+function MobileClientele() {
+  const brands = [
+    "Startup Talky", "Merino Industries", "BitBNS",
+    "Somany Ceramics", "BuyHatke", "SBI", "Rehau", "OKX"
+  ];
+  return (
+    <section className="border-b-2 border-ink bg-paper p-6">
+      <Eyebrow color="flame">Partners</Eyebrow>
+      <h3 className="display text-3xl mt-2 tracking-tight">Our Network</h3>
+      
+      <div className="grid grid-cols-2 gap-2 mt-6">
+        {brands.map((b) => (
+          <div key={b} className="p-3 border border-ink/40 text-center font-bold display text-sm bg-paper hover:bg-volt hover:text-ink transition">
+            {b}
+          </div>
+        ))}
+      </div>
+      <div className="mt-4">
+        <Link to="/clients" className="w-full text-center brute bg-ink text-paper py-3 mono text-[10px] uppercase tracking-widest block">
+          View Full Client Index →
+        </Link>
+      </div>
+    </section>
+  );
+}
+
+function MobileCloser() {
+  return (
+    <section className="bg-ink text-paper py-16 px-6 text-center relative overflow-hidden">
+      <div className="absolute inset-0 stripes opacity-[0.05]" />
+      <div className="relative">
+        <Eyebrow color="flame">Ready</Eyebrow>
+        <h3 className="display text-4xl mt-4 leading-tight">
+          Built for<br />
+          <span className="italic text-flame">what's next.</span>
+        </h3>
+        <div className="mt-8">
+          <Link 
+            to="/contact" 
+            className="brute bg-flame text-paper px-8 py-4 mono uppercase tracking-wider text-xs inline-block"
+          >
+            Start a project →
+          </Link>
         </div>
       </div>
     </section>
