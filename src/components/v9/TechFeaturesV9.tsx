@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Cpu, ShieldCheck, Lock, Terminal, Database, FileText, CheckCircle2, Search } from 'lucide-react';
+import { Cpu, ShieldCheck, Lock, Terminal, Search, CheckCircle2 } from 'lucide-react';
 
 export const TechFeaturesV9 = () => {
   const [activeTab, setActiveTab] = useState<'features' | 'rag' | 'security'>('features');
@@ -10,8 +10,8 @@ export const TechFeaturesV9 = () => {
   const techServices = [
     {
       code: "T-01",
-      title: "AI Implementation",
-      img: "/images/tech_infra.png",
+      title: "AI Implementation & Strategy",
+      img: "/images/ai_implementation_model.png",
       summary: "We take AI from slide deck to production — scoping the use case, choosing the model, and wiring it into the systems your teams live in.",
       points: ["Use-case discovery and ROI modelling", "Model selection & benchmarking", "Retrieval pipelines over internal data", "Human-in-the-loop guardrails"]
     },
@@ -24,31 +24,31 @@ export const TechFeaturesV9 = () => {
     },
     {
       code: "T-03",
-      title: "Process Automation",
-      img: "/images/mission_manifesto.jpg",
-      summary: "The unglamorous work that pays for itself. We find repetitive loops across your operations and remove the manual step.",
-      points: ["Document and invoice processing", "Back-office workflow orchestration", "Support triage & routing agents", "System-to-system integration"]
+      title: "Process & Workflow Automation",
+      img: "/images/process_automation_flow.png",
+      summary: "Automated back-office robotic loops. We find repetitive tasks across your operations and remove the manual step.",
+      points: ["Document and invoice auto-triage", "Departmental workflow orchestration", "Support triage & routing agents", "System-to-system integration"]
     },
     {
       code: "T-04",
-      title: "Technology Maintenance",
+      title: "Technology Maintenance & Telemetry",
       img: "/images/tech_infra.png",
       summary: "Long-term ownership of the stack we build — and often the stack you inherited from someone else.",
       points: ["Monitoring & incident response", "Model drift & regression tracking", "Security patching & hygiene", "Quarterly architecture reviews"]
     },
     {
       code: "T-05",
-      title: "Data Engineering",
-      img: "/images/private_ai_vpc.png",
-      summary: "AI is only as good as the pipes feeding it. We build the ingestion, cleaning and storage layer underneath.",
-      points: ["Warehouse & lakehouse design", "ETL / streaming pipelines", "Vector store architecture", "Data quality contracts"]
+      title: "Data & Knowledge Base Engineering",
+      img: "/images/data_engineering_pipeline.png",
+      summary: "Every document, contract, catalogue and brochure indexed into a unified vector store and knowledge graph.",
+      points: ["Warehouse & lakehouse design", "ETL & streaming pipelines", "Vector store knowledge graph", "Data quality contracts"]
     },
     {
       code: "T-06",
-      title: "AI Advisory & Governance",
-      img: "/images/mission_manifesto.jpg",
-      summary: "For leadership teams who need a straight answer about what is real, what is hype, and what it will cost.",
-      points: ["Capability audits & readiness scoring", "Build-vs-buy assessments", "Internal AI policy & governance", "Team enablement & training"]
+      title: "AI Governance & Department Agents",
+      img: "/images/ai_governance_matrix.png",
+      summary: "Dedicated departmental AI agents (Marketing, PR, Sales, HR, Finance) and Founder AI context engines.",
+      points: ["Department-wise AI agent suite", "Executive Founder AI assistant", "Internal AI policy & governance", "Capability audits & readiness scoring"]
     }
   ];
 
@@ -66,7 +66,7 @@ Grounded retrieval context fetched from 4,200 indexed claims documents:
 
   return (
     <section style={{ padding: '100px 0', backgroundColor: '#09090C', borderTop: '1px solid rgba(255,255,255,0.1)' }}>
-      <div style={{ maxWidth: '1200px', margin: '0 auto', padding: '0 24px' }}>
+      <div style={{ maxWidth: '1280px', margin: '0 auto', padding: '0 24px' }}>
         
         <div style={{ textAlign: 'center', maxWidth: '800px', margin: '0 auto 64px' }}>
           <div style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', padding: '6px 16px', borderRadius: '9999px', backgroundColor: 'rgba(0,229,255,0.1)', border: '1px solid rgba(0,229,255,0.4)', fontSize: '11px', fontWeight: 800, letterSpacing: '0.15em', color: '#00E5FF', textTransform: 'uppercase', marginBottom: '16px' }}>
@@ -76,7 +76,7 @@ Grounded retrieval context fetched from 4,200 indexed claims documents:
             Engineering Intelligent Operations
           </h2>
           <p style={{ fontSize: '16px', color: '#908F9D', lineHeight: 1.6 }}>
-            All 6 core technology modules with 3D visual representations & sovereign data guardrails.
+            All 6 core technology modules with 100% unique 3D visual representations & Local LLM architecture.
           </p>
 
           {/* Interactive Mode Switcher */}
@@ -96,7 +96,7 @@ Grounded retrieval context fetched from 4,200 indexed claims documents:
                 transition: 'all 0.3s ease'
               }}
             >
-              All 6 Tech Services (3D Renders)
+              All 6 Tech Services (Unique 3D Renders)
             </button>
 
             <button
@@ -137,15 +137,15 @@ Grounded retrieval context fetched from 4,200 indexed claims documents:
           </div>
         </div>
 
-        {/* TAB 1: ALL 6 TECH SERVICES WITH 3D RENDERS */}
+        {/* TAB 1: ALL 6 TECH SERVICES WITH UNIQUE 3D RENDERS */}
         {activeTab === 'features' && (
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: '24px' }}>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(340px, 1fr))', gap: '24px' }}>
             {techServices.map((s) => (
-              <div key={s.code} style={{ backgroundColor: '#111115', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '16px', overflow: 'hidden', display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
-                <div style={{ position: 'relative', height: '180px', width: '100%' }}>
-                  <img src={s.img} alt={s.title} style={{ width: '100%', height: '100%', objectFit: 'cover', filter: 'brightness(0.7) contrast(1.1)' }} />
+              <div key={s.code} style={{ backgroundColor: '#111115', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '18px', overflow: 'hidden', display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
+                <div style={{ position: 'relative', height: '200px', width: '100%' }}>
+                  <img src={s.img} alt={s.title} style={{ width: '100%', height: '100%', objectFit: 'cover', filter: 'brightness(0.8) contrast(1.1)' }} />
                   <div style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, background: 'linear-gradient(to top, #111115 0%, transparent 60%)' }} />
-                  <span style={{ position: 'absolute', top: '16px', left: '16px', fontSize: '11px', fontWeight: 800, color: '#00E5FF', backgroundColor: 'rgba(17,17,21,0.85)', border: '1px solid rgba(0,229,255,0.4)', padding: '4px 10px', borderRadius: '9999px' }}>
+                  <span style={{ position: 'absolute', top: '16px', left: '16px', fontSize: '11px', fontWeight: 800, color: '#00E5FF', backgroundColor: 'rgba(17,17,21,0.85)', border: '1px solid rgba(0,229,255,0.4)', padding: '4px 12px', borderRadius: '9999px' }}>
                     {s.code}
                   </span>
                 </div>

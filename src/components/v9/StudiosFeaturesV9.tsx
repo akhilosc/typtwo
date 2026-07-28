@@ -21,14 +21,14 @@ export const StudiosFeaturesV9 = () => {
     },
     {
       code: "S-03",
-      title: "Brand Promotion & Messaging",
+      title: "Brand Promotion & Marquee PR",
       img: "/images/narrative_arena.jpg",
       summary: "Identity work with legs — how the brand sounds, moves and shows up long after the launch post.",
-      points: ["Positioning & messaging systems", "Visual identity & motion language", "Launch films & brand anthems", "Brand guideline documentation"]
+      points: ["Exclusive Percept Profile PR alliance", "Spokesperson profiling & press releases", "Visual identity & motion language", "Launch films & brand anthems"]
     },
     {
       code: "S-04",
-      title: "Performance Marketing",
+      title: "Performance Marketing & AI CMO",
       img: "/images/ai_cmo.png",
       summary: "Paid media run against real numbers. Creative and media buying under one roof so the feedback loop stays short.",
       points: ["Meta, Google & YouTube buying", "Creative testing frameworks (40 variants/mo)", "Landing page & funnel work", "Attribution & reporting dashboards"]
@@ -36,15 +36,15 @@ export const StudiosFeaturesV9 = () => {
     {
       code: "S-05",
       title: "Influencer & Creator Sourcing",
-      img: "/images/voice_neural_engine.png",
-      summary: "Creator partnerships matched on audience fit rather than follower count, managed end to end.",
+      img: "/images/creator_sourcing_network.png",
+      summary: "Global creator partnerships matched on audience fit rather than follower count, managed end to end.",
       points: ["Creator sourcing & vetting", "Briefing & rights negotiation", "Co-produced content", "Whitelisting & paid amplification"]
     },
     {
       code: "S-06",
       title: "Traditional Media & Launch Events",
-      img: "/images/studios_creative.png",
-      summary: "Print, outdoor, radio and events — still effective when the audience is actually there.",
+      img: "/images/launch_events_stage.png",
+      summary: "Print, outdoor, radio and marquee launch events — still effective when the audience is actually there.",
       points: ["Media planning & buying", "Print & outdoor creative", "Event & activation design", "PR & press coordination"]
     }
   ];
@@ -57,7 +57,7 @@ export const StudiosFeaturesV9 = () => {
 
   return (
     <section style={{ padding: '100px 0', backgroundColor: '#040404', borderTop: '1px solid rgba(255,255,255,0.1)' }}>
-      <div style={{ maxWidth: '1200px', margin: '0 auto', padding: '0 24px' }}>
+      <div style={{ maxWidth: '1280px', margin: '0 auto', padding: '0 24px' }}>
         
         <div style={{ textAlign: 'center', maxWidth: '800px', margin: '0 auto 64px' }}>
           <div style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', padding: '6px 16px', borderRadius: '9999px', backgroundColor: 'rgba(212,175,55,0.1)', border: '1px solid rgba(212,175,55,0.4)', fontSize: '11px', fontWeight: 800, letterSpacing: '0.2em', color: '#D4AF37', textTransform: 'uppercase', marginBottom: '16px' }}>
@@ -67,7 +67,7 @@ export const StudiosFeaturesV9 = () => {
             Engineering Intelligent Growth
           </h2>
           <p style={{ fontSize: '16px', color: '#908F9D', lineHeight: 1.6 }}>
-            All 6 core creative modules with 3D renders & vertical fiction storytelling.
+            All 6 core creative modules with 100% unique 3D visual renders & vertical fiction storytelling.
           </p>
 
           {/* Mode Switcher */}
@@ -87,7 +87,7 @@ export const StudiosFeaturesV9 = () => {
                 transition: 'all 0.3s ease'
               }}
             >
-              All 6 Studios Services (3D Renders)
+              All 6 Studios Services (Unique 3D Renders)
             </button>
 
             <button
@@ -128,15 +128,15 @@ export const StudiosFeaturesV9 = () => {
           </div>
         </div>
 
-        {/* TAB 1: ALL 6 STUDIOS SERVICES WITH 3D RENDERS */}
+        {/* TAB 1: ALL 6 STUDIOS SERVICES WITH UNIQUE 3D RENDERS */}
         {activeTab === 'features' && (
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: '24px' }}>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(340px, 1fr))', gap: '24px' }}>
             {studioServices.map((s) => (
-              <div key={s.code} style={{ backgroundColor: '#111115', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '16px', overflow: 'hidden', display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
-                <div style={{ position: 'relative', height: '180px', width: '100%' }}>
-                  <img src={s.img} alt={s.title} style={{ width: '100%', height: '100%', objectFit: 'cover', filter: 'brightness(0.75) contrast(1.1)' }} />
+              <div key={s.code} style={{ backgroundColor: '#111115', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '18px', overflow: 'hidden', display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
+                <div style={{ position: 'relative', height: '200px', width: '100%' }}>
+                  <img src={s.img} alt={s.title} style={{ width: '100%', height: '100%', objectFit: 'cover', filter: 'brightness(0.8) contrast(1.1)' }} />
                   <div style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, background: 'linear-gradient(to top, #111115 0%, transparent 60%)' }} />
-                  <span style={{ position: 'absolute', top: '16px', left: '16px', fontSize: '11px', fontWeight: 800, color: '#D4AF37', backgroundColor: 'rgba(17,17,21,0.85)', border: '1px solid rgba(212,175,55,0.4)', padding: '4px 10px', borderRadius: '9999px' }}>
+                  <span style={{ position: 'absolute', top: '16px', left: '16px', fontSize: '11px', fontWeight: 800, color: '#D4AF37', backgroundColor: 'rgba(17,17,21,0.85)', border: '1px solid rgba(212,175,55,0.4)', padding: '4px 12px', borderRadius: '9999px' }}>
                     {s.code}
                   </span>
                 </div>
@@ -187,25 +187,25 @@ export const StudiosFeaturesV9 = () => {
               </div>
             </div>
 
-            {/* Card 2: AI CMO */}
+            {/* Card 2: Launch Stage */}
             <div style={{ backgroundColor: '#111115', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '16px', overflow: 'hidden' }}>
               <div style={{ position: 'relative', height: '300px', width: '100%' }}>
                 <img 
-                  src="/images/ai_cmo.png" 
-                  alt="AI CMO Growth Matrix Render" 
+                  src="/images/launch_events_stage.png" 
+                  alt="Marquee Launch Events Stage Render" 
                   style={{ width: '100%', height: '100%', objectFit: 'cover' }}
                 />
                 <div style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, background: 'linear-gradient(to top, #111115 0%, transparent 60%)' }} />
               </div>
               <div style={{ padding: '24px' }}>
                 <span style={{ fontSize: '11px', fontWeight: 800, color: '#D4AF37', letterSpacing: '0.15em', textTransform: 'uppercase', display: 'block', marginBottom: '8px' }}>
-                  AUTONOMOUS AI CMO ENGINE
+                  MARQUEE LAUNCH EVENTS & PRESS
                 </span>
                 <h4 style={{ fontSize: '20px', fontWeight: 800, color: '#FFFFFF', marginBottom: '8px' }}>
-                  Growth Strategy & Positioning Engine
+                  National Launch & Activation Stage
                 </h4>
                 <p style={{ fontSize: '14px', color: '#908F9D', lineHeight: 1.6 }}>
-                  Always-on market sentiment analysis, channel alignment, and creative testing feedback loops.
+                  High-visibility physical activations, press conferences, and media launch spectacles.
                 </p>
               </div>
             </div>
