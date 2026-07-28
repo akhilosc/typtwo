@@ -14,7 +14,6 @@ import { Route as AboutRouteImport } from './routes/about'
 import { Route as ContactRouteImport } from './routes/contact'
 import { Route as StudiosRouteImport } from './routes/studios'
 import { Route as TechRouteImport } from './routes/tech'
-import { Route as V9RouteImport } from './routes/v9'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -41,11 +40,6 @@ const TechRoute = TechRouteImport.update({
   path: '/tech',
   getParentRoute: () => rootRouteImport,
 } as any)
-const V9Route = V9RouteImport.update({
-  id: '/v9',
-  path: '/v9',
-  getParentRoute: () => rootRouteImport,
-} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -53,7 +47,6 @@ export interface FileRoutesByFullPath {
   '/contact': typeof ContactRoute
   '/studios': typeof StudiosRoute
   '/tech': typeof TechRoute
-  '/v9': typeof V9Route
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -61,7 +54,6 @@ export interface FileRoutesByTo {
   '/contact': typeof ContactRoute
   '/studios': typeof StudiosRoute
   '/tech': typeof TechRoute
-  '/v9': typeof V9Route
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -70,14 +62,13 @@ export interface FileRoutesById {
   '/contact': typeof ContactRoute
   '/studios': typeof StudiosRoute
   '/tech': typeof TechRoute
-  '/v9': typeof V9Route
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/about' | '/contact' | '/studios' | '/tech' | '/v9'
+  fullPaths: '/' | '/about' | '/contact' | '/studios' | '/tech'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/about' | '/contact' | '/studios' | '/tech' | '/v9'
-  id: '__root__' | '/' | '/about' | '/contact' | '/studios' | '/tech' | '/v9'
+  to: '/' | '/about' | '/contact' | '/studios' | '/tech'
+  id: '__root__' | '/' | '/about' | '/contact' | '/studios' | '/tech'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -86,7 +77,6 @@ export interface RootRouteChildren {
   ContactRoute: typeof ContactRoute
   StudiosRoute: typeof StudiosRoute
   TechRoute: typeof TechRoute
-  V9Route: typeof V9Route
 }
 
 declare module '@tanstack/react-router' {
@@ -126,13 +116,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof TechRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/v9': {
-      id: '/v9'
-      path: '/v9'
-      fullPath: '/v9'
-      preLoaderRoute: typeof V9RouteImport
-      parentRoute: typeof rootRouteImport
-    }
   }
 }
 
@@ -142,7 +125,6 @@ const rootRouteChildren: RootRouteChildren = {
   ContactRoute: ContactRoute,
   StudiosRoute: StudiosRoute,
   TechRoute: TechRoute,
-  V9Route: V9Route,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

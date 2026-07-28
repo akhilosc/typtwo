@@ -1,5 +1,6 @@
 import { Link } from "@tanstack/react-router";
-import type { ReactNode } from "react";
+import { type ReactNode, useState, useEffect } from "react";
+import { Sun, Moon } from "lucide-react";
 
 const NAV = [
   { to: "/tech", label: "Tech", n: "01" },
@@ -62,6 +63,31 @@ export function StatusBar() {
 }
 
 export function SiteHeader() {
+  const [theme, setTheme] = useState<'light' | 'dark'>('light');
+
+  useEffect(() => {
+    const isDark = document.documentElement.classList.contains('dark') || localStorage.getItem('theme') === 'dark';
+    if (isDark) {
+      document.documentElement.classList.add('dark');
+      setTheme('dark');
+    } else {
+      document.documentElement.classList.remove('dark');
+      setTheme('light');
+    }
+  }, []);
+
+  const toggleTheme = () => {
+    if (theme === 'light') {
+      document.documentElement.classList.add('dark');
+      localStorage.setItem('theme', 'dark');
+      setTheme('dark');
+    } else {
+      document.documentElement.classList.remove('dark');
+      localStorage.setItem('theme', 'light');
+      setTheme('light');
+    }
+  };
+
   return (
     <>
       <StatusBar />
@@ -95,17 +121,27 @@ export function SiteHeader() {
             ))}
           </nav>
 
-          <Link
-            to="/contact"
-            className="col-span-6 md:col-span-3 flex items-center justify-between gap-2 px-6 py-4 bg-ink text-paper hover:bg-flame transition group"
-          >
-            <span className="mono text-xs uppercase tracking-widest">
-              Start a project
-            </span>
-            <span className="text-xl group-hover:translate-x-1 transition-transform">
-              →
-            </span>
-          </Link>
+          <div className="col-span-6 md:col-span-3 flex items-stretch">
+            <button
+              onClick={toggleTheme}
+              className="flex items-center justify-center px-4 hover:bg-ink hover:text-paper border-r-2 border-ink transition cursor-pointer text-ink bg-paper"
+              title="Toggle theme mode"
+              style={{ minWidth: '56px' }}
+            >
+              {theme === 'light' ? <Moon size={16} /> : <Sun size={16} />}
+            </button>
+            <Link
+              to="/contact"
+              className="flex-1 flex items-center justify-between gap-2 px-6 py-4 bg-ink text-paper hover:bg-flame transition group"
+            >
+              <span className="mono text-xs uppercase tracking-widest">
+                Start a project
+              </span>
+              <span className="text-xl group-hover:translate-x-1 transition-transform">
+                →
+              </span>
+            </Link>
+          </div>
         </div>
       </header>
     </>

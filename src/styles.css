@@ -1,5 +1,4 @@
-@import "tailwindcss" source(none);
-@source "../src";
+@import "tailwindcss";
 @import "tw-animate-css";
 
 @custom-variant dark (&:is(.dark *));
@@ -38,10 +37,11 @@
   --color-volt: var(--volt);
 }
 
-/* Brutalist Mono — paper white, ink black, flame orange, volt yellow */
+/* Brutalist Mono Layout Base */
 :root {
   --radius: 0px;
 
+  /* Default Light: paper white, ink black, flame orange, volt yellow */
   --paper: oklch(1 0 0);                     /* #ffffff */
   --ink: oklch(0.14 0 0);                    /* #0a0a0a */
   --flame: oklch(0.68 0.21 38);              /* #ff5722 */
@@ -75,8 +75,31 @@
 }
 
 .dark {
-  --background: var(--ink);
-  --foreground: var(--paper);
+  /* Premium Metallic Gold & Black Palette matches user logo upload */
+  --paper: oklch(0.12 0.01 20);              /* Charcoal Obsidian void black #0b0b0d */
+  --ink: oklch(0.82 0.15 80);                /* Warm metallic gold #e5c158 */
+  --flame: oklch(0.72 0.16 75);              /* Rich burnished gold #cfa33f */
+  --volt: oklch(0.92 0.18 85);               /* Bright radiant gold accent #ffe375 */
+
+  --background: var(--paper);
+  --foreground: var(--ink);
+
+  --card: var(--paper);
+  --card-foreground: var(--ink);
+  --popover: var(--paper);
+  --popover-foreground: var(--ink);
+
+  --primary: var(--ink);
+  --primary-foreground: var(--paper);
+  --secondary: oklch(0.18 0.02 80);
+  --secondary-foreground: var(--ink);
+  --muted: oklch(0.18 0.02 80);
+  --muted-foreground: oklch(0.55 0.06 80);
+  --accent: var(--flame);
+  --accent-foreground: var(--paper);
+  --border: var(--ink);
+  --input: var(--ink);
+  --ring: var(--flame);
 }
 
 @layer base {
@@ -90,12 +113,21 @@
     font-family: var(--font-sans);
     -webkit-font-smoothing: antialiased;
     text-rendering: optimizeLegibility;
+    transition: background-color 0.25s ease, color 0.25s ease;
   }
 
   body {
     background-image:
       linear-gradient(to right, color-mix(in oklab, var(--ink) 6%, transparent) 1px, transparent 1px);
     background-size: 80px 100%;
+  }
+
+  /* Fine Gold dust particle overlay in dark mode */
+  .dark body {
+    background-image: 
+      radial-gradient(circle, rgba(229, 193, 88, 0.025) 1px, transparent 1px),
+      linear-gradient(to right, color-mix(in oklab, var(--ink) 3.5%, transparent) 1px, transparent 1px);
+    background-size: 32px 32px, 80px 100%;
   }
 
   h1, h2, h3, h4, h5 {
