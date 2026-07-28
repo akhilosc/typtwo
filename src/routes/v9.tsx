@@ -7,11 +7,11 @@ import { VoiceCloningV9 } from '@/components/v9/VoiceCloningV9';
 import { MethodologyV9 } from '@/components/v9/MethodologyV9';
 import { VersionSwitcherV9 } from '@/components/v9/VersionSwitcherV9';
 
-export const Route = createFileRoute('/')({
-  component: Index,
+export const Route = createFileRoute('/v9')({
+  component: Version9,
 });
 
-function Index() {
+function Version9() {
   return (
     <div className="bg-[#040404] min-h-screen text-white">
       <HeroV9 />

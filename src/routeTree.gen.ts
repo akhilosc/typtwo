@@ -9,25 +9,16 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
-import { Route as TechRouteImport } from './routes/tech'
-import { Route as StudiosRouteImport } from './routes/studios'
-import { Route as ContactRouteImport } from './routes/contact'
-import { Route as AboutRouteImport } from './routes/about'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as AboutRouteImport } from './routes/about'
+import { Route as ContactRouteImport } from './routes/contact'
+import { Route as StudiosRouteImport } from './routes/studios'
+import { Route as TechRouteImport } from './routes/tech'
+import { Route as V9RouteImport } from './routes/v9'
 
-const TechRoute = TechRouteImport.update({
-  id: '/tech',
-  path: '/tech',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const StudiosRoute = StudiosRouteImport.update({
-  id: '/studios',
-  path: '/studios',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const ContactRoute = ContactRouteImport.update({
-  id: '/contact',
-  path: '/contact',
+const IndexRoute = IndexRouteImport.update({
+  id: '/',
+  path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AboutRoute = AboutRouteImport.update({
@@ -35,9 +26,24 @@ const AboutRoute = AboutRouteImport.update({
   path: '/about',
   getParentRoute: () => rootRouteImport,
 } as any)
-const IndexRoute = IndexRouteImport.update({
-  id: '/',
-  path: '/',
+const ContactRoute = ContactRouteImport.update({
+  id: '/contact',
+  path: '/contact',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const StudiosRoute = StudiosRouteImport.update({
+  id: '/studios',
+  path: '/studios',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const TechRoute = TechRouteImport.update({
+  id: '/tech',
+  path: '/tech',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const V9Route = V9RouteImport.update({
+  id: '/v9',
+  path: '/v9',
   getParentRoute: () => rootRouteImport,
 } as any)
 
@@ -47,6 +53,7 @@ export interface FileRoutesByFullPath {
   '/contact': typeof ContactRoute
   '/studios': typeof StudiosRoute
   '/tech': typeof TechRoute
+  '/v9': typeof V9Route
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -54,6 +61,7 @@ export interface FileRoutesByTo {
   '/contact': typeof ContactRoute
   '/studios': typeof StudiosRoute
   '/tech': typeof TechRoute
+  '/v9': typeof V9Route
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -62,13 +70,14 @@ export interface FileRoutesById {
   '/contact': typeof ContactRoute
   '/studios': typeof StudiosRoute
   '/tech': typeof TechRoute
+  '/v9': typeof V9Route
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/about' | '/contact' | '/studios' | '/tech'
+  fullPaths: '/' | '/about' | '/contact' | '/studios' | '/tech' | '/v9'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/about' | '/contact' | '/studios' | '/tech'
-  id: '__root__' | '/' | '/about' | '/contact' | '/studios' | '/tech'
+  to: '/' | '/about' | '/contact' | '/studios' | '/tech' | '/v9'
+  id: '__root__' | '/' | '/about' | '/contact' | '/studios' | '/tech' | '/v9'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -77,29 +86,16 @@ export interface RootRouteChildren {
   ContactRoute: typeof ContactRoute
   StudiosRoute: typeof StudiosRoute
   TechRoute: typeof TechRoute
+  V9Route: typeof V9Route
 }
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
-    '/tech': {
-      id: '/tech'
-      path: '/tech'
-      fullPath: '/tech'
-      preLoaderRoute: typeof TechRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/studios': {
-      id: '/studios'
-      path: '/studios'
-      fullPath: '/studios'
-      preLoaderRoute: typeof StudiosRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/contact': {
-      id: '/contact'
-      path: '/contact'
-      fullPath: '/contact'
-      preLoaderRoute: typeof ContactRouteImport
+    '/': {
+      id: '/'
+      path: '/'
+      fullPath: '/'
+      preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/about': {
@@ -109,11 +105,32 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AboutRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/': {
-      id: '/'
-      path: '/'
-      fullPath: '/'
-      preLoaderRoute: typeof IndexRouteImport
+    '/contact': {
+      id: '/contact'
+      path: '/contact'
+      fullPath: '/contact'
+      preLoaderRoute: typeof ContactRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/studios': {
+      id: '/studios'
+      path: '/studios'
+      fullPath: '/studios'
+      preLoaderRoute: typeof StudiosRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/tech': {
+      id: '/tech'
+      path: '/tech'
+      fullPath: '/tech'
+      preLoaderRoute: typeof TechRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/v9': {
+      id: '/v9'
+      path: '/v9'
+      fullPath: '/v9'
+      preLoaderRoute: typeof V9RouteImport
       parentRoute: typeof rootRouteImport
     }
   }
@@ -125,7 +142,18 @@ const rootRouteChildren: RootRouteChildren = {
   ContactRoute: ContactRoute,
   StudiosRoute: StudiosRoute,
   TechRoute: TechRoute,
+  V9Route: V9Route,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
+
+import type { getRouter } from './router.tsx'
+import type { startInstance } from './start.ts'
+declare module '@tanstack/react-start' {
+  interface Register {
+    ssr: true
+    router: Awaited<ReturnType<typeof getRouter>>
+    config: Awaited<ReturnType<typeof startInstance.getOptions>>
+  }
+}
