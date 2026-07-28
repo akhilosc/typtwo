@@ -16,26 +16,26 @@ export const VoiceCloningV9 = () => {
     <section style={{ padding: '100px 0', backgroundColor: '#09090C', borderTop: '1px solid rgba(255,255,255,0.1)' }}>
       <div style={{ maxWidth: '1100px', margin: '0 auto', padding: '0 24px' }}>
         
-        <div style={{ backgroundColor: '#111115', border: '1px solid rgba(212,175,55,0.4)', borderRadius: '24px', overflow: 'hidden', display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', boxShadow: '0 0 50px rgba(212,175,55,0.15)' }}>
+        <div style={{ backgroundColor: '#111115', border: '1px solid rgba(212,175,55,0.4)', borderRadius: '24px', overflow: 'hidden', display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(340px, 1fr))', boxShadow: '0 0 50px rgba(212,175,55,0.15)' }}>
           
-          {/* Left Column: Visual Replica Image */}
-          <div style={{ position: 'relative', minHeight: '440px', display: 'flex', alignItems: 'flex-end', padding: '32px' }}>
+          {/* Left Column: New Luxury 3D Voice Neural Spectrum Render */}
+          <div style={{ position: 'relative', minHeight: '480px', display: 'flex', alignItems: 'flex-end', padding: '32px' }}>
             <img 
-              src="/images/voice_cloning.jpg" 
-              alt="Multilingual Voice Replica Keynote"
-              style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, width: '100%', height: '100%', objectFit: 'cover', filter: 'brightness(0.7) contrast(1.1)' }}
+              src="/images/voice_neural_engine.png" 
+              alt="Multilingual Voice Neural Spectrum Render"
+              style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, width: '100%', height: '100%', objectFit: 'cover', filter: 'brightness(0.9) contrast(1.1)' }}
             />
-            <div style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, background: 'linear-gradient(to top, #111115 0%, rgba(17,17,21,0.4) 60%, transparent 100%)' }} />
+            <div style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, background: 'linear-gradient(to top, #111115 0%, rgba(17,17,21,0.2) 60%, transparent 100%)' }} />
             <div style={{ position: 'relative', zIndex: 10 }}>
               <div style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', padding: '6px 14px', borderRadius: '9999px', backgroundColor: 'rgba(17,17,21,0.9)', border: '1px solid #D4AF37', color: '#D4AF37', fontSize: '11px', fontWeight: 800, textTransform: 'uppercase', marginBottom: '12px' }}>
-                <Sparkles size={14} /> FOUNDER SPEECH REPLICA
+                <Sparkles size={14} /> NEURAL VOICE SPECTRUM V4.2
               </div>
               <h3 style={{ fontSize: '24px', fontWeight: 800, color: '#FFFFFF', marginBottom: '4px' }}>Global Keynote Synthesis</h3>
               <p style={{ fontSize: '12px', color: '#CBD5E1' }}>Record once. Broadcast in 100+ languages with full founder accent retention.</p>
             </div>
           </div>
 
-          {/* Right Column: Controls & Player */}
+          {/* Right Column: Controls & Audio Visualizer */}
           <div style={{ padding: '40px', display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
             <span style={{ fontSize: '11px', fontWeight: 800, letterSpacing: '0.15em', color: '#D4AF37', textTransform: 'uppercase', marginBottom: '8px', display: 'block' }}>
               MULTILINGUAL VOICE ENGINE
