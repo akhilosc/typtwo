@@ -1,8 +1,8 @@
 import React, { useState } from 'react';
-import { Sparkles, Video, Globe, Award, TrendingUp, CheckCircle2, Play } from 'lucide-react';
+import { Sparkles, CheckCircle2 } from 'lucide-react';
 
 export const StudiosFeaturesV9 = () => {
-  const [activeTab, setActiveTab] = useState<'features' | 'creatives' | 'impact'>('features');
+  const [activeTab, setActiveTab] = useState<'features' | 'creatives' | 'impact'>('creatives');
 
   const studioServices = [
     {
@@ -50,64 +50,145 @@ export const StudiosFeaturesV9 = () => {
   ];
 
   return (
-    <section className="py-28 bg-[#040404] border-t border-white/10 text-white relative">
-      <div className="container mx-auto px-6">
-        <div className="text-center max-w-3xl mx-auto mb-16">
-          <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-[#D4AF37]/10 border border-[#D4AF37]/50 text-[#F5D77F] text-xs font-extrabold tracking-widest uppercase mb-4">
-            <Sparkles className="w-4 h-4 text-[#D4AF37]" /> TYPTWO STUDIOS • CREATIVE INTELLIGENCE
+    <section style={{ padding: '100px 0', backgroundColor: '#040404', borderTop: '1px solid rgba(255,255,255,0.1)' }}>
+      <div style={{ maxWidth: '1200px', margin: '0 auto', padding: '0 24px' }}>
+        
+        <div style={{ textAlign: 'center', maxWidth: '800px', margin: '0 auto 64px' }}>
+          <div style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', padding: '6px 16px', borderRadius: '9999px', backgroundColor: 'rgba(212,175,55,0.1)', border: '1px solid rgba(212,175,55,0.4)', fontSize: '11px', fontWeight: 800, letterSpacing: '0.2em', color: '#D4AF37', textTransform: 'uppercase', marginBottom: '16px' }}>
+            <Sparkles size={16} /> TYPTWO STUDIOS • CREATIVE INTELLIGENCE
           </div>
-          <h2 className="text-4xl sm:text-6xl font-extrabold tracking-tight text-white mb-4">
+          <h2 style={{ fontSize: 'clamp(36px, 5vw, 64px)', fontWeight: 800, color: '#FFFFFF', letterSpacing: '-0.03em', marginBottom: '16px' }}>
             Engineering Intelligent Growth
           </h2>
-          <p className="text-slate-400 text-base sm:text-lg leading-relaxed">
+          <p style={{ fontSize: '16px', color: '#908F9D', lineHeight: 1.6 }}>
             All 6 core creative modules built for unforgettable brand momentum.
           </p>
 
           {/* Mode Switcher */}
-          <div className="flex justify-center gap-3 mt-8">
+          <div style={{ display: 'flex', justifyContent: 'center', gap: '12px', marginTop: '32px', flexWrap: 'wrap' }}>
+            <button
+              onClick={() => setActiveTab('creatives')}
+              style={{
+                padding: '10px 20px',
+                borderRadius: '9999px',
+                fontSize: '12px',
+                fontWeight: 700,
+                cursor: 'pointer',
+                border: 'none',
+                backgroundColor: activeTab === 'creatives' ? '#D4AF37' : 'rgba(255,255,255,0.05)',
+                color: activeTab === 'creatives' ? '#040404' : '#908F9D',
+                boxShadow: activeTab === 'creatives' ? '0 0 20px rgba(212,175,55,0.5)' : 'none',
+                transition: 'all 0.3s ease'
+              }}
+            >
+              High-Res Visual Renders Showcase
+            </button>
+
             <button
               onClick={() => setActiveTab('features')}
-              className={`px-5 py-2.5 rounded-full text-xs font-bold transition-all ${
-                activeTab === 'features' ? 'bg-[#D4AF37] text-black shadow-[0_0_20px_rgba(212,175,55,0.4)]' : 'bg-white/5 text-slate-400 hover:text-white'
-              }`}
+              style={{
+                padding: '10px 20px',
+                borderRadius: '9999px',
+                fontSize: '12px',
+                fontWeight: 700,
+                cursor: 'pointer',
+                border: 'none',
+                backgroundColor: activeTab === 'features' ? '#D4AF37' : 'rgba(255,255,255,0.05)',
+                color: activeTab === 'features' ? '#040404' : '#908F9D',
+                boxShadow: activeTab === 'features' ? '0 0 20px rgba(212,175,55,0.5)' : 'none',
+                transition: 'all 0.3s ease'
+              }}
             >
               All 6 Studios Services (S-01..S-06)
             </button>
 
             <button
-              onClick={() => setActiveTab('creatives')}
-              className={`px-5 py-2.5 rounded-full text-xs font-bold transition-all ${
-                activeTab === 'creatives' ? 'bg-[#D4AF37] text-black shadow-[0_0_20px_rgba(212,175,55,0.4)]' : 'bg-white/5 text-slate-400 hover:text-white'
-              }`}
-            >
-              High-Res Visual Renders
-            </button>
-
-            <button
               onClick={() => setActiveTab('impact')}
-              className={`px-5 py-2.5 rounded-full text-xs font-bold transition-all ${
-                activeTab === 'impact' ? 'bg-[#D4AF37] text-black shadow-[0_0_20px_rgba(212,175,55,0.4)]' : 'bg-white/5 text-slate-400 hover:text-white'
-              }`}
+              style={{
+                padding: '10px 20px',
+                borderRadius: '9999px',
+                fontSize: '12px',
+                fontWeight: 700,
+                cursor: 'pointer',
+                border: 'none',
+                backgroundColor: activeTab === 'impact' ? '#D4AF37' : 'rgba(255,255,255,0.05)',
+                color: activeTab === 'impact' ? '#040404' : '#908F9D',
+                boxShadow: activeTab === 'impact' ? '0 0 20px rgba(212,175,55,0.5)' : 'none',
+                transition: 'all 0.3s ease'
+              }}
             >
               Proven Growth Impact
             </button>
           </div>
         </div>
 
-        {/* TAB 1: ALL 6 STUDIOS SERVICES */}
+        {/* TAB: VISUAL RENDERS SHOWCASE */}
+        {activeTab === 'creatives' && (
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: '32px', maxWidth: '1100px', margin: '0 auto' }}>
+            
+            {/* Card 1: AI CMO */}
+            <div style={{ backgroundColor: '#111115', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '16px', overflow: 'hidden' }}>
+              <div style={{ position: 'relative', height: '300px', width: '100%' }}>
+                <img 
+                  src="/images/ai_cmo.png" 
+                  alt="AI CMO Growth Matrix Render" 
+                  style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                />
+                <div style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, background: 'linear-gradient(to top, #111115 0%, transparent 60%)' }} />
+              </div>
+              <div style={{ padding: '24px' }}>
+                <span style={{ fontSize: '11px', fontWeight: 800, color: '#D4AF37', letterSpacing: '0.15em', textTransform: 'uppercase', display: 'block', marginBottom: '8px' }}>
+                  AUTONOMOUS AI CMO ENGINE
+                </span>
+                <h4 style={{ fontSize: '20px', fontWeight: 800, color: '#FFFFFF', marginBottom: '8px' }}>
+                  Growth Strategy & Positioning Engine
+                </h4>
+                <p style={{ fontSize: '14px', color: '#908F9D', lineHeight: 1.6 }}>
+                  Always-on market sentiment analysis, channel alignment, and creative testing feedback loops.
+                </p>
+              </div>
+            </div>
+
+            {/* Card 2: 4K Video AI */}
+            <div style={{ backgroundColor: '#111115', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '16px', overflow: 'hidden' }}>
+              <div style={{ position: 'relative', height: '300px', width: '100%' }}>
+                <img 
+                  src="/images/video_ai.png" 
+                  alt="4K Generative Video AI Engine Render" 
+                  style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                />
+                <div style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, background: 'linear-gradient(to top, #111115 0%, transparent 60%)' }} />
+              </div>
+              <div style={{ padding: '24px' }}>
+                <span style={{ fontSize: '11px', fontWeight: 800, color: '#D4AF37', letterSpacing: '0.15em', textTransform: 'uppercase', display: 'block', marginBottom: '8px' }}>
+                  4K GENERATIVE VIDEO AI ENGINE
+                </span>
+                <h4 style={{ fontSize: '20px', fontWeight: 800, color: '#FFFFFF', marginBottom: '8px' }}>
+                  High-Res Brand Films & Micro Dramas
+                </h4>
+                <p style={{ fontSize: '14px', color: '#908F9D', lineHeight: 1.6 }}>
+                  Generating 4K video assets and episodic short-form creative series at infinite production scale.
+                </p>
+              </div>
+            </div>
+
+          </div>
+        )}
+
+        {/* TAB: ALL 6 SERVICES */}
         {activeTab === 'features' && (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '24px' }}>
             {studioServices.map((s) => (
-              <div key={s.code} className="p-8 rounded-2xl bg-[#111115] border border-white/10 hover:border-[#D4AF37]/50 transition-all duration-300 group flex flex-col justify-between hover:-translate-y-1">
+              <div key={s.code} style={{ backgroundColor: '#111115', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '16px', padding: '32px 24px', display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
                 <div>
-                  <span className="text-xs font-extrabold tracking-widest text-[#D4AF37] block mb-3">{s.code}</span>
-                  <h3 className="text-2xl font-bold text-white mb-3 group-hover:text-[#F5D77F] transition-colors">{s.title}</h3>
-                  <p className="text-slate-400 text-sm leading-relaxed mb-6">{s.summary}</p>
+                  <span style={{ fontSize: '11px', fontWeight: 800, color: '#D4AF37', letterSpacing: '0.15em', display: 'block', marginBottom: '12px' }}>{s.code}</span>
+                  <h3 style={{ fontSize: '20px', fontWeight: 800, color: '#FFFFFF', marginBottom: '8px' }}>{s.title}</h3>
+                  <p style={{ fontSize: '14px', color: '#908F9D', lineHeight: 1.6, marginBottom: '20px' }}>{s.summary}</p>
                 </div>
-                <ul className="space-y-2.5 border-t border-white/5 pt-4">
+                <ul style={{ listStyle: 'none', display: 'flex', flexDirection: 'column', gap: '8px', borderTop: '1px solid rgba(255,255,255,0.05)', paddingTop: '16px' }}>
                   {s.points.map((pt, idx) => (
-                    <li key={idx} className="flex items-center gap-2.5 text-xs text-slate-300">
-                      <CheckCircle2 className="w-3.5 h-3.5 text-[#D4AF37] shrink-0" />
+                    <li key={idx} style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '13px', color: '#FFFFFF' }}>
+                      <CheckCircle2 size={14} color="#D4AF37" />
                       <span>{pt}</span>
                     </li>
                   ))}
@@ -117,47 +198,19 @@ export const StudiosFeaturesV9 = () => {
           </div>
         )}
 
-        {/* TAB 2: VISUAL RENDERS SHOWCASE */}
-        {activeTab === 'creatives' && (
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-5xl mx-auto">
-            <div className="rounded-2xl bg-[#111115] border border-white/10 overflow-hidden group">
-              <div className="relative h-72">
-                <img src="/images/ai_cmo.png" alt="AI CMO Matrix" className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700" />
-                <div className="absolute inset-0 bg-gradient-to-t from-[#111115] via-transparent to-transparent" />
-              </div>
-              <div className="p-6">
-                <span className="text-xs font-bold text-[#D4AF37] tracking-wider uppercase block mb-1">AUTONOMOUS AI CMO ENGINE</span>
-                <h4 className="text-xl font-bold text-white mb-2">Growth Strategy & Channel Optimization</h4>
-                <p className="text-slate-400 text-sm">Always-on market sentiment analysis, messaging alignment, and creative testing feedback loops.</p>
-              </div>
-            </div>
-
-            <div className="rounded-2xl bg-[#111115] border border-white/10 overflow-hidden group">
-              <div className="relative h-72">
-                <img src="/images/video_ai.png" alt="4K Generative Video AI" className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700" />
-                <div className="absolute inset-0 bg-gradient-to-t from-[#111115] via-transparent to-transparent" />
-              </div>
-              <div className="p-6">
-                <span className="text-xs font-bold text-[#D4AF37] tracking-wider uppercase block mb-1">4K GENERATIVE VIDEO AI</span>
-                <h4 className="text-xl font-bold text-white mb-2">High-Res Brand Films & Creative Campaigns</h4>
-                <p className="text-slate-400 text-sm">Generating 4K video assets and episodic short-form creative series at infinite production scale.</p>
-              </div>
-            </div>
-          </div>
-        )}
-
-        {/* TAB 3: PROVEN IMPACT */}
+        {/* TAB: PROVEN IMPACT */}
         {activeTab === 'impact' && (
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 max-w-5xl mx-auto">
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '24px', maxWidth: '1100px', margin: '0 auto' }}>
             {caseStudies.map((cs, idx) => (
-              <div key={idx} className="p-8 rounded-2xl bg-[#111115] border border-white/10 text-left">
-                <span className="text-xs font-extrabold text-[#D4AF37] tracking-widest block mb-2">{cs.client}</span>
-                <h4 className="text-xl font-bold text-white mb-3">{cs.result}</h4>
-                <p className="text-slate-400 text-sm leading-relaxed">{cs.detail}</p>
+              <div key={idx} style={{ backgroundColor: '#111115', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '16px', padding: '32px 24px' }}>
+                <span style={{ fontSize: '11px', fontWeight: 800, color: '#D4AF37', letterSpacing: '0.15em', display: 'block', marginBottom: '8px' }}>{cs.client}</span>
+                <h4 style={{ fontSize: '18px', fontWeight: 800, color: '#FFFFFF', marginBottom: '12px' }}>{cs.result}</h4>
+                <p style={{ fontSize: '14px', color: '#908F9D', lineHeight: 1.6 }}>{cs.detail}</p>
               </div>
             ))}
           </div>
         )}
+
       </div>
     </section>
   );

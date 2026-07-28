@@ -6,152 +6,200 @@ export const DualEngineV9 = () => {
   const [hoveredPanel, setHoveredPanel] = useState<'tech' | 'studios' | null>(null);
 
   return (
-    <section id="gateway" className="py-28 bg-[#040404] border-t border-white/10 overflow-hidden">
-      <div className="container mx-auto px-6 mb-16 text-center max-w-3xl">
-        <span className="inline-block px-4 py-1.5 rounded-full bg-[#D4AF37]/10 border border-[#D4AF37]/40 text-xs font-extrabold tracking-widest text-[#D4AF37] mb-4 uppercase">
+    <section id="gateway" style={{ padding: '100px 0', backgroundColor: '#040404', borderTop: '1px solid rgba(255,255,255,0.1)', overflow: 'hidden' }}>
+      <div style={{ maxWidth: '800px', margin: '0 auto 64px', textAlign: 'center', padding: '0 24px' }}>
+        <span style={{ display: 'inline-block', padding: '6px 16px', borderRadius: '9999px', backgroundColor: 'rgba(212,175,55,0.1)', border: '1px solid rgba(212,175,55,0.4)', fontSize: '11px', fontWeight: 800, letterSpacing: '0.2em', color: '#D4AF37', textTransform: 'uppercase', marginBottom: '16px' }}>
           TWO WORLDS • ONE VISION
         </span>
-        <h2 className="text-4xl sm:text-6xl font-extrabold tracking-tight text-white mb-4">
+        <h2 style={{ fontSize: 'clamp(36px, 5vw, 64px)', fontWeight: 800, color: '#FFFFFF', letterSpacing: '-0.03em', marginBottom: '16px' }}>
           The Dual Engine Architecture
         </h2>
-        <p className="text-slate-400 text-base sm:text-lg leading-relaxed">
+        <p style={{ fontSize: '16px', color: '#908F9D', lineHeight: 1.6 }}>
           Every business has two engines. One keeps the business running. The other keeps it growing. We build both.
         </p>
       </div>
 
       {/* Kinetic Split Canvas */}
-      <div className="flex flex-col lg:flex-row min-h-[780px] w-full relative border-y border-white/10">
+      <div style={{ display: 'flex', flexWrap: 'wrap', minHeight: '750px', width: '100%', position: 'relative', borderTop: '1px solid rgba(255,255,255,0.1)', borderBottom: '1px solid rgba(255,255,255,0.1)' }}>
+        
         {/* Left Side: Typtwo Tech */}
         <div 
-          className={`relative flex-1 flex items-end p-8 sm:p-16 transition-all duration-700 ease-out bg-[#09090C] overflow-hidden group ${
-            hoveredPanel === 'tech' ? 'lg:flex-[1.5]' : ''
-          } ${hoveredPanel === 'studios' ? 'lg:flex-[0.6]' : ''}`}
+          style={{
+            flex: hoveredPanel === 'tech' ? 1.5 : hoveredPanel === 'studios' ? 0.6 : 1,
+            position: 'relative',
+            display: 'flex',
+            alignItems: 'flex-end',
+            padding: '64px',
+            transition: 'all 0.7s cubic-bezier(0.16, 1, 0.3, 1)',
+            backgroundColor: '#09090C',
+            overflow: 'hidden',
+            minWidth: '320px'
+          }}
           onMouseEnter={() => setHoveredPanel('tech')}
           onMouseLeave={() => setHoveredPanel(null)}
         >
-          {/* 3D Monolith Background Render */}
-          <div className="absolute inset-0 z-0">
+          {/* 3D Tech Monolith Image */}
+          <div style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, zIndex: 0 }}>
             <img 
               src="/images/tech_infra.png" 
-              alt="Typtwo Tech 3D Monolith"
-              className="w-full h-full object-cover brightness-[0.35] contrast-125 transition-all duration-1000 group-hover:scale-105 group-hover:brightness-50"
+              alt="Typtwo Tech Sovereign 3D Monolith"
+              style={{
+                width: '100%',
+                height: '100%',
+                objectFit: 'cover',
+                filter: hoveredPanel === 'tech' ? 'brightness(0.55) contrast(1.2)' : 'brightness(0.35) contrast(1.15)',
+                transform: hoveredPanel === 'tech' ? 'scale(1.08)' : 'scale(1)',
+                transition: 'all 1s cubic-bezier(0.16, 1, 0.3, 1)'
+              }}
             />
-            <div className="absolute inset-0 bg-gradient-to-t from-[#040404] via-[#040404]/60 to-cyan-500/20" />
+            <div style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, background: 'linear-gradient(to top, rgba(4,4,4,0.95) 0%, rgba(4,4,4,0.4) 50%, rgba(0,229,255,0.15) 100%)' }} />
           </div>
 
-          <div className="relative z-10 max-w-xl">
-            <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-cyan-500/10 border border-cyan-400/50 text-cyan-300 text-xs font-extrabold tracking-wider uppercase mb-5">
-              <Cpu className="w-4 h-4" /> ENGINE 01 • TYPTWO TECH
+          <div style={{ position: 'relative', zIndex: 10, maxWidth: '520px' }}>
+            <div style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', padding: '6px 14px', borderRadius: '9999px', backgroundColor: 'rgba(0,229,255,0.1)', border: '1px solid rgba(0,229,255,0.4)', fontSize: '11px', fontWeight: 800, letterSpacing: '0.15em', color: '#00E5FF', textTransform: 'uppercase', marginBottom: '20px' }}>
+              <Cpu size={16} /> ENGINE 01 • TYPTWO TECH
             </div>
 
-            <h3 className="text-3xl sm:text-5xl font-extrabold text-white tracking-tight leading-tight mb-4">
+            <h3 style={{ fontSize: 'clamp(32px, 3.5vw, 48px)', fontWeight: 800, color: '#FFFFFF', letterSpacing: '-0.03em', lineHeight: 1.1, marginBottom: '16px' }}>
               Engineering Intelligent Operations
             </h3>
 
-            <p className="text-slate-300 italic text-base sm:text-lg leading-relaxed mb-4">
+            <p style={{ fontSize: '16px', color: '#FFFFFF', fontStyle: 'italic', lineHeight: 1.5, marginBottom: '16px' }}>
               "Imagine if your business could remember everything. Every document. Every conversation. Every process. Every customer. Every decision."
             </p>
 
-            <p className="text-slate-400 text-sm leading-relaxed mb-6">
+            <p style={{ fontSize: '14px', color: '#908F9D', lineHeight: 1.6, marginBottom: '24px' }}>
               Typtwo Tech helps organisations modernise the way they operate through intelligent systems, secure automation, and connected technology.
             </p>
 
-            <ul className="space-y-3 mb-8">
-              <li className="flex items-center gap-3 text-sm text-slate-200">
-                <CheckCircle2 className="w-4 h-4 text-cyan-400 shrink-0" />
+            <ul style={{ listStyle: 'none', display: 'flex', flexDirection: 'column', gap: '10px', marginBottom: '32px' }}>
+              <li style={{ display: 'flex', alignItems: 'center', gap: '10px', fontSize: '14px', color: '#FFFFFF' }}>
+                <CheckCircle2 size={16} color="#00E5FF" />
                 <span>Simplify complexity and organize institutional memory</span>
               </li>
-              <li className="flex items-center gap-3 text-sm text-slate-200">
-                <CheckCircle2 className="w-4 h-4 text-cyan-400 shrink-0" />
+              <li style={{ display: 'flex', alignItems: 'center', gap: '10px', fontSize: '14px', color: '#FFFFFF' }}>
+                <CheckCircle2 size={16} color="#00E5FF" />
                 <span>Automate repetitive work silently in the background</span>
               </li>
-              <li className="flex items-center gap-3 text-sm text-slate-200">
-                <CheckCircle2 className="w-4 h-4 text-cyan-400 shrink-0" />
+              <li style={{ display: 'flex', alignItems: 'center', gap: '10px', fontSize: '14px', color: '#FFFFFF' }}>
+                <CheckCircle2 size={16} color="#00E5FF" />
                 <span>Zero-trust sovereign data & air-gapped protection</span>
               </li>
             </ul>
 
             <Link
               to="/tech"
-              className="inline-flex items-center gap-3 px-7 py-3.5 rounded-full bg-cyan-500/20 border border-cyan-400 text-cyan-200 font-bold hover:bg-cyan-400 hover:text-black transition-all duration-300"
+              style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '10px',
+                padding: '14px 28px',
+                borderRadius: '9999px',
+                backgroundColor: 'rgba(0,112,243,0.25)',
+                border: '1px solid #00E5FF',
+                color: '#FFFFFF',
+                fontSize: '14px',
+                fontWeight: 700,
+                textDecoration: 'none',
+                boxShadow: hoveredPanel === 'tech' ? '0 0 30px rgba(0,229,255,0.6)' : 'none',
+                transition: 'all 0.3s ease'
+              }}
             >
               <span>Explore Typtwo Tech</span>
-              <ArrowRight className="w-4 h-4" />
+              <ArrowRight size={18} />
             </Link>
-          </div>
-        </div>
-
-        {/* Center Node Badge */}
-        <div className="hidden lg:flex absolute top-0 bottom-0 left-1/2 -translate-x-1/2 z-20 items-center justify-center pointer-events-none">
-          <div className="w-px h-full bg-white/20" />
-          <div className={`absolute w-12 h-12 rounded-full bg-[#111115] border flex items-center justify-center text-xs font-black transition-all duration-300 shadow-2xl ${
-            hoveredPanel === 'tech' ? 'border-cyan-400 text-cyan-400 shadow-cyan-500/50' :
-            hoveredPanel === 'studios' ? 'border-[#D4AF37] text-[#D4AF37] shadow-[#D4AF37]/50' :
-            'border-white/20 text-slate-400'
-          }`}>
-            VS
           </div>
         </div>
 
         {/* Right Side: Typtwo Studios */}
         <div 
-          className={`relative flex-1 flex items-end p-8 sm:p-16 transition-all duration-700 ease-out bg-[#09090C] overflow-hidden group ${
-            hoveredPanel === 'studios' ? 'lg:flex-[1.5]' : ''
-          } ${hoveredPanel === 'tech' ? 'lg:flex-[0.6]' : ''}`}
+          style={{
+            flex: hoveredPanel === 'studios' ? 1.5 : hoveredPanel === 'tech' ? 0.6 : 1,
+            position: 'relative',
+            display: 'flex',
+            alignItems: 'flex-end',
+            padding: '64px',
+            transition: 'all 0.7s cubic-bezier(0.16, 1, 0.3, 1)',
+            backgroundColor: '#09090C',
+            overflow: 'hidden',
+            minWidth: '320px'
+          }}
           onMouseEnter={() => setHoveredPanel('studios')}
           onMouseLeave={() => setHoveredPanel(null)}
         >
-          {/* 3D Monolith Background Render */}
-          <div className="absolute inset-0 z-0">
+          {/* 3D Studios Monolith Image */}
+          <div style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, zIndex: 0 }}>
             <img 
               src="/images/studios_creative.png" 
-              alt="Typtwo Studios 3D Monolith"
-              className="w-full h-full object-cover brightness-[0.35] contrast-125 transition-all duration-1000 group-hover:scale-105 group-hover:brightness-50"
+              alt="Typtwo Studios Sovereign 3D Monolith"
+              style={{
+                width: '100%',
+                height: '100%',
+                objectFit: 'cover',
+                filter: hoveredPanel === 'studios' ? 'brightness(0.55) contrast(1.2)' : 'brightness(0.35) contrast(1.15)',
+                transform: hoveredPanel === 'studios' ? 'scale(1.08)' : 'scale(1)',
+                transition: 'all 1s cubic-bezier(0.16, 1, 0.3, 1)'
+              }}
             />
-            <div className="absolute inset-0 bg-gradient-to-t from-[#040404] via-[#040404]/60 to-[#D4AF37]/20" />
+            <div style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, background: 'linear-gradient(to top, rgba(4,4,4,0.95) 0%, rgba(4,4,4,0.4) 50%, rgba(212,175,55,0.15) 100%)' }} />
           </div>
 
-          <div className="relative z-10 max-w-xl">
-            <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-[#D4AF37]/10 border border-[#D4AF37]/50 text-[#F5D77F] text-xs font-extrabold tracking-wider uppercase mb-5">
-              <Sparkles className="w-4 h-4 text-[#D4AF37]" /> ENGINE 02 • TYPTWO STUDIOS
+          <div style={{ position: 'relative', zIndex: 10, maxWidth: '520px' }}>
+            <div style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', padding: '6px 14px', borderRadius: '9999px', backgroundColor: 'rgba(212,175,55,0.1)', border: '1px solid rgba(212,175,55,0.4)', fontSize: '11px', fontWeight: 800, letterSpacing: '0.15em', color: '#D4AF37', textTransform: 'uppercase', marginBottom: '20px' }}>
+              <Sparkles size={16} /> ENGINE 02 • TYPTWO STUDIOS
             </div>
 
-            <h3 className="text-3xl sm:text-5xl font-extrabold text-white tracking-tight leading-tight mb-4">
+            <h3 style={{ fontSize: 'clamp(32px, 3.5vw, 48px)', fontWeight: 800, color: '#FFFFFF', letterSpacing: '-0.03em', lineHeight: 1.1, marginBottom: '16px' }}>
               Engineering Intelligent Growth
             </h3>
 
-            <p className="text-slate-300 italic text-base sm:text-lg leading-relaxed mb-4">
+            <p style={{ fontSize: '16px', color: '#FFFFFF', fontStyle: 'italic', lineHeight: 1.5, marginBottom: '16px' }}>
               "Great businesses deserve great stories. People don't remember advertisements. They remember moments, ideas, experiences, and conversations."
             </p>
 
-            <p className="text-slate-400 text-sm leading-relaxed mb-6">
+            <p style={{ fontSize: '14px', color: '#908F9D', lineHeight: 1.6, marginBottom: '24px' }}>
               Typtwo Studios helps businesses create brands people trust, campaigns people remember, and content people actually want to watch.
             </p>
 
-            <ul className="space-y-3 mb-8">
-              <li className="flex items-center gap-3 text-sm text-slate-200">
-                <CheckCircle2 className="w-4 h-4 text-[#D4AF37] shrink-0" />
+            <ul style={{ listStyle: 'none', display: 'flex', flexDirection: 'column', gap: '10px', marginBottom: '32px' }}>
+              <li style={{ display: 'flex', alignItems: 'center', gap: '10px', fontSize: '14px', color: '#FFFFFF' }}>
+                <CheckCircle2 size={16} color="#D4AF37" />
                 <span>Autonomous AI CMO & brand positioning strategy</span>
               </li>
-              <li className="flex items-center gap-3 text-sm text-slate-200">
-                <CheckCircle2 className="w-4 h-4 text-[#D4AF37] shrink-0" />
+              <li style={{ display: 'flex', alignItems: 'center', gap: '10px', fontSize: '14px', color: '#FFFFFF' }}>
+                <CheckCircle2 size={16} color="#D4AF37" />
                 <span>Multilingual Voice Cloning for global founder keynotes</span>
               </li>
-              <li className="flex items-center gap-3 text-sm text-slate-200">
-                <CheckCircle2 className="w-4 h-4 text-[#D4AF37] shrink-0" />
+              <li style={{ display: 'flex', alignItems: 'center', gap: '10px', fontSize: '14px', color: '#FFFFFF' }}>
+                <CheckCircle2 size={16} color="#D4AF37" />
                 <span>4K Generative video production & creative campaigns</span>
               </li>
             </ul>
 
             <Link
               to="/studios"
-              className="inline-flex items-center gap-3 px-7 py-3.5 rounded-full bg-[#D4AF37]/20 border border-[#D4AF37] text-[#F5D77F] font-bold hover:bg-[#D4AF37] hover:text-black transition-all duration-300"
+              style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '10px',
+                padding: '14px 28px',
+                borderRadius: '9999px',
+                backgroundColor: 'rgba(212,175,55,0.25)',
+                border: '1px solid #D4AF37',
+                color: '#FFFFFF',
+                fontSize: '14px',
+                fontWeight: 700,
+                textDecoration: 'none',
+                boxShadow: hoveredPanel === 'studios' ? '0 0 30px rgba(212,175,55,0.6)' : 'none',
+                transition: 'all 0.3s ease'
+              }}
             >
               <span>Explore Typtwo Studios</span>
-              <ArrowRight className="w-4 h-4" />
+              <ArrowRight size={18} />
             </Link>
           </div>
         </div>
+
       </div>
     </section>
   );

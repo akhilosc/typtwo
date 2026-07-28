@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Globe, Play, Pause, Volume2, Sparkles } from 'lucide-react';
+import { Globe, Play, Pause, Sparkles } from 'lucide-react';
 
 export const VoiceCloningV9 = () => {
   const [isPlaying, setIsPlaying] = useState(false);
@@ -13,82 +13,115 @@ export const VoiceCloningV9 = () => {
   ];
 
   return (
-    <section className="py-28 bg-[#09090C] border-t border-white/10 text-white relative">
-      <div className="container mx-auto px-6">
-        <div className="max-w-5xl mx-auto rounded-3xl bg-[#111115] border border-[#D4AF37]/40 overflow-hidden grid grid-cols-1 lg:grid-cols-2 shadow-[0_0_50px_rgba(212,175,55,0.15)]">
+    <section style={{ padding: '100px 0', backgroundColor: '#09090C', borderTop: '1px solid rgba(255,255,255,0.1)' }}>
+      <div style={{ maxWidth: '1100px', margin: '0 auto', padding: '0 24px' }}>
+        
+        <div style={{ backgroundColor: '#111115', border: '1px solid rgba(212,175,55,0.4)', borderRadius: '24px', overflow: 'hidden', display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', boxShadow: '0 0 50px rgba(212,175,55,0.15)' }}>
+          
           {/* Left Column: Visual Replica Image */}
-          <div className="relative min-h-[440px] flex items-end p-8">
+          <div style={{ position: 'relative', minHeight: '440px', display: 'flex', alignItems: 'flex-end', padding: '32px' }}>
             <img 
               src="/images/voice_cloning.jpg" 
-              alt="Multilingual Voice Replica"
-              className="absolute inset-0 w-full h-full object-cover brightness-75 contrast-110"
+              alt="Multilingual Voice Replica Keynote"
+              style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, width: '100%', height: '100%', objectFit: 'cover', filter: 'brightness(0.7) contrast(1.1)' }}
             />
-            <div className="absolute inset-0 bg-gradient-to-t from-[#111115] via-[#111115]/40 to-transparent" />
-            <div className="relative z-10">
-              <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-[#111115]/90 border border-[#D4AF37] text-[#D4AF37] text-xs font-bold uppercase mb-2">
-                <Sparkles className="w-3.5 h-3.5" /> FOUNDER SPEECH REPLICA
+            <div style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, background: 'linear-gradient(to top, #111115 0%, rgba(17,17,21,0.4) 60%, transparent 100%)' }} />
+            <div style={{ position: 'relative', zIndex: 10 }}>
+              <div style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', padding: '6px 14px', borderRadius: '9999px', backgroundColor: 'rgba(17,17,21,0.9)', border: '1px solid #D4AF37', color: '#D4AF37', fontSize: '11px', fontWeight: 800, textTransform: 'uppercase', marginBottom: '12px' }}>
+                <Sparkles size={14} /> FOUNDER SPEECH REPLICA
               </div>
-              <h3 className="text-2xl font-extrabold text-white">Global Keynote Synthesis</h3>
-              <p className="text-slate-300 text-xs mt-1">Record once. Broadcast in 100+ languages with full founder accent retention.</p>
+              <h3 style={{ fontSize: '24px', fontWeight: 800, color: '#FFFFFF', marginBottom: '4px' }}>Global Keynote Synthesis</h3>
+              <p style={{ fontSize: '12px', color: '#CBD5E1' }}>Record once. Broadcast in 100+ languages with full founder accent retention.</p>
             </div>
           </div>
 
           {/* Right Column: Controls & Player */}
-          <div className="p-8 lg:p-12 flex flex-col justify-center">
-            <span className="text-xs font-extrabold tracking-widest text-[#D4AF37] block mb-2 uppercase">MULTILINGUAL VOICE ENGINE</span>
-            <h2 className="text-3xl font-extrabold text-white mb-3">Interactive Voice Visualizer</h2>
-            <p className="text-slate-400 text-sm leading-relaxed mb-6">
+          <div style={{ padding: '40px', display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
+            <span style={{ fontSize: '11px', fontWeight: 800, letterSpacing: '0.15em', color: '#D4AF37', textTransform: 'uppercase', marginBottom: '8px', display: 'block' }}>
+              MULTILINGUAL VOICE ENGINE
+            </span>
+            <h2 style={{ fontSize: '28px', fontWeight: 800, color: '#FFFFFF', marginBottom: '12px' }}>Interactive Voice Visualizer</h2>
+            <p style={{ fontSize: '14px', color: '#908F9D', lineHeight: 1.6, marginBottom: '24px' }}>
               Synthesise high-fidelity founder voice replicas across global markets with zero re-recording.
             </p>
 
             {/* Language Selector */}
-            <div className="space-y-2 mb-6">
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', marginBottom: '24px' }}>
               {languages.map((l) => (
                 <button
                   key={l.name}
                   onClick={() => setSelectedLang(l.name)}
-                  className={`w-full flex items-center gap-3 p-3 rounded-xl border text-left transition-all ${
-                    selectedLang === l.name 
-                      ? 'bg-[#D4AF37]/10 border-[#D4AF37] text-[#F5D77F]' 
-                      : 'bg-white/5 border-white/10 text-slate-400 hover:text-white hover:border-white/20'
-                  }`}
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '12px',
+                    padding: '12px 16px',
+                    borderRadius: '12px',
+                    border: '1px solid',
+                    textAlign: 'left',
+                    cursor: 'pointer',
+                    backgroundColor: selectedLang === l.name ? 'rgba(212,175,55,0.1)' : 'rgba(255,255,255,0.03)',
+                    borderColor: selectedLang === l.name ? '#D4AF37' : 'rgba(255,255,255,0.1)',
+                    color: selectedLang === l.name ? '#F5D77F' : '#908F9D',
+                    transition: 'all 0.3s ease'
+                  }}
                 >
-                  <Globe className="w-4 h-4 text-[#D4AF37] shrink-0" />
+                  <Globe size={16} color="#D4AF37" />
                   <div>
-                    <div className="text-xs font-bold">{l.name}</div>
-                    <div className="text-[10px] opacity-70">{l.accent}</div>
+                    <div style={{ fontSize: '13px', fontWeight: 700 }}>{l.name}</div>
+                    <div style={{ fontSize: '11px', opacity: 0.7 }}>{l.accent}</div>
                   </div>
                 </button>
               ))}
             </div>
 
             {/* Player Controls */}
-            <div className="p-4 rounded-full bg-black/70 border border-white/10 flex items-center gap-4">
+            <div style={{ padding: '16px 20px', borderRadius: '9999px', backgroundColor: 'rgba(0,0,0,0.7)', border: '1px solid rgba(255,255,255,0.1)', display: 'flex', alignItems: 'center', gap: '16px' }}>
               <button
                 onClick={() => setIsPlaying(!isPlaying)}
-                className="w-12 h-12 rounded-full bg-gradient-to-r from-[#F5D77F] to-[#D4AF37] text-black flex items-center justify-center font-bold shadow-[0_0_20px_rgba(212,175,55,0.4)] hover:scale-105 transition-transform"
+                style={{
+                  width: '48px',
+                  height: '48px',
+                  borderRadius: '50%',
+                  background: 'linear-gradient(135deg, #F5D77F 0%, #D4AF37 100%)',
+                  border: 'none',
+                  color: '#040404',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  fontWeight: 800,
+                  cursor: 'pointer',
+                  boxShadow: '0 0 20px rgba(212,175,55,0.4)'
+                }}
               >
-                {isPlaying ? <Pause className="w-5 h-5" /> : <Play className="w-5 h-5 ml-0.5" />}
+                {isPlaying ? <Pause size={20} /> : <Play size={20} style={{ marginLeft: '2px' }} />}
               </button>
 
-              <div className="flex-1">
-                <div className="flex items-end gap-1 h-5 mb-1">
+              <div style={{ flex: 1 }}>
+                <div style={{ display: 'flex', alignItems: 'flex-end', gap: '4px', height: '20px', marginBottom: '4px' }}>
                   {[...Array(16)].map((_, i) => (
                     <span 
                       key={i} 
-                      className={`w-1 rounded-full bg-[#D4AF37] transition-all duration-300 ${
-                        isPlaying ? (i % 2 === 0 ? 'h-4 animate-pulse' : 'h-2') : 'h-1.5 opacity-40'
-                      }`} 
+                      style={{
+                        width: '4px',
+                        borderRadius: '2px',
+                        backgroundColor: '#D4AF37',
+                        height: isPlaying ? (i % 2 === 0 ? '16px' : '8px') : '4px',
+                        opacity: isPlaying ? 1 : 0.4,
+                        transition: 'height 0.3s ease'
+                      }} 
                     />
                   ))}
                 </div>
-                <span className="text-[10px] text-slate-400">
+                <span style={{ fontSize: '11px', color: '#908F9D' }}>
                   {isPlaying ? `Playing ${selectedLang}...` : 'Click play to test audio replica'}
                 </span>
               </div>
             </div>
+
           </div>
         </div>
+
       </div>
     </section>
   );
