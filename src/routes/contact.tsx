@@ -176,6 +176,8 @@ function ContactPage() {
           )}
         </div>
       </section>
+
+      <FAQSection />
     </>
   );
 }
@@ -207,5 +209,73 @@ function Field({
         className="w-full bg-paper border-2 border-ink px-4 py-3 focus:outline-none focus:bg-volt/30 mono text-sm"
       />
     </label>
+  );
+}
+
+function FAQSection() {
+  const [openIdx, setOpenIdx] = useState<number | null>(null);
+
+  const faqs = [
+    {
+      q: "How do Typtwo Tech and Typtwo Studios collaborate?",
+      a: "Though we operate as two specialized divisions, we work under a unified leadership team. Tech ensures your software engines, private AI infrastructure, and systems are bulletproof. Studios makes sure your market messaging, media, and GTM traction matches your technical supremacy."
+    },
+    {
+      q: "What is your typical onboarding timeline for GTM pilots?",
+      a: "For growth sprints and campaign execution inside Studios, we launch within 10-14 days. For complex private AI setups or cloud migrations within Tech, we conduct a 7-day discovery sprint followed by execution phases customized to your infrastructure."
+    },
+    {
+      q: "Are the custom local AI nodes secure?",
+      a: "Yes. Every large language model setup, orchestration engine, or custom vector pipeline is deployed exclusively inside your secure corporate cloud perimeter (VPC) on GCP, AWS, or Azure. We do not store or telemetry your customer data."
+    },
+    {
+      q: "Can we hire a single division, or do we have to work with both?",
+      a: "You can engage with either division independently. Many clients start with a growth sprint from Studios or an operations automation pipeline from Tech, and expand the engagement as their needs grow."
+    }
+  ];
+
+  return (
+    <section className="bg-paper border-b-2 border-ink">
+      <SectionLabel n="03" label="Frequently Asked Questions" />
+      <div className="grid grid-cols-1 md:grid-cols-12 items-stretch">
+        <div className="col-span-12 md:col-span-4 p-8 md:p-10 border-r-0 md:border-r-2 border-b-2 md:border-b-0 border-ink flex flex-col justify-between">
+          <div>
+            <Eyebrow color="flame">SUPPORT</Eyebrow>
+            <h3 className="display text-4xl md:text-5xl mt-3 leading-tight">Got Questions?</h3>
+            <p className="text-sm text-muted-foreground mt-4 leading-relaxed">
+              We operate transparently. If you have questions about custom integrations, engineering cycles, or NDA perimeters, reach out directly.
+            </p>
+          </div>
+        </div>
+
+        <div className="col-span-12 md:col-span-8 divide-y-2 divide-ink">
+          {faqs.map((faq, idx) => {
+            const isOpen = openIdx === idx;
+            return (
+              <div key={idx} className="bg-paper hover:bg-volt/10 transition-colors">
+                <button
+                  onClick={() => setOpenIdx(isOpen ? null : idx)}
+                  className="w-full text-left p-6 md:p-8 flex items-center justify-between gap-4 font-bold display text-xl md:text-2xl cursor-pointer"
+                >
+                  <span>{faq.q}</span>
+                  <span className={`text-2xl transition-transform duration-300 transform ${isOpen ? "rotate-45 text-flame" : "rotate-0 text-ink"}`}>
+                    +
+                  </span>
+                </button>
+                <div
+                  className={`overflow-hidden transition-all duration-300 ease-in-out ${
+                    isOpen ? "max-h-60 border-t-2 border-ink/30" : "max-h-0"
+                  }`}
+                >
+                  <p className="p-6 md:p-8 text-sm leading-relaxed text-muted-foreground bg-paper/50">
+                    {faq.a}
+                  </p>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      </div>
+    </section>
   );
 }
