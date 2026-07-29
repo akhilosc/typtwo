@@ -187,18 +187,39 @@ export function SiteHeader() {
 }
 
 export function SiteFooter() {
+  const [time, setTime] = useState("");
+
+  useEffect(() => {
+    const updateTime = () => {
+      const now = new Date();
+      // Simple UTC time string format
+      const year = now.getUTCFullYear();
+      const month = String(now.getUTCMonth() + 1).padStart(2, '0');
+      const date = String(now.getUTCDate()).padStart(2, '0');
+      const hours = String(now.getUTCHours()).padStart(2, '0');
+      const minutes = String(now.getUTCMinutes()).padStart(2, '0');
+      const seconds = String(now.getUTCSeconds()).padStart(2, '0');
+      setTime(`${year}-${month}-${date} ${hours}:${minutes}:${seconds} UTC`);
+    };
+    updateTime();
+    const interval = setInterval(updateTime, 1000);
+    return () => clearInterval(interval);
+  }, []);
+
   return (
     <footer className="border-t-2 border-ink bg-paper">
-      <div className="border-b-2 border-ink bg-ink text-paper overflow-hidden">
-        <div className="ticker-slow flex w-max whitespace-nowrap py-6 display text-6xl md:text-8xl">
-          {Array.from({ length: 6 }).map((_, i) => (
-            <span key={i} className="mx-8 flex items-center gap-8">
-              <span>TWO WORLDS</span>
-              <span className="text-flame">✱</span>
-              <span className="italic">One force.</span>
-              <span className="text-volt">✱</span>
-            </span>
-          ))}
+      {/* Live System Status Bar */}
+      <div className="border-b-2 border-ink bg-ink text-paper px-6 py-4 font-mono text-xs uppercase tracking-widest flex flex-col sm:flex-row items-center justify-between gap-4">
+        <div className="flex items-center gap-2">
+          <span className="h-2.5 w-2.5 bg-volt rounded-full blink" />
+          <span>SYSTEMS STATUS: OPTIMAL</span>
+        </div>
+        <div className="text-center sm:text-left text-[10px] opacity-75">
+          NODE: TYPTWO_EDGE_M1 // 35.224.112.98
+        </div>
+        <div className="flex items-center gap-2 text-[11px]">
+          <span className="opacity-75">CLOCK:</span>
+          <span className="text-volt font-bold">{time || "2026-07-29 00:00:00 UTC"}</span>
         </div>
       </div>
 

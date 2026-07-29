@@ -4,7 +4,6 @@ import {
   BruteButton,
   Eyebrow,
   SectionLabel,
-  Ticker,
 } from "../components/site-chrome";
 
 export const Route = createFileRoute("/")({
@@ -35,7 +34,8 @@ function Index() {
       {/* Desktop Viewport */}
       <div className="hidden md:block">
         <Hero />
-        <Marquee />
+        <CoreFocusBar />
+        <Philosophy />
         <Duality />
         <Numbers />
         <HomepageClientele />
@@ -52,6 +52,44 @@ function Index() {
         <MobileCloser />
       </div>
     </>
+  );
+}
+
+/* ==================== SCROLL REVEAL UTILITY ==================== */
+
+function ScrollReveal({ children }: { children: React.ReactNode }) {
+  const [isVisible, setIsVisible] = React.useState(false);
+  const ref = React.useRef<HTMLDivElement>(null);
+
+  React.useEffect(() => {
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (entry.isIntersecting) {
+          setIsVisible(true);
+          observer.unobserve(entry.target);
+        }
+      },
+      { threshold: 0.1 }
+    );
+
+    if (ref.current) {
+      observer.observe(ref.current);
+    }
+
+    return () => {
+      if (ref.current) observer.unobserve(ref.current);
+    };
+  }, []);
+
+  return (
+    <div
+      ref={ref}
+      className={`transition-all duration-1000 transform ${
+        isVisible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-8"
+      }`}
+    >
+      {children}
+    </div>
   );
 }
 
@@ -120,20 +158,63 @@ function RotatingSeal() {
   );
 }
 
-function Marquee() {
+function CoreFocusBar() {
   return (
-    <section className="bg-ink text-paper border-b-2 border-ink">
-      <Ticker
-        className="py-6 display text-5xl md:text-7xl"
-        items={[
-          "OPERATIONS",
-          "◆",
-          "GROWTH",
-          "◆",
-          "ENTERPRISE",
-          "◆",
-        ]}
-      />
+    <section className="bg-ink text-paper border-b-2 border-ink px-6 py-5 flex flex-wrap justify-around items-center gap-6 mono text-[11px] uppercase tracking-widest font-bold">
+      <div className="flex items-center gap-2">
+        <span className="text-flame">✱</span>
+        <span>Intelligent Operations</span>
+      </div>
+      <div className="hidden sm:flex items-center gap-2">
+        <span className="text-volt">✱</span>
+        <span>Sovereign AI Infrastructure</span>
+      </div>
+      <div className="flex items-center gap-2">
+        <span className="text-flame">✱</span>
+        <span>Intelligent Growth</span>
+      </div>
+    </section>
+  );
+}
+
+function Philosophy() {
+  return (
+    <section className="border-b-2 border-ink bg-paper">
+      <SectionLabel n="02" label="Core Philosophy" />
+      <div className="grid grid-cols-1 md:grid-cols-3">
+        <div className="p-8 md:p-12 border-b-2 md:border-b-0 md:border-r-2 border-ink hover:bg-volt hover:text-ink transition-all duration-300 flex flex-col justify-between min-h-[260px] group cursor-pointer">
+          <div>
+            <div className="mono text-[10px] text-muted-foreground uppercase tracking-widest mb-6">[ Pillar 01 ]</div>
+            <h3 className="display text-3xl font-extrabold mb-4 group-hover:translate-x-1 transition-transform">Precision Infrastructure</h3>
+            <p className="text-sm leading-relaxed text-muted-foreground group-hover:text-ink transition-colors">
+              Sovereign AI orchestration, local large language models, and private cloud automations built securely inside your compliance perimeter.
+            </p>
+          </div>
+          <span className="mono text-[10px] uppercase tracking-widest mt-6 opacity-0 group-hover:opacity-100 transition-opacity">→ Operational Integrity</span>
+        </div>
+
+        <div className="p-8 md:p-12 border-b-2 md:border-b-0 md:border-r-2 border-ink hover:bg-volt hover:text-ink transition-all duration-300 flex flex-col justify-between min-h-[260px] group cursor-pointer">
+          <div>
+            <div className="mono text-[10px] text-muted-foreground uppercase tracking-widest mb-6">[ Pillar 02 ]</div>
+            <h3 className="display text-3xl font-extrabold mb-4 group-hover:translate-x-1 transition-transform">Narrative Supremacy</h3>
+            <p className="text-sm leading-relaxed text-muted-foreground group-hover:text-ink transition-colors">
+              Capturing attention equity via high-production short-form video IPs, content distributions, and strategic corporate narrative positioning.
+            </p>
+          </div>
+          <span className="mono text-[10px] uppercase tracking-widest mt-6 opacity-0 group-hover:opacity-100 transition-opacity">→ Market Share</span>
+        </div>
+
+        <div className="p-8 md:p-12 hover:bg-volt hover:text-ink transition-all duration-300 flex flex-col justify-between min-h-[260px] group cursor-pointer">
+          <div>
+            <div className="mono text-[10px] text-muted-foreground uppercase tracking-widest mb-6">[ Pillar 03 ]</div>
+            <h3 className="display text-3xl font-extrabold mb-4 group-hover:translate-x-1 transition-transform">Velocity of Execution</h3>
+            <p className="text-sm leading-relaxed text-muted-foreground group-hover:text-ink transition-colors">
+              Deploying lightweight, high-impact growth sprints and custom operational pipelines to build validation pipelines at scale.
+            </p>
+          </div>
+          <span className="mono text-[10px] uppercase tracking-widest mt-6 opacity-0 group-hover:opacity-100 transition-opacity">→ Rapid Validation</span>
+        </div>
+      </div>
     </section>
   );
 }
@@ -141,33 +222,60 @@ function Marquee() {
 function Duality() {
   return (
     <section className="border-b-2 border-ink">
-      <SectionLabel n="01" label="Two divisions" />
+      <SectionLabel n="03" label="Two divisions" />
       <div className="grid grid-cols-1 md:grid-cols-2">
-        <div className="relative p-8 md:p-14 border-b-2 md:border-b-0 md:border-r-2 border-ink bg-paper overflow-hidden">
+        <div className="relative p-8 md:p-14 border-b-2 md:border-b-0 md:border-r-2 border-ink bg-paper overflow-hidden group">
           <div className="absolute -right-10 -top-10 h-40 w-40 stripes opacity-10" />
           <div className="mono text-xs uppercase tracking-widest mb-6">
             [ 01 / Tech ]
           </div>
-          <h2 className="display text-6xl md:text-8xl leading-[0.85]">
-            Intelligent<br />
-            <span className="italic">Operations.</span>
-          </h2>
+          <ScrollReveal>
+            <h2 className="display text-6xl md:text-8xl leading-[0.85]">
+              Intelligent<br />
+              <span className="italic">Operations.</span>
+            </h2>
+          </ScrollReveal>
           <div className="mt-10">
             <BruteButton to="/tech" variant="ink">Enter Tech</BruteButton>
           </div>
+
+          {/* Interactive schematic line art graphic (Tech) */}
+          <div className="absolute right-6 bottom-6 w-32 h-32 opacity-20 group-hover:opacity-80 transition-opacity duration-300 pointer-events-none hidden md:block">
+            <svg viewBox="0 0 100 100" className="w-full h-full text-ink dark:text-paper">
+              <line x1="10" y1="10" x2="90" y2="10" stroke="currentColor" strokeWidth="2" strokeDasharray="4 4" />
+              <line x1="90" y1="10" x2="90" y2="90" stroke="currentColor" strokeWidth="2" strokeDasharray="4 4" />
+              <line x1="90" y1="90" x2="10" y2="90" stroke="currentColor" strokeWidth="2" strokeDasharray="4 4" />
+              <line x1="10" y1="90" x2="10" y2="10" stroke="currentColor" strokeWidth="2" strokeDasharray="4 4" />
+              <circle cx="10" cy="10" r="4" fill="currentColor" />
+              <circle cx="90" cy="10" r="4" fill="currentColor" />
+              <circle cx="90" cy="90" r="4" fill="currentColor" />
+              <circle cx="10" cy="90" r="4" fill="currentColor" />
+              <circle cx="50" cy="50" r="6" fill="#f84f31" className="blink" />
+            </svg>
+          </div>
         </div>
 
-        <div className="relative p-8 md:p-14 bg-flame text-paper overflow-hidden">
+        <div className="relative p-8 md:p-14 bg-flame text-paper overflow-hidden group">
           <div className="absolute -left-10 -bottom-10 h-40 w-40 border-2 border-paper" />
           <div className="mono text-xs uppercase tracking-widest mb-6 opacity-90">
             [ 02 / Studios ]
           </div>
-          <h2 className="display text-6xl md:text-8xl leading-[0.85]">
-            Intelligent<br />
-            <span className="italic">Growth.</span>
-          </h2>
+          <ScrollReveal>
+            <h2 className="display text-6xl md:text-8xl leading-[0.85]">
+              Intelligent<br />
+              <span className="italic">Growth.</span>
+            </h2>
+          </ScrollReveal>
           <div className="mt-10">
             <BruteButton to="/studios" variant="paper">Enter Studios</BruteButton>
+          </div>
+
+          {/* Interactive trajectory graph graphic (Studios) */}
+          <div className="absolute right-6 bottom-6 w-32 h-32 opacity-20 group-hover:opacity-80 transition-opacity duration-300 pointer-events-none hidden md:block">
+            <svg viewBox="0 0 100 100" className="w-full h-full text-paper">
+              <path d="M 10 90 L 30 70 L 50 80 L 70 40 L 90 20" fill="none" stroke="currentColor" strokeWidth="3" />
+              <circle cx="90" cy="20" r="5" fill="#fcf600" />
+            </svg>
           </div>
         </div>
       </div>
@@ -200,29 +308,22 @@ function Numbers() {
 }
 
 function HomepageClientele() {
-  const row1 = [
-    "Startup Talky",
-    "Merino Industries",
-    "BitBNS",
-    "Somany Ceramics",
-    "BuyHatke!",
-    "Abhay Prabhavana"
-  ];
-  
-  const row2 = [
-    "SBI",
-    "Rehau",
-    "OKX",
-    "Bluehost",
-    "Clove Dental",
-    "Sugs Lloyd",
-    "Spinny",
-    "Percept Limited"
+  const brands = [
+    { name: "Startup Talky", tag: "Founder Media" },
+    { name: "Merino Industries", tag: "Industrial" },
+    { name: "BitBNS", tag: "Digital Assets" },
+    { name: "Somany Ceramics", tag: "Manufacturing" },
+    { name: "BuyHatke!", tag: "E-Commerce" },
+    { name: "Abhay Prabhavana", tag: "Museum IP" },
+    { name: "SBI", tag: "Fintech" },
+    { name: "Rehau", tag: "Engineering" },
+    { name: "OKX", tag: "Web3 Network" },
+    { name: "Bluehost", tag: "Infrastructure" }
   ];
 
   return (
     <section className="border-b-2 border-ink">
-      <SectionLabel n="03" label="Clientele Network" />
+      <SectionLabel n="04" label="Clientele Network" />
       <div className="grid grid-cols-1 md:grid-cols-12 items-stretch">
         <div className="col-span-12 md:col-span-4 p-8 md:p-14 border-r-0 md:border-r-2 border-ink flex flex-col justify-between gap-8">
           <div>
@@ -245,34 +346,20 @@ function HomepageClientele() {
           </div>
         </div>
         
-        <div className="col-span-12 md:col-span-8 flex flex-col justify-center gap-4 py-8 overflow-hidden bg-paper">
-          {/* Row 1 Marquee */}
-          <div className="relative overflow-hidden w-full py-2">
-            <div className="flex w-max gap-4 ticker">
-              {[...row1, ...row1, ...row1].map((brand, idx) => (
-                <div 
-                  key={idx} 
-                  className="px-8 py-4 border-2 border-ink display text-xl md:text-2xl font-bold bg-paper text-ink whitespace-nowrap hover:bg-volt hover:text-ink transition-colors cursor-pointer"
-                >
-                  {brand}
-                </div>
-              ))}
+        {/* Static 5x2 Interactive Partner Grid */}
+        <div className="col-span-12 md:col-span-8 grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 bg-paper">
+          {brands.map((b, idx) => (
+            <div 
+              key={b.name} 
+              className="p-6 border-b border-r border-ink/30 hover:bg-volt hover:text-ink transition-all duration-300 flex flex-col justify-between min-h-[140px] group cursor-pointer"
+            >
+              <span className="mono text-[9px] text-muted-foreground group-hover:text-ink/80">[ 0{idx + 1} ]</span>
+              <h4 className="display text-xl font-bold leading-tight mt-4">{b.name}</h4>
+              <span className="mono text-[9px] opacity-0 group-hover:opacity-100 transition-opacity mt-2 text-ink uppercase tracking-wider">
+                {b.tag}
+              </span>
             </div>
-          </div>
-
-          {/* Row 2 Marquee */}
-          <div className="relative overflow-hidden w-full py-2">
-            <div className="flex w-max gap-4 ticker-reverse">
-              {[...row2, ...row2, ...row2].map((brand, idx) => (
-                <div 
-                  key={idx} 
-                  className="px-8 py-4 border-2 border-ink display text-xl md:text-2xl font-bold bg-paper text-ink whitespace-nowrap hover:bg-volt hover:text-ink transition-colors cursor-pointer"
-                >
-                  {brand}
-                </div>
-              ))}
-            </div>
-          </div>
+          ))}
         </div>
       </div>
     </section>
@@ -285,10 +372,12 @@ function Closer() {
       <div className="absolute inset-0 stripes opacity-[0.08]" />
       <div className="relative max-w-6xl mx-auto px-6 text-center">
         <Eyebrow color="flame">Ready</Eyebrow>
-        <h2 className="display text-6xl md:text-9xl mt-6 leading-[0.85]">
-          Built for<br />
-          <span className="italic text-flame">what's next.</span>
-        </h2>
+        <ScrollReveal>
+          <h2 className="display text-6xl md:text-9xl mt-6 leading-[0.85]">
+            Built for<br />
+            <span className="italic text-flame">what's next.</span>
+          </h2>
+        </ScrollReveal>
         <div className="mt-12 flex flex-wrap justify-center gap-3">
           <BruteButton to="/contact" variant="flame">Start a project</BruteButton>
         </div>
