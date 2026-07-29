@@ -66,6 +66,7 @@ export function StatusBar() {
 export function SiteHeader() {
   const [theme, setTheme] = useState<'light' | 'dark'>('light');
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
 
   useEffect(() => {
     const isDark = document.documentElement.classList.contains('dark') || localStorage.getItem('theme') === 'dark';
@@ -76,6 +77,13 @@ export function SiteHeader() {
       document.documentElement.classList.remove('dark');
       setTheme('light');
     }
+
+    const checkAuth = () => {
+      setIsLoggedIn(localStorage.getItem("t2_session") === "active");
+    };
+    checkAuth();
+    window.addEventListener("storage", checkAuth);
+    return () => window.removeEventListener("storage", checkAuth);
   }, []);
 
   const toggleTheme = () => {
@@ -89,6 +97,13 @@ export function SiteHeader() {
       setTheme('light');
     }
   };
+
+  const navLinks = [
+    ...NAV,
+    isLoggedIn
+      ? { to: "/dashboard" as const, label: "Dashboard", n: "06" }
+      : { to: "/login" as const, label: "Portal", n: "06" }
+  ];
 
   return (
     <>
@@ -111,12 +126,14 @@ export function SiteHeader() {
           </Link>
 
           <nav className="hidden md:flex col-span-6 items-stretch">
-            {NAV.map((n) => (
+            {navLinks.map((n) => (
               <Link
                 key={n.to}
                 to={n.to}
-                className="group flex-1 flex items-center gap-3 px-5 border-r-2 border-ink mono text-xs uppercase tracking-widest hover:bg-ink hover:text-paper transition"
-                activeProps={{ className: "bg-volt text-ink" }}
+                className={`group flex-1 flex items-center gap-2 px-3 border-r-2 border-ink mono text-[11px] uppercase tracking-widest hover:bg-ink hover:text-paper transition ${
+                  n.to === "/dashboard" ? "text-volt font-bold" : ""
+                }`}
+                activeProps={{ className: "bg-volt text-ink font-bold" }}
               >
                 <span className="opacity-60">[{n.n}]</span>
                 <span>{n.label}</span>
@@ -159,12 +176,14 @@ export function SiteHeader() {
         {mobileMenuOpen && (
           <div className="md:hidden border-t-2 border-ink bg-paper w-full">
             <nav className="flex flex-col items-stretch">
-              {NAV.map((n) => (
+              {navLinks.map((n) => (
                 <Link
                   key={n.to}
                   to={n.to}
                   onClick={() => setMobileMenuOpen(false)}
-                  className="px-6 py-4 border-b-2 border-ink mono text-sm uppercase tracking-widest text-ink hover:bg-ink hover:text-paper transition"
+                  className={`px-6 py-4 border-b-2 border-ink mono text-sm uppercase tracking-widest text-ink hover:bg-ink hover:text-paper transition ${
+                    n.to === "/dashboard" ? "bg-volt/20 text-volt" : ""
+                  }`}
                   activeProps={{ className: "bg-volt text-ink" }}
                 >
                   <span className="opacity-60 mr-2">[{n.n}]</span>

@@ -13,6 +13,8 @@ import { Route as IndexRouteImport } from './routes/index'
 import { Route as AboutRouteImport } from './routes/about'
 import { Route as ClientsRouteImport } from './routes/clients'
 import { Route as ContactRouteImport } from './routes/contact'
+import { Route as DashboardRouteImport } from './routes/dashboard'
+import { Route as LoginRouteImport } from './routes/login'
 import { Route as StudiosRouteImport } from './routes/studios'
 import { Route as TechRouteImport } from './routes/tech'
 
@@ -36,6 +38,16 @@ const ContactRoute = ContactRouteImport.update({
   path: '/contact',
   getParentRoute: () => rootRouteImport,
 } as any)
+const DashboardRoute = DashboardRouteImport.update({
+  id: '/dashboard',
+  path: '/dashboard',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const LoginRoute = LoginRouteImport.update({
+  id: '/login',
+  path: '/login',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const StudiosRoute = StudiosRouteImport.update({
   id: '/studios',
   path: '/studios',
@@ -52,6 +64,8 @@ export interface FileRoutesByFullPath {
   '/about': typeof AboutRoute
   '/clients': typeof ClientsRoute
   '/contact': typeof ContactRoute
+  '/dashboard': typeof DashboardRoute
+  '/login': typeof LoginRoute
   '/studios': typeof StudiosRoute
   '/tech': typeof TechRoute
 }
@@ -60,6 +74,8 @@ export interface FileRoutesByTo {
   '/about': typeof AboutRoute
   '/clients': typeof ClientsRoute
   '/contact': typeof ContactRoute
+  '/dashboard': typeof DashboardRoute
+  '/login': typeof LoginRoute
   '/studios': typeof StudiosRoute
   '/tech': typeof TechRoute
 }
@@ -69,16 +85,42 @@ export interface FileRoutesById {
   '/about': typeof AboutRoute
   '/clients': typeof ClientsRoute
   '/contact': typeof ContactRoute
+  '/dashboard': typeof DashboardRoute
+  '/login': typeof LoginRoute
   '/studios': typeof StudiosRoute
   '/tech': typeof TechRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/about' | '/clients' | '/contact' | '/studios' | '/tech'
+  fullPaths:
+    | '/'
+    | '/about'
+    | '/clients'
+    | '/contact'
+    | '/dashboard'
+    | '/login'
+    | '/studios'
+    | '/tech'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/about' | '/clients' | '/contact' | '/studios' | '/tech'
+  to:
+    | '/'
+    | '/about'
+    | '/clients'
+    | '/contact'
+    | '/dashboard'
+    | '/login'
+    | '/studios'
+    | '/tech'
   id:
-    '__root__' | '/' | '/about' | '/clients' | '/contact' | '/studios' | '/tech'
+    | '__root__'
+    | '/'
+    | '/about'
+    | '/clients'
+    | '/contact'
+    | '/dashboard'
+    | '/login'
+    | '/studios'
+    | '/tech'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -86,6 +128,8 @@ export interface RootRouteChildren {
   AboutRoute: typeof AboutRoute
   ClientsRoute: typeof ClientsRoute
   ContactRoute: typeof ContactRoute
+  DashboardRoute: typeof DashboardRoute
+  LoginRoute: typeof LoginRoute
   StudiosRoute: typeof StudiosRoute
   TechRoute: typeof TechRoute
 }
@@ -120,6 +164,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ContactRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/dashboard': {
+      id: '/dashboard'
+      path: '/dashboard'
+      fullPath: '/dashboard'
+      preLoaderRoute: typeof DashboardRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/login': {
+      id: '/login'
+      path: '/login'
+      fullPath: '/login'
+      preLoaderRoute: typeof LoginRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/studios': {
       id: '/studios'
       path: '/studios'
@@ -142,6 +200,8 @@ const rootRouteChildren: RootRouteChildren = {
   AboutRoute: AboutRoute,
   ClientsRoute: ClientsRoute,
   ContactRoute: ContactRoute,
+  DashboardRoute: DashboardRoute,
+  LoginRoute: LoginRoute,
   StudiosRoute: StudiosRoute,
   TechRoute: TechRoute,
 }
