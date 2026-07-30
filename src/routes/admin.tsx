@@ -69,28 +69,40 @@ function AdminPage() {
   // Load client configurations
   useEffect(() => {
     const key = `t2_reqs_${selectedClientId}`;
-    const stored = localStorage.getItem(key);
-    if (stored) {
-      const parsed: Requirement[] = JSON.parse(stored);
-      const merged = [...parsed];
-      DEFAULT_REQUIREMENTS.forEach((def) => {
-        if (!merged.some((m) => m.id === def.id)) {
-          merged.push(JSON.parse(JSON.stringify(def)));
-        }
-      });
-      setReqs(merged);
-      localStorage.setItem(key, JSON.stringify(merged));
-    } else {
-      const initial = JSON.parse(JSON.stringify(DEFAULT_REQUIREMENTS));
-      setReqs(initial);
-      localStorage.setItem(key, JSON.stringify(initial));
-    }
+    
+    const loadData = () => {
+      const stored = localStorage.getItem(key);
+      if (stored) {
+        const parsed: Requirement[] = JSON.parse(stored);
+        const merged = [...parsed];
+        DEFAULT_REQUIREMENTS.forEach((def) => {
+          if (!merged.some((m) => m.id === def.id)) {
+            merged.push(JSON.parse(JSON.stringify(def)));
+          }
+        });
+        setReqs(merged);
+      } else {
+        const initial = JSON.parse(JSON.stringify(DEFAULT_REQUIREMENTS));
+        setReqs(initial);
+        localStorage.setItem(key, JSON.stringify(initial));
+      }
+    };
+
+    loadData();
+    window.addEventListener("storage", loadData);
+    window.addEventListener("t2_storage_update", loadData);
+
+    return () => {
+      window.removeEventListener("storage", loadData);
+      window.removeEventListener("t2_storage_update", loadData);
+    };
   }, [selectedClientId]);
 
   // Save configurations
   const saveConfig = (updatedReqs: Requirement[]) => {
     localStorage.setItem(`t2_reqs_${selectedClientId}`, JSON.stringify(updatedReqs));
     window.dispatchEvent(new Event("storage"));
+    window.dispatchEvent(new Event("t2_storage_update"));
     setNotifyMsg("SAVED");
     setTimeout(() => setNotifyMsg(""), 2000);
   };
@@ -143,6 +155,7 @@ function AdminPage() {
 
     localStorage.setItem(key, JSON.stringify(updated));
     window.dispatchEvent(new Event("storage"));
+    window.dispatchEvent(new Event("t2_storage_update"));
     setNewStatusText("");
     setNotifyMsg("STATUS ADDED");
     setTimeout(() => setNotifyMsg(""), 2000);
@@ -162,6 +175,7 @@ function AdminPage() {
 
     localStorage.setItem(key, JSON.stringify(updated));
     window.dispatchEvent(new Event("storage"));
+    window.dispatchEvent(new Event("t2_storage_update"));
     setNewFileName("");
     setNotifyMsg("FILE ADDED");
     setTimeout(() => setNotifyMsg(""), 2000);
@@ -236,25 +250,43 @@ function AdminPage() {
 
               <div className="space-y-3">
                 {reqs.map((r) => (
-                  <div key={r.id} className="flex items-center justify-between py-1">
-                    <label className="flex items-center gap-2 cursor-pointer select-none">
-                      <input
-                        type="checkbox"
-                        checked={r.active}
-                        onChange={() => toggleReqActive(r.id)}
-                        className="h-4 w-4 bg-neutral-950 border border-neutral-800 text-volt rounded-sm focus:ring-0 cursor-pointer"
-                      />
-                      <span className={`text-xs uppercase tracking-wide font-bold ${r.active ? "text-white" : "text-neutral-500"}`}>
-                        {r.label}
-                      </span>
-                    </label>
-                    {r.type === "social_handle" && (
-                      <button
-                        onClick={() => deleteRequirement(r.id)}
-                        className="text-[9px] text-flame underline hover:text-white cursor-pointer"
-                      >
-                        Remove
-                      </button>
+                  <div key={r.id} className="py-2 border-b border-neutral-800 last:border-b-0">
+                    <div className="flex items-center justify-between">
+                      <label className="flex items-center gap-2 cursor-pointer select-none">
+                        <input
+                          type="checkbox"
+                          checked={r.active}
+                          onChange={() => toggleReqActive(r.id)}
+                          className="h-4 w-4 bg-neutral-950 border border-neutral-800 text-volt rounded-sm focus:ring-0 cursor-pointer"
+                        />
+                        <span className={`text-xs uppercase tracking-wide font-bold ${r.active ? "text-white" : "text-neutral-500"}`}>
+                          {r.label}
+                        </span>
+                      </label>
+                      {r.type === "social_handle" && (
+                        <button
+                          onClick={() => deleteRequirement(r.id)}
+                          className="text-[9px] text-flame underline hover:text-white cursor-pointer"
+                        >
+                          Remove
+                        </button>
+                      )}
+                    </div>
+                    {r.submitted && r.value && (
+                      <div className="pl-6 mt-1.5 flex flex-col sm:flex-row sm:items-center gap-2">
+                        <span className="text-[8px] bg-emerald-950/80 text-emerald-400 border border-emerald-900 px-1.5 py-0.5 rounded-sm font-bold uppercase w-fit">
+                          SUBMITTED DATA:
+                        </span>
+                        <span className="text-[10px] text-neutral-300 font-mono break-all select-all">
+                          {r.value.startsWith("http") ? (
+                            <a href={r.value} target="_blank" rel="noreferrer" className="text-volt underline hover:text-white">
+                              {r.value} ↗
+                            </a>
+                          ) : (
+                            r.value
+                          )}
+                        </span>
+                      </div>
                     )}
                   </div>
                 ))}

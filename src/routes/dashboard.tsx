@@ -161,12 +161,18 @@ function DashboardPage() {
     };
 
     window.addEventListener("storage", handleStorageChange);
-    return () => window.removeEventListener("storage", handleStorageChange);
+    window.addEventListener("t2_storage_update", handleStorageChange);
+    
+    return () => {
+      window.removeEventListener("storage", handleStorageChange);
+      window.removeEventListener("t2_storage_update", handleStorageChange);
+    };
   }, [navigate, clientId]);
 
   const handleLogout = () => {
     localStorage.removeItem("t2_session");
     window.dispatchEvent(new Event("storage"));
+    window.dispatchEvent(new Event("t2_storage_update"));
     navigate({ to: "/login" });
   };
 
@@ -189,6 +195,7 @@ function DashboardPage() {
     setReqs(updated);
     localStorage.setItem(`t2_reqs_${clientId}`, JSON.stringify(updated));
     window.dispatchEvent(new Event("storage"));
+    window.dispatchEvent(new Event("t2_storage_update"));
     alert("Requirement submitted to the Typtwo Operations Desk.");
   };
 
