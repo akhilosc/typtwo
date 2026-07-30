@@ -230,6 +230,27 @@ function AdminPage() {
     setTimeout(() => setNotifyMsg(""), 2000);
   };
 
+  // Read local file from device and convert it to Base64 data URL
+  const handleLocalFileUpload = (
+    e: React.ChangeEvent<HTMLInputElement>,
+    setName: (name: string) => void,
+    setUrl: (url: string) => void
+  ) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    setName(file.name);
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      if (event.target?.result) {
+        setUrl(event.target.result as string);
+        setNotifyMsg("FILE UPLOADED");
+        setTimeout(() => setNotifyMsg(""), 2000);
+      }
+    };
+    reader.readAsDataURL(file);
+  };
+
   const toggleReqActive = (id: string) => {
     const updated = reqs.map((r) => r.id === id ? { ...r, active: !r.active } : r);
     setReqs(updated);
@@ -359,7 +380,10 @@ function AdminPage() {
   // Add deliverable / upload item against milestone
   const handleAddMilestoneDeliverable = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!activeMilestoneAttachmentId || !attachedDocName.trim()) return;
+    if (!activeMilestoneAttachmentId || !attachedDocName.trim() || !attachedDocUrl.trim()) {
+      alert("Please fill document name and paste URL OR upload a local file.");
+      return;
+    }
 
     const updated = milestones.map((m) => {
       if (m.id === activeMilestoneAttachmentId) {
@@ -413,13 +437,16 @@ function AdminPage() {
   // Share Agreement / Corporate Contract
   const addCorporateAgreement = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!newAgreementName.trim()) return;
+    if (!newAgreementName.trim() || !newAgreementUrl.trim()) {
+      alert("Please fill name and paste URL OR upload a local file.");
+      return;
+    }
 
     const key = `t2_agreements_${selectedClientId}`;
     const current: AgreementDoc[] = JSON.parse(localStorage.getItem(key) || "[]");
     const now = new Date();
     const updated = [
-      { name: newAgreementName, date: now.toLocaleDateString(), url: newAgreementUrl.trim() || "#" },
+      { name: newAgreementName, date: now.toLocaleDateString(), url: newAgreementUrl.trim() },
       ...current
     ];
 
@@ -456,12 +483,15 @@ function AdminPage() {
   // Add vault document
   const addVaultDocument = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!newFileName.trim()) return;
+    if (!newFileName.trim() || !newFileUrl.trim()) {
+      alert("Please fill file name and paste URL OR upload a local file.");
+      return;
+    }
 
     const key = `t2_files_${selectedClientId}`;
     const current: VaultFile[] = JSON.parse(localStorage.getItem(key) || "[]");
     const updated = [
-      { name: newFileName, size: "Download link shared", url: newFileUrl.trim() || "#" },
+      { name: newFileName, size: "Download link shared", url: newFileUrl.trim() },
       ...current
     ];
 
@@ -766,28 +796,36 @@ function AdminPage() {
                                     value={attachedDocName}
                                     onChange={(e) => setAttachedDocName(e.target.value)}
                                     className="bg-neutral-950 border border-neutral-850 px-2 py-1 text-[10px] text-white rounded-sm focus:outline-none"
-                                    required
                                   />
                                   <input
-                                    type="url"
-                                    placeholder="Doc Access URL"
+                                    type="text"
+                                    placeholder="Doc Access URL / Link"
                                     value={attachedDocUrl}
                                     onChange={(e) => setAttachedDocUrl(e.target.value)}
                                     className="bg-neutral-950 border border-neutral-850 px-2 py-1 text-[10px] text-white rounded-sm focus:outline-none"
-                                    required
+                                  />
+                                </div>
+                                <div className="space-y-1 bg-[#0a0a0a] p-1.5 rounded-sm border border-neutral-900">
+                                  <label className="text-[8px] text-neutral-500 uppercase font-bold block">
+                                    OR Upload Local File from Device
+                                  </label>
+                                  <input
+                                    type="file"
+                                    onChange={(e) => handleLocalFileUpload(e, setAttachedDocName, setAttachedDocUrl)}
+                                    className="text-[9px] text-neutral-400 file:mr-2 file:py-1 file:px-2 file:rounded-sm file:border-0 file:text-[9px] file:font-bold file:bg-neutral-900 file:text-neutral-350 hover:file:bg-neutral-800 cursor-pointer"
                                   />
                                 </div>
                                 <div className="flex gap-2">
                                   <button
                                     type="submit"
-                                    className="flex-1 bg-volt text-black text-[9px] py-1 font-bold rounded-sm"
+                                    className="flex-1 bg-volt text-black text-[9px] py-1 font-bold rounded-sm cursor-pointer hover:bg-white"
                                   >
                                     Attach Link
                                   </button>
                                   <button
                                     type="button"
                                     onClick={() => setActiveMilestoneAttachmentId(null)}
-                                    className="bg-neutral-800 text-neutral-400 text-[9px] py-1 px-2.5 rounded-sm"
+                                    className="bg-neutral-800 text-neutral-400 text-[9px] py-1 px-2.5 rounded-sm cursor-pointer"
                                   >
                                     Cancel
                                   </button>
@@ -930,17 +968,25 @@ function AdminPage() {
                         onChange={(e) => setNewAgreementName(e.target.value)}
                         placeholder="Agreement Name: e.g. Master Services Agreement (MSA)"
                         className="w-full bg-neutral-950 border border-neutral-800 rounded-sm px-3.5 py-2 text-xs text-white focus:outline-none focus:border-volt"
-                        required
                       />
                     </div>
                     <div>
                       <input
-                        type="url"
+                        type="text"
                         value={newAgreementUrl}
                         onChange={(e) => setNewAgreementUrl(e.target.value)}
-                        placeholder="Secure Agreement Link: e.g. https://drive.google.com/..."
+                        placeholder="Secure Agreement Link / Access URL"
                         className="w-full bg-neutral-950 border border-neutral-800 rounded-sm px-3.5 py-2 text-xs text-white focus:outline-none focus:border-volt"
-                        required
+                      />
+                    </div>
+                    <div className="space-y-1.5 bg-[#0a0a0a] p-2.5 rounded-sm border border-neutral-900">
+                      <label className="text-[9px] text-neutral-500 uppercase font-bold block">
+                        OR Upload Local File from Device
+                      </label>
+                      <input
+                        type="file"
+                        onChange={(e) => handleLocalFileUpload(e, setNewAgreementName, setNewAgreementUrl)}
+                        className="text-[10px] text-neutral-400 file:mr-2 file:py-1 file:px-2.5 file:rounded-sm file:border-0 file:text-[9px] file:font-bold file:bg-neutral-900 file:text-neutral-300 hover:file:bg-neutral-800 cursor-pointer"
                       />
                     </div>
                     <button
@@ -966,17 +1012,25 @@ function AdminPage() {
                         onChange={(e) => setNewFileName(e.target.value)}
                         placeholder="File Name: e.g. Campaign_Assets_Blueprint.pdf"
                         className="w-full bg-neutral-950 border border-neutral-805 px-3.5 py-2 text-xs focus:outline-none text-white focus:border-volt"
-                        required
                       />
                     </div>
                     <div>
                       <input
-                        type="url"
+                        type="text"
                         value={newFileUrl}
                         onChange={(e) => setNewFileUrl(e.target.value)}
-                        placeholder="File Access Link: e.g. https://drive.google.com/..."
+                        placeholder="File Access Link / Access URL"
                         className="w-full bg-neutral-950 border border-neutral-805 px-3.5 py-2 text-xs focus:outline-none text-white focus:border-volt"
-                        required
+                      />
+                    </div>
+                    <div className="space-y-1.5 bg-[#0a0a0a] p-2.5 rounded-sm border border-neutral-900">
+                      <label className="text-[9px] text-neutral-500 uppercase font-bold block">
+                        OR Upload Local File from Device
+                      </label>
+                      <input
+                        type="file"
+                        onChange={(e) => handleLocalFileUpload(e, setNewFileName, setNewFileUrl)}
+                        className="text-[10px] text-neutral-400 file:mr-2 file:py-1 file:px-2.5 file:rounded-sm file:border-0 file:text-[9px] file:font-bold file:bg-neutral-900 file:text-neutral-300 hover:file:bg-neutral-800 cursor-pointer"
                       />
                     </div>
                     <button
