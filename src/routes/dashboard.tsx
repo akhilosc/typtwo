@@ -579,8 +579,8 @@ function DashboardPage() {
                   <div className="flex items-start gap-3">
                     <span className="text-emerald-500 font-bold shrink-0 text-xs">✓ [100%]</span>
                     <div className="space-y-1">
-                      <h4 className="text-xs text-white uppercase font-bold">Multi-Factor Authenticator Synced</h4>
-                      <p className="text-[10px] text-neutral-550 font-bold uppercase">Email OTP verification configured and linked for workspace login security.</p>
+                      <h4 className="text-xs text-white uppercase font-bold">Secure Credentials Verification</h4>
+                      <p className="text-[10px] text-neutral-550 font-bold uppercase">Corporate account and password credentials verified for workspace access.</p>
                     </div>
                   </div>
 
