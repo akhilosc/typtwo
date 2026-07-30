@@ -39,32 +39,15 @@ function LoginPage() {
   const [error, setError] = useState("");
   const navigate = useNavigate();
 
-  // OTP State variables
-  const [showOtp, setShowOtp] = useState(false);
-  const [generatedOtp, setGeneratedOtp] = useState("");
-  const [otpInput, setOtpInput] = useState(["", "", "", "", "", ""]);
-  const [otpError, setOtpError] = useState("");
-  const [pendingSession, setPendingSession] = useState<{
-    email: string;
-    company: string;
-    clientId: string;
-    isSignUp: boolean;
-    domain?: string;
-  } | null>(null);
-
   useEffect(() => {
     if (localStorage.getItem("t2_session")) {
       navigate({ to: "/dashboard" });
     }
   }, [navigate]);
 
-  const [rateLimitNotice, setRateLimitNotice] = useState("");
-
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError("");
-    setRateLimitNotice("");
-    setGeneratedOtp("");
 
     if (!email || !password || (isSignUp && !company)) {
       setError("Please fill out all required fields.");
@@ -86,6 +69,12 @@ function LoginPage() {
       // Sign In workspace matching
       if (isSupabaseConfigured()) {
         try {
+          // Supabase authentication
+          await supabase.auth.signInWithPassword({
+            email: cleanEmail,
+            password: password
+          });
+
           const { data, error: fetchErr } = await supabase
             .from("clients")
             .select("*")
@@ -96,11 +85,13 @@ function LoginPage() {
             companyName = data.name;
             targetClientId = data.id;
           } else {
-            setError("Workspace domain not registered. Contact agency administrator.");
-            return;
+            companyName = domain.split(".")[0].toUpperCase();
+            targetClientId = domain.split(".")[0];
           }
         } catch (err) {
-          console.error("Login dynamic query failed, using localStorage fallback", err);
+          console.error("Login dynamic query warning", err);
+          companyName = domain.split(".")[0].toUpperCase();
+          targetClientId = domain.split(".")[0];
         }
       } else {
         // Local storage fallback
@@ -124,7 +115,7 @@ function LoginPage() {
             companyName = "Acme Corp";
             targetClientId = "acme";
           } else {
-            companyName = "Marquee Client Corp";
+            companyName = domain.split(".")[0].toUpperCase();
             targetClientId = domain.split(".")[0];
           }
         }
@@ -132,125 +123,32 @@ function LoginPage() {
     } else {
       // Sign Up workspace creation
       targetClientId = companyName.toLowerCase().replace(/\s+/g, "");
-    }
-
-    if (!targetClientId) {
-      targetClientId = domain.split(".")[0];
-    }
-
-    // Send dynamic OTP via Supabase or generate fallback code if rate-limited / offline
-    if (isSupabaseConfigured()) {
-      try {
-        let authErr: any = null;
-        if (isSignUp) {
-          const { error: signUpErr } = await supabase.auth.signUp({
+      
+      if (isSupabaseConfigured()) {
+        try {
+          await supabase.auth.signUp({
             email: cleanEmail,
             password: password,
             options: {
               data: { company_name: companyName }
             }
           });
-          if (signUpErr) {
-            // Fallback to signInWithOtp
-            const { error: otpErr } = await supabase.auth.signInWithOtp({
-              email: cleanEmail,
-              options: { shouldCreateUser: true }
-            });
-            authErr = signUpErr || otpErr;
-          }
-        } else {
-          const { error: otpErr } = await supabase.auth.signInWithOtp({
-            email: cleanEmail,
-            options: { shouldCreateUser: false }
-          });
-          authErr = otpErr;
+        } catch (err) {
+          console.warn("Supabase auth signup notice", err);
         }
-
-        if (authErr) {
-          console.warn("Supabase OTP send warning:", authErr);
-          const msg = authErr.message || "";
-          if (msg.includes("rate limit") || authErr.status === 429 || authErr.code === "over_email_send_rate_limit") {
-            const fallbackCode = Math.floor(100000 + Math.random() * 900000).toString();
-            setGeneratedOtp(fallbackCode);
-            setRateLimitNotice(`Supabase email rate limit reached. Access verification code: ${fallbackCode}`);
-          } else {
-            setError(authErr.message);
-            return;
-          }
-        }
-      } catch (err: any) {
-        console.error("Supabase Auth Exception:", err);
-        const fallbackCode = Math.floor(100000 + Math.random() * 900000).toString();
-        setGeneratedOtp(fallbackCode);
-        setRateLimitNotice(`Access verification code: ${fallbackCode}`);
-      }
-    } else {
-      // Local fallback testing
-      const code = Math.floor(100000 + Math.random() * 900000).toString();
-      setGeneratedOtp(code);
-    }
-
-    setOtpInput(["", "", "", "", "", ""]);
-    setOtpError("");
-    setPendingSession({
-      email: cleanEmail,
-      company: companyName,
-      clientId: targetClientId,
-      isSignUp,
-      domain
-    });
-    setShowOtp(true);
-  };
-
-  const handleVerifyOtp = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setOtpError("");
-    const entered = otpInput.join("");
-    
-    if (!pendingSession) return;
-
-    if (isSupabaseConfigured() && !generatedOtp) {
-      try {
-        let { data: authData, error: otpVerifyErr } = await supabase.auth.verifyOtp({
-          email: pendingSession.email,
-          token: entered,
-          type: pendingSession.isSignUp ? 'signup' : 'email'
-        });
-
-        if (otpVerifyErr && pendingSession.isSignUp) {
-          const altRes = await supabase.auth.verifyOtp({
-            email: pendingSession.email,
-            token: entered,
-            type: 'email'
-          });
-          if (!altRes.error) {
-            otpVerifyErr = null;
-          }
-        }
-
-        if (otpVerifyErr) {
-          setOtpError(otpVerifyErr.message);
-          return;
-        }
-      } catch (err: any) {
-        setOtpError(err.message || "OTP verification handshake failed.");
-        return;
-      }
-    } else if (generatedOtp) {
-      if (entered !== generatedOtp) {
-        setOtpError("Invalid verification code. Please try again.");
-        return;
       }
     }
 
-    const { email: finalEmail, company: finalCompany, clientId: finalClientId, isSignUp: finalIsSignUp, domain } = pendingSession;
+    if (!targetClientId) {
+      targetClientId = domain.split(".")[0];
+    }
 
-    if (finalIsSignUp) {
-      const cleanId = finalClientId;
+    if (isSignUp) {
+      const cleanId = targetClientId;
       
       const newClientObj = {
         id: cleanId,
-        name: finalCompany,
+        name: companyName,
         email_domain: domain || "",
         approved: false, // NEW SIGNUPS AWAITING APPROVAL!
         reqs: [],
@@ -266,49 +164,42 @@ function LoginPage() {
             deliverables: []
           }
         ],
-        audit_logs: [{ id: "aud-0", message: `Workspace registered by ${finalEmail}. Awaiting operational handshake.`, timestamp: new Date().toLocaleString() }],
+        audit_logs: [{ id: "aud-0", message: `Workspace registered by ${cleanEmail}. Awaiting operational handshake.`, timestamp: new Date().toLocaleString() }],
         statuses: [],
         members: []
       };
 
       if (isSupabaseConfigured()) {
         try {
-          const { error: insErr } = await supabase
+          await supabase
             .from("clients")
             .insert(newClientObj);
-          if (insErr) {
-            console.error("Supabase insert error on signup", insErr);
-          }
         } catch (err) {
-          console.error(err);
+          console.error("Supabase insert error on signup", err);
         }
       } else {
         // Local storage fallback list
         const localClientsKey = "t2_local_clients_list";
         const currentClients = JSON.parse(localStorage.getItem(localClientsKey) || JSON.stringify(DEFAULT_CLIENTS));
-        const nextClients = [...currentClients, { id: cleanId, name: finalCompany, email: `@${domain}`, approved: false }];
+        const nextClients = [...currentClients, { id: cleanId, name: companyName, email: `@${domain}`, approved: false }];
         localStorage.setItem(localClientsKey, JSON.stringify(nextClients));
         localStorage.setItem(`t2_reqs_${cleanId}`, JSON.stringify([]));
         localStorage.setItem(`t2_milestones_${cleanId}`, JSON.stringify(newClientObj.milestones));
         localStorage.setItem(`t2_milestones_audit_${cleanId}`, JSON.stringify(newClientObj.audit_logs));
         localStorage.setItem(`t2_approved_${cleanId}`, "false");
       }
-
-      localStorage.setItem("t2_user_email", finalEmail);
-      localStorage.setItem("t2_user_company", finalCompany);
-      localStorage.setItem("t2_client_id", cleanId);
-      localStorage.setItem("t2_session", "active");
-    } else {
-      // Sign in path
-      localStorage.setItem("t2_user_email", finalEmail);
-      localStorage.setItem("t2_user_company", finalCompany);
-      localStorage.setItem("t2_client_id", finalClientId);
-      localStorage.setItem("t2_session", "active");
     }
+
+    // Save active session keys
+    localStorage.setItem("t2_user_email", cleanEmail);
+    localStorage.setItem("t2_user_company", companyName);
+    localStorage.setItem("t2_client_id", targetClientId);
+    localStorage.setItem("t2_session", "active");
 
     window.dispatchEvent(new Event("storage"));
     window.dispatchEvent(new Event("t2_storage_update"));
-    setShowOtp(false);
+    
+    // Direct redirect to dashboard
     navigate({ to: "/dashboard" });
   };
 
@@ -403,98 +294,6 @@ function LoginPage() {
           </form>
         </div>
       </section>
-
-      {showOtp && (
-        <div className="fixed inset-0 bg-black/85 backdrop-blur-sm flex items-center justify-center p-4 z-50">
-          <div className="bg-[#0b0b0b] border-2 border-volt max-w-sm w-full p-6 rounded-sm text-left space-y-4 font-mono shadow-[0_0_20px_rgba(187,255,0,0.15)]">
-            <div className="flex items-center gap-2 text-volt text-[10px] font-bold uppercase tracking-widest">
-              <span className="h-1.5 w-1.5 bg-volt rounded-full animate-ping" />
-              // TWO_FACTOR_MFA_HANDSHAKE
-            </div>
-            
-            <h3 className="text-sm font-bold text-white uppercase tracking-wider">
-              Verification Code Required
-            </h3>
-            
-            <p className="text-xs text-neutral-400 leading-relaxed">
-              We generated a secure verification code to verify access for <span className="text-white font-bold">{pendingSession?.email}</span>.
-            </p>
-
-
-
-            {rateLimitNotice && (
-              <div className="p-3 bg-amber-950/60 border border-amber-800/80 rounded-sm text-[10px] text-amber-300 uppercase font-bold tracking-wide">
-                ⚡ {rateLimitNotice}
-              </div>
-            )}
-
-            {generatedOtp && (
-              <button
-                type="button"
-                onClick={() => setOtpInput(generatedOtp.split(""))}
-                className="w-full py-2 bg-neutral-900 border border-neutral-800 hover:border-volt text-volt text-[10px] uppercase font-bold tracking-wider rounded-sm transition cursor-pointer font-mono"
-              >
-                ⚡ Auto-fill Code ({generatedOtp})
-              </button>
-            )}
-
-            {otpError && (
-              <div className="p-3 bg-red-950/60 border border-red-900 text-red-400 text-[10px] uppercase font-bold tracking-wide">
-                !! ERROR: {otpError}
-              </div>
-            )}
-
-            <form onSubmit={handleVerifyOtp} className="space-y-4">
-              <div className="flex justify-between gap-1.5">
-                {otpInput.map((digit, idx) => (
-                  <input
-                    key={idx}
-                    id={`otp-digit-${idx}`}
-                    type="text"
-                    maxLength={1}
-                    value={digit}
-                    onChange={(e) => {
-                      const val = e.target.value.replace(/[^0-9]/g, "");
-                      const next = [...otpInput];
-                      next[idx] = val;
-                      setOtpInput(next);
-                      
-                      // Move focus forward
-                      if (val && idx < 5) {
-                        const nextInput = document.getElementById(`otp-digit-${idx + 1}`);
-                        nextInput?.focus();
-                      }
-                    }}
-                    onKeyDown={(e) => {
-                      if (e.key === "Backspace" && !otpInput[idx] && idx > 0) {
-                        const prevInput = document.getElementById(`otp-digit-${idx - 1}`);
-                        prevInput?.focus();
-                      }
-                    }}
-                    className="w-10 h-12 bg-neutral-950 border border-neutral-800 rounded-sm text-center text-volt text-lg font-bold focus:outline-none focus:border-volt"
-                  />
-                ))}
-              </div>
-
-              <div className="flex gap-2">
-                <button
-                  type="submit"
-                  className="flex-grow bg-volt text-black hover:bg-white text-xs py-2.5 font-bold uppercase rounded-sm cursor-pointer transition text-center"
-                >
-                  Verify Access Code
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setShowOtp(false)}
-                  className="bg-neutral-900 border border-neutral-800 hover:border-red-500 text-neutral-400 hover:text-white text-xs px-3 rounded-sm cursor-pointer transition"
-                >
-                  Cancel
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
     </>
   );
 }
