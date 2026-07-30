@@ -392,7 +392,27 @@ export function PageHeader({
         </div>
         <div className="col-span-12 md:col-span-4 p-6 md:p-14 flex flex-col justify-between gap-8">
           <p className="text-lg leading-relaxed">{lead}</p>
-          <div className={`h-24 ${accent === "flame" ? "bg-flame" : "bg-volt"} brute`} />
+          
+          {/* Mini-Terminal Status Widget */}
+          <div className="border-2 border-ink p-4 bg-ink text-paper font-mono text-[9px] uppercase tracking-wider space-y-1 relative brute">
+            <div className="absolute top-3 right-3 flex gap-1">
+              <span className="h-1.5 w-1.5 rounded-full bg-volt blink" />
+              <span className="h-1.5 w-1.5 rounded-full bg-flame" />
+            </div>
+            <div className="text-flame font-bold">// SECURE_SYS_LOG</div>
+            <div className="flex justify-between pt-1">
+              <span className="opacity-60">STATUS:</span>
+              <span className="text-[#00ff66]">ACTIVE_OK</span>
+            </div>
+            <div className="flex justify-between">
+              <span className="opacity-60">NETWORK:</span>
+              <span>T2_NODE_{kicker.replace('/', '_').replace(' ', '_').split('_')[0].toUpperCase()}</span>
+            </div>
+            <div className="flex justify-between">
+              <span className="opacity-60">ACCENT:</span>
+              <span className="text-volt">{accent}</span>
+            </div>
+          </div>
         </div>
       </div>
     </section>
