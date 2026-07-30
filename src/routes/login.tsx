@@ -120,9 +120,30 @@ function LoginPage() {
       targetClientId = domain.split(".")[0];
     }
 
-    // Generate 6-digit OTP Code
-    const code = Math.floor(100000 + Math.random() * 900000).toString();
-    setGeneratedOtp(code);
+    // Send dynamic OTP via Supabase or generate mock code for local development
+    if (isSupabaseConfigured()) {
+      try {
+        const { error: otpErrorResponse } = await supabase.auth.signInWithOtp({
+          email: cleanEmail,
+          options: {
+            shouldCreateUser: isSignUp
+          }
+        });
+        if (otpErrorResponse) {
+          setError(otpErrorResponse.message);
+          return;
+        }
+      } catch (err: any) {
+        setError(err.message || "Failed to issue verification code via Supabase.");
+        return;
+      }
+    } else {
+      // Local fallback testing
+      const code = Math.floor(100000 + Math.random() * 900000).toString();
+      setGeneratedOtp(code);
+      console.log(`[TYPTWO SECURE HANDSHAKE] Local testing OTP code generated: ${code}`);
+    }
+
     setOtpInput(["", "", "", "", "", ""]);
     setOtpError("");
     setPendingSession({
@@ -140,12 +161,29 @@ function LoginPage() {
     setOtpError("");
     const entered = otpInput.join("");
     
-    if (entered !== generatedOtp) {
-      setOtpError("Invalid verification code. Please try again.");
-      return;
-    }
-
     if (!pendingSession) return;
+
+    if (isSupabaseConfigured()) {
+      try {
+        const { data: authData, error: otpVerifyErr } = await supabase.auth.verifyOtp({
+          email: pendingSession.email,
+          token: entered,
+          type: 'email'
+        });
+        if (otpVerifyErr) {
+          setOtpError(otpVerifyErr.message);
+          return;
+        }
+      } catch (err: any) {
+        setOtpError(err.message || "OTP verification handshake failed.");
+        return;
+      }
+    } else {
+      if (entered !== generatedOtp) {
+        setOtpError("Invalid verification code. Please try again.");
+        return;
+      }
+    }
 
     const { email: finalEmail, company: finalCompany, clientId: finalClientId, isSignUp: finalIsSignUp, domain } = pendingSession;
 
