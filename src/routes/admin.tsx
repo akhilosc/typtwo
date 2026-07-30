@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { createFileRoute, Link } from "@tanstack/react-router";
+import { supabase, isSupabaseConfigured } from "../lib/supabase";
 
 export const Route = createFileRoute("/admin")({
   head: () => ({
@@ -173,7 +174,37 @@ function AdminPage() {
     const milestonesKey = `t2_milestones_${selectedClientId}`;
     const auditLogsKey = `t2_milestones_audit_${selectedClientId}`;
     
-    const loadData = () => {
+    const loadData = async () => {
+      if (isSupabaseConfigured()) {
+        try {
+          const { data, error } = await supabase
+            .from("clients")
+            .select("*")
+            .eq("id", selectedClientId)
+            .single();
+
+          if (data && !error) {
+            // Load requirements
+            let merged = [...(data.reqs || [])];
+            DEFAULT_REQUIREMENTS.forEach((def) => {
+              if (!merged.some((m) => m.id === def.id)) {
+                merged.push(JSON.parse(JSON.stringify(def)));
+              }
+            });
+            setReqs(merged);
+
+            // Load milestones
+            setMilestones(data.milestones && data.milestones.length > 0 ? data.milestones : DEFAULT_MILESTONES);
+
+            // Load audit logs
+            setAuditLogs(data.audit_logs || []);
+            return;
+          }
+        } catch (err) {
+          console.error("Failed to load client data from Supabase, falling back to localStorage", err);
+        }
+      }
+
       // 1. Requirements
       const stored = localStorage.getItem(key);
       if (stored) {
@@ -212,17 +243,48 @@ function AdminPage() {
     };
 
     loadData();
+
+    // Subscribe to realtime database updates
+    let channel: any;
+    if (isSupabaseConfigured()) {
+      channel = supabase
+        .channel(`admin_clients_${selectedClientId}`)
+        .on("postgres_changes", { event: "*", schema: "public", table: "clients", filter: `id=eq.${selectedClientId}` }, () => {
+          loadData();
+        })
+        .subscribe();
+    }
+
     window.addEventListener("storage", loadData);
     window.addEventListener("t2_storage_update", loadData);
 
     return () => {
+      if (channel) supabase.removeChannel(channel);
       window.removeEventListener("storage", loadData);
       window.removeEventListener("t2_storage_update", loadData);
     };
   }, [selectedClientId]);
 
   // Save configurations
-  const saveConfig = (updatedReqs: Requirement[]) => {
+  const saveConfig = async (updatedReqs: Requirement[]) => {
+    if (isSupabaseConfigured()) {
+      try {
+        const { error } = await supabase
+          .from("clients")
+          .update({ reqs: updatedReqs })
+          .eq("id", selectedClientId);
+        
+        if (!error) {
+          setNotifyMsg("SUPABASE SYNCED");
+          setTimeout(() => setNotifyMsg(""), 2000);
+          return;
+        }
+        console.error("Supabase update error", error);
+      } catch (err) {
+        console.error(err);
+      }
+    }
+
     localStorage.setItem(`t2_reqs_${selectedClientId}`, JSON.stringify(updatedReqs));
     window.dispatchEvent(new Event("storage"));
     window.dispatchEvent(new Event("t2_storage_update"));
@@ -314,24 +376,46 @@ function AdminPage() {
   // --- MILESTONES ACTIONS ---
 
   // Helper to save milestones state and dispatch sync events
-  const saveMilestones = (updatedMilestones: Milestone[], newAuditMessage?: string) => {
-    const milestonesKey = `t2_milestones_${selectedClientId}`;
-    const auditLogsKey = `t2_milestones_audit_${selectedClientId}`;
-
-    localStorage.setItem(milestonesKey, JSON.stringify(updatedMilestones));
-    setMilestones(updatedMilestones);
-
+  const saveMilestones = async (updatedMilestones: Milestone[], newAuditMessage?: string) => {
+    let nextAudits = [...auditLogs];
     if (newAuditMessage) {
       const newLog: MilestoneAuditLog = {
         id: `aud-${Date.now()}`,
         message: newAuditMessage,
         timestamp: new Date().toLocaleString()
       };
-      const updatedAudits = [newLog, ...auditLogs];
-      localStorage.setItem(auditLogsKey, JSON.stringify(updatedAudits));
-      setAuditLogs(updatedAudits);
+      nextAudits = [newLog, ...nextAudits];
+      setAuditLogs(nextAudits);
+    }
+    setMilestones(updatedMilestones);
+
+    if (isSupabaseConfigured()) {
+      try {
+        const { error } = await supabase
+          .from("clients")
+          .update({
+            milestones: updatedMilestones,
+            audit_logs: nextAudits
+          })
+          .eq("id", selectedClientId);
+
+        if (!error) {
+          setNotifyMsg("SUPABASE SYNCED");
+          setTimeout(() => setNotifyMsg(""), 2000);
+          return;
+        }
+        console.error("Supabase milestones save error", error);
+      } catch (err) {
+        console.error(err);
+      }
     }
 
+    const milestonesKey = `t2_milestones_${selectedClientId}`;
+    const auditLogsKey = `t2_milestones_audit_${selectedClientId}`;
+    localStorage.setItem(milestonesKey, JSON.stringify(updatedMilestones));
+    if (newAuditMessage) {
+      localStorage.setItem(auditLogsKey, JSON.stringify(nextAudits));
+    }
     window.dispatchEvent(new Event("storage"));
     window.dispatchEvent(new Event("t2_storage_update"));
     setNotifyMsg("MILESTONES SYNCED");
@@ -435,21 +519,47 @@ function AdminPage() {
   };
 
   // Share Agreement / Corporate Contract
-  const addCorporateAgreement = (e: React.FormEvent) => {
+  const addCorporateAgreement = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!newAgreementName.trim() || !newAgreementUrl.trim()) {
       alert("Please fill name and paste URL OR upload a local file.");
       return;
     }
 
+    const newDoc = { name: newAgreementName, date: new Date().toLocaleDateString(), url: newAgreementUrl.trim() };
+
+    if (isSupabaseConfigured()) {
+      try {
+        const { data } = await supabase
+          .from("clients")
+          .select("agreements")
+          .eq("id", selectedClientId)
+          .single();
+
+        const current = data?.agreements || [];
+        const updated = [newDoc, ...current];
+
+        const { error } = await supabase
+          .from("clients")
+          .update({ agreements: updated })
+          .eq("id", selectedClientId);
+
+        if (!error) {
+          setNewAgreementName("");
+          setNewAgreementUrl("");
+          setNotifyMsg("CONTRACT SYNCED");
+          setTimeout(() => setNotifyMsg(""), 2000);
+          return;
+        }
+        console.error("Supabase contract sync error", error);
+      } catch (err) {
+        console.error(err);
+      }
+    }
+
     const key = `t2_agreements_${selectedClientId}`;
     const current: AgreementDoc[] = JSON.parse(localStorage.getItem(key) || "[]");
-    const now = new Date();
-    const updated = [
-      { name: newAgreementName, date: now.toLocaleDateString(), url: newAgreementUrl.trim() },
-      ...current
-    ];
-
+    const updated = [newDoc, ...current];
     localStorage.setItem(key, JSON.stringify(updated));
     window.dispatchEvent(new Event("storage"));
     window.dispatchEvent(new Event("t2_storage_update"));
@@ -460,18 +570,43 @@ function AdminPage() {
   };
 
   // Log feed status updates
-  const addStatusUpdate = (e: React.FormEvent) => {
+  const addStatusUpdate = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!newStatusText.trim()) return;
 
+    const newLog = { text: newStatusText, timestamp: new Date().toLocaleTimeString() + " - Today" };
+
+    if (isSupabaseConfigured()) {
+      try {
+        const { data } = await supabase
+          .from("clients")
+          .select("statuses")
+          .eq("id", selectedClientId)
+          .single();
+
+        const current = data?.statuses || [];
+        const updated = [newLog, ...current];
+
+        const { error } = await supabase
+          .from("clients")
+          .update({ statuses: updated })
+          .eq("id", selectedClientId);
+
+        if (!error) {
+          setNewStatusText("");
+          setNotifyMsg("STATUS SYNCED");
+          setTimeout(() => setNotifyMsg(""), 2000);
+          return;
+        }
+        console.error("Supabase status sync error", error);
+      } catch (err) {
+        console.error(err);
+      }
+    }
+
     const key = `t2_statuses_${selectedClientId}`;
     const current: StatusUpdate[] = JSON.parse(localStorage.getItem(key) || "[]");
-    const now = new Date();
-    const updated = [
-      { text: newStatusText, timestamp: now.toLocaleTimeString() + " - Today" },
-      ...current
-    ];
-
+    const updated = [newLog, ...current];
     localStorage.setItem(key, JSON.stringify(updated));
     window.dispatchEvent(new Event("storage"));
     window.dispatchEvent(new Event("t2_storage_update"));
@@ -481,20 +616,47 @@ function AdminPage() {
   };
 
   // Add vault document
-  const addVaultDocument = (e: React.FormEvent) => {
+  const addVaultDocument = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!newFileName.trim() || !newFileUrl.trim()) {
       alert("Please fill file name and paste URL OR upload a local file.");
       return;
     }
 
+    const newFile = { name: newFileName, size: "Download link shared", url: newFileUrl.trim() };
+
+    if (isSupabaseConfigured()) {
+      try {
+        const { data } = await supabase
+          .from("clients")
+          .select("files")
+          .eq("id", selectedClientId)
+          .single();
+
+        const current = data?.files || [];
+        const updated = [newFile, ...current];
+
+        const { error } = await supabase
+          .from("clients")
+          .update({ files: updated })
+          .eq("id", selectedClientId);
+
+        if (!error) {
+          setNewFileName("");
+          setNewFileUrl("");
+          setNotifyMsg("VAULT FILE SYNCED");
+          setTimeout(() => setNotifyMsg(""), 2000);
+          return;
+        }
+        console.error("Supabase vault sync error", error);
+      } catch (err) {
+        console.error(err);
+      }
+    }
+
     const key = `t2_files_${selectedClientId}`;
     const current: VaultFile[] = JSON.parse(localStorage.getItem(key) || "[]");
-    const updated = [
-      { name: newFileName, size: "Download link shared", url: newFileUrl.trim() },
-      ...current
-    ];
-
+    const updated = [newFile, ...current];
     localStorage.setItem(key, JSON.stringify(updated));
     window.dispatchEvent(new Event("storage"));
     window.dispatchEvent(new Event("t2_storage_update"));
@@ -505,15 +667,44 @@ function AdminPage() {
   };
 
   // Reset database
-  const resetClientData = () => {
+  const resetClientData = async () => {
     if (window.confirm("Wipe all configurations for this client?")) {
+      const initial = JSON.parse(JSON.stringify(DEFAULT_REQUIREMENTS));
+
+      if (isSupabaseConfigured()) {
+        try {
+          const { error } = await supabase
+            .from("clients")
+            .update({
+              reqs: initial,
+              files: [],
+              agreements: [],
+              milestones: DEFAULT_MILESTONES,
+              audit_logs: [{ id: "aud-0", message: "Client milestones database initialized.", timestamp: new Date().toLocaleString() }],
+              statuses: []
+            })
+            .eq("id", selectedClientId);
+
+          if (!error) {
+            setReqs(initial);
+            setMilestones(DEFAULT_MILESTONES);
+            setAuditLogs([{ id: "aud-0", message: "Client milestones database initialized.", timestamp: new Date().toLocaleString() }]);
+            setNotifyMsg("SUPABASE RESET");
+            setTimeout(() => setNotifyMsg(""), 2000);
+            return;
+          }
+          console.error("Supabase reset error", error);
+        } catch (err) {
+          console.error(err);
+        }
+      }
+
       localStorage.removeItem(`t2_reqs_${selectedClientId}`);
       localStorage.removeItem(`t2_statuses_${selectedClientId}`);
       localStorage.removeItem(`t2_files_${selectedClientId}`);
       localStorage.removeItem(`t2_milestones_${selectedClientId}`);
       localStorage.removeItem(`t2_milestones_audit_${selectedClientId}`);
       localStorage.removeItem(`t2_agreements_${selectedClientId}`);
-      const initial = JSON.parse(JSON.stringify(DEFAULT_REQUIREMENTS));
       setReqs(initial);
       saveConfig(initial);
     }

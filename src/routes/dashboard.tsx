@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { createFileRoute, useNavigate, Link } from "@tanstack/react-router";
+import { supabase, isSupabaseConfigured } from "../lib/supabase";
 
 export const Route = createFileRoute("/dashboard")({
   head: () => ({
@@ -134,101 +135,169 @@ function DashboardPage() {
     setCompany(userCompany);
     setClientId(id);
 
-    // 1. Load requirements
     const reqKey = `t2_reqs_${id}`;
-    const storedReqs = localStorage.getItem(reqKey);
-    let currentReqs: Requirement[] = [];
-    if (storedReqs) {
-      const parsed: Requirement[] = JSON.parse(storedReqs);
-      const merged = [...parsed];
-      DEFAULT_REQUIREMENTS.forEach((def) => {
-        if (!merged.some((m) => m.id === def.id)) {
-          merged.push(JSON.parse(JSON.stringify(def)));
-        }
-      });
-      currentReqs = merged;
-      localStorage.setItem(reqKey, JSON.stringify(merged));
-    } else {
-      currentReqs = JSON.parse(JSON.stringify(DEFAULT_REQUIREMENTS));
-      localStorage.setItem(reqKey, JSON.stringify(currentReqs));
-    }
-    setReqs(currentReqs);
-
-    // Initialise input values from stored requirements values
-    const vals: Record<string, string> = {};
-    currentReqs.forEach((r) => {
-      vals[r.id] = r.value || "";
-    });
-    setInputVals(vals);
-
-    // 2. Load status logs
     const statusKey = `t2_statuses_${id}`;
-    const storedStatuses = localStorage.getItem(statusKey);
-    if (storedStatuses) {
-      setStatuses(JSON.parse(storedStatuses));
-    } else {
-      setStatuses(DEFAULT_STATUSES);
-      localStorage.setItem(statusKey, JSON.stringify(DEFAULT_STATUSES));
-    }
-
-    // 3. Load files
     const filesKey = `t2_files_${id}`;
-    const storedFiles = localStorage.getItem(filesKey);
-    if (storedFiles) {
-      setFiles(JSON.parse(storedFiles));
-    } else {
-      setFiles(DEFAULT_FILES);
-      localStorage.setItem(filesKey, JSON.stringify(DEFAULT_FILES));
-    }
-
-    // 4. Load Agreements
     const agreementsKey = `t2_agreements_${id}`;
-    const storedAgreements = localStorage.getItem(agreementsKey);
-    if (storedAgreements) {
-      setAgreements(JSON.parse(storedAgreements));
-    } else {
-      setAgreements(DEFAULT_AGREEMENTS);
-      localStorage.setItem(agreementsKey, JSON.stringify(DEFAULT_AGREEMENTS));
-    }
-
-    // 5. Load Project Milestones & Audit logs
     const milestonesKey = `t2_milestones_${id}`;
     const auditLogsKey = `t2_milestones_audit_${id}`;
 
-    const storedMilestones = localStorage.getItem(milestonesKey);
-    if (storedMilestones) {
-      setMilestones(JSON.parse(storedMilestones));
-    } else {
-      // Setup defaults
-      const defaultM: Milestone[] = [
-        {
-          id: "m-1",
-          title: "Phase 1: Discovery & Asset Auditing",
-          percentage: 100,
-          statusText: "All core brand kit links, color systems, and media briefs reviewed and logged.",
-          updatedAt: new Date().toLocaleString(),
-          deliverables: [{ name: "Corporate Onboarding Audit Brief", url: "https://drive.google.com" }]
-        },
-        {
-          id: "m-2",
-          title: "Phase 2: Operational Strategy & Setup",
-          percentage: 50,
-          statusText: "Drafting active campaign setup scripts and custom target audience personas.",
-          updatedAt: new Date().toLocaleString(),
-          deliverables: []
-        }
-      ];
-      setMilestones(defaultM);
-      localStorage.setItem(milestonesKey, JSON.stringify(defaultM));
-    }
+    const loadData = async () => {
+      if (isSupabaseConfigured()) {
+        try {
+          const { data, error } = await supabase
+            .from("clients")
+            .select("*")
+            .eq("id", id)
+            .single();
 
-    const storedAudits = localStorage.getItem(auditLogsKey);
-    if (storedAudits) {
-      setAuditLogs(JSON.parse(storedAudits));
-    } else {
-      const initialAudit = [{ id: "aud-0", message: "Client milestones database initialized.", timestamp: new Date().toLocaleString() }];
-      setAuditLogs(initialAudit);
-      localStorage.setItem(auditLogsKey, JSON.stringify(initialAudit));
+          if (data && !error) {
+            // Load requirements
+            let merged = [...(data.reqs || [])];
+            DEFAULT_REQUIREMENTS.forEach((def) => {
+              if (!merged.some((m) => m.id === def.id)) {
+                merged.push(JSON.parse(JSON.stringify(def)));
+              }
+            });
+            setReqs(merged);
+
+            const vals: Record<string, string> = {};
+            merged.forEach((r) => {
+              vals[r.id] = r.value || "";
+            });
+            setInputVals(vals);
+
+            // Load statuses, files, agreements, milestones
+            setStatuses(data.statuses || DEFAULT_STATUSES);
+            setFiles(data.files || DEFAULT_FILES);
+            setAgreements(data.agreements || DEFAULT_AGREEMENTS);
+            setMilestones(data.milestones && data.milestones.length > 0 ? data.milestones : [
+              {
+                id: "m-1",
+                title: "Phase 1: Discovery & Asset Auditing",
+                percentage: 100,
+                statusText: "All core brand kit links, color systems, and media briefs reviewed and logged.",
+                updatedAt: new Date().toLocaleString(),
+                deliverables: [{ name: "Corporate Onboarding Audit Brief", url: "https://drive.google.com" }]
+              },
+              {
+                id: "m-2",
+                title: "Phase 2: Operational Strategy & Setup",
+                percentage: 50,
+                statusText: "Drafting active campaign setup scripts and custom target audience personas.",
+                updatedAt: new Date().toLocaleString(),
+                deliverables: []
+              }
+            ]);
+            setAuditLogs(data.audit_logs || [{ id: "aud-0", message: "Client milestones database initialized.", timestamp: new Date().toLocaleString() }]);
+            return;
+          }
+        } catch (err) {
+          console.error("Failed to load client data from Supabase, falling back to localStorage", err);
+        }
+      }
+
+      // 1. Load requirements
+      const storedReqs = localStorage.getItem(reqKey);
+      let currentReqs: Requirement[] = [];
+      if (storedReqs) {
+        const parsed: Requirement[] = JSON.parse(storedReqs);
+        const merged = [...parsed];
+        DEFAULT_REQUIREMENTS.forEach((def) => {
+          if (!merged.some((m) => m.id === def.id)) {
+            merged.push(JSON.parse(JSON.stringify(def)));
+          }
+        });
+        currentReqs = merged;
+        localStorage.setItem(reqKey, JSON.stringify(merged));
+      } else {
+        currentReqs = JSON.parse(JSON.stringify(DEFAULT_REQUIREMENTS));
+        localStorage.setItem(reqKey, JSON.stringify(currentReqs));
+      }
+      setReqs(currentReqs);
+
+      // Initialise input values from stored requirements values
+      const vals: Record<string, string> = {};
+      currentReqs.forEach((r) => {
+        vals[r.id] = r.value || "";
+      });
+      setInputVals(vals);
+
+      // 2. Load status logs
+      const storedStatuses = localStorage.getItem(statusKey);
+      if (storedStatuses) {
+        setStatuses(JSON.parse(storedStatuses));
+      } else {
+        setStatuses(DEFAULT_STATUSES);
+        localStorage.setItem(statusKey, JSON.stringify(DEFAULT_STATUSES));
+      }
+
+      // 3. Load files
+      const storedFiles = localStorage.getItem(filesKey);
+      if (storedFiles) {
+        setFiles(JSON.parse(storedFiles));
+      } else {
+        setFiles(DEFAULT_FILES);
+        localStorage.setItem(filesKey, JSON.stringify(DEFAULT_FILES));
+      }
+
+      // 4. Load Agreements
+      const storedAgreements = localStorage.getItem(agreementsKey);
+      if (storedAgreements) {
+        setAgreements(JSON.parse(storedAgreements));
+      } else {
+        setAgreements(DEFAULT_AGREEMENTS);
+        localStorage.setItem(agreementsKey, JSON.stringify(DEFAULT_AGREEMENTS));
+      }
+
+      // 5. Load Project Milestones & Audit logs
+      const storedMilestones = localStorage.getItem(milestonesKey);
+      if (storedMilestones) {
+        setMilestones(JSON.parse(storedMilestones));
+      } else {
+        const defaultM: Milestone[] = [
+          {
+            id: "m-1",
+            title: "Phase 1: Discovery & Asset Auditing",
+            percentage: 100,
+            statusText: "All core brand kit links, color systems, and media briefs reviewed and logged.",
+            updatedAt: new Date().toLocaleString(),
+            deliverables: [{ name: "Corporate Onboarding Audit Brief", url: "https://drive.google.com" }]
+          },
+          {
+            id: "m-2",
+            title: "Phase 2: Operational Strategy & Setup",
+            percentage: 50,
+            statusText: "Drafting active campaign setup scripts and custom target audience personas.",
+            updatedAt: new Date().toLocaleString(),
+            deliverables: []
+          }
+        ];
+        setMilestones(defaultM);
+        localStorage.setItem(milestonesKey, JSON.stringify(defaultM));
+      }
+
+      const storedAudits = localStorage.getItem(auditLogsKey);
+      if (storedAudits) {
+        setAuditLogs(JSON.parse(storedAudits));
+      } else {
+        const initialAudit = [{ id: "aud-0", message: "Client milestones database initialized.", timestamp: new Date().toLocaleString() }];
+        setAuditLogs(initialAudit);
+        localStorage.setItem(auditLogsKey, JSON.stringify(initialAudit));
+      }
+    };
+
+    loadData();
+
+    // Subscribe to realtime database updates
+    let channel: any;
+    if (isSupabaseConfigured()) {
+      channel = supabase
+        .channel(`dashboard_clients_${id}`)
+        .on("postgres_changes", { event: "*", schema: "public", table: "clients", filter: `id=eq.${id}` }, () => {
+          loadData();
+        })
+        .subscribe();
     }
 
     const handleStorageChange = () => {
@@ -261,6 +330,7 @@ function DashboardPage() {
     window.addEventListener("t2_storage_update", handleStorageChange);
     
     return () => {
+      if (channel) supabase.removeChannel(channel);
       window.removeEventListener("storage", handleStorageChange);
       window.removeEventListener("t2_storage_update", handleStorageChange);
     };
@@ -278,7 +348,7 @@ function DashboardPage() {
   };
 
   // Submit individual requirement
-  const submitRequirement = (id: string) => {
+  const submitRequirement = async (id: string) => {
     const value = inputVals[id] || "";
     if (!value.trim()) {
       alert("Please fill in the input box before submitting.");
@@ -290,6 +360,24 @@ function DashboardPage() {
     );
 
     setReqs(updated);
+
+    if (isSupabaseConfigured()) {
+      try {
+        const { error } = await supabase
+          .from("clients")
+          .update({ reqs: updated })
+          .eq("id", clientId);
+        
+        if (!error) {
+          alert("Requirement submitted to the Typtwo Operations Desk.");
+          return;
+        }
+        console.error("Supabase requirement submit error", error);
+      } catch (err) {
+        console.error(err);
+      }
+    }
+
     localStorage.setItem(`t2_reqs_${clientId}`, JSON.stringify(updated));
     window.dispatchEvent(new Event("storage"));
     window.dispatchEvent(new Event("t2_storage_update"));
