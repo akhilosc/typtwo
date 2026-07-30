@@ -30,6 +30,28 @@ interface VaultFile {
   size: string;
 }
 
+interface AgreementDoc {
+  name: string;
+  date: string;
+}
+
+interface ProjectProgress {
+  percentage: number;
+  phase: string;
+  statusText: string;
+}
+
+const DEFAULT_AGREEMENTS: AgreementDoc[] = [
+  { name: "Master Services Agreement (MSA) - Signed.pdf", date: "Initial Onboarding" },
+  { name: "Non-Disclosure Agreement (NDA) - Executed.pdf", date: "Initial Onboarding" }
+];
+
+const DEFAULT_PROGRESS: ProjectProgress = {
+  percentage: 65,
+  phase: "Phase 2: Strategy Development",
+  statusText: "Auditing current assets and configuring targeted growth pipelines."
+};
+
 const DEFAULT_REQUIREMENTS = [
   // Core Branding Assets
   { id: "req-brand-kit", type: "drive_link", label: "Brand Kit (Logos, Fonts, Colors) Drive Link", active: true, submitted: false, value: "" },
@@ -78,12 +100,14 @@ function DashboardPage() {
   const [email, setEmail] = useState("");
   const [company, setCompany] = useState("");
   const [clientId, setClientId] = useState("");
-  const [activeTab, setActiveTab] = useState<"requirements" | "vault" | "feed">("requirements");
+  const [activeTab, setActiveTab] = useState<"requirements" | "vault" | "agreements" | "feed">("requirements");
   
   // Dynamic client states loaded from localStorage
   const [reqs, setReqs] = useState<Requirement[]>([]);
   const [statuses, setStatuses] = useState<StatusUpdate[]>([]);
   const [files, setFiles] = useState<VaultFile[]>([]);
+  const [agreements, setAgreements] = useState<AgreementDoc[]>([]);
+  const [progress, setProgress] = useState<ProjectProgress>(DEFAULT_PROGRESS);
 
   // Input states for each requirement
   const [inputVals, setInputVals] = useState<Record<string, string>>({});
@@ -156,6 +180,26 @@ function DashboardPage() {
       localStorage.setItem(filesKey, JSON.stringify(DEFAULT_FILES));
     }
 
+    // 4. Load Agreements
+    const agreementsKey = `t2_agreements_${id}`;
+    const storedAgreements = localStorage.getItem(agreementsKey);
+    if (storedAgreements) {
+      setAgreements(JSON.parse(storedAgreements));
+    } else {
+      setAgreements(DEFAULT_AGREEMENTS);
+      localStorage.setItem(agreementsKey, JSON.stringify(DEFAULT_AGREEMENTS));
+    }
+
+    // 5. Load Project Progress
+    const progressKey = `t2_progress_${id}`;
+    const storedProgress = localStorage.getItem(progressKey);
+    if (storedProgress) {
+      setProgress(JSON.parse(storedProgress));
+    } else {
+      setProgress(DEFAULT_PROGRESS);
+      localStorage.setItem(progressKey, JSON.stringify(DEFAULT_PROGRESS));
+    }
+
     const handleStorageChange = () => {
       const freshReqs = localStorage.getItem(reqKey);
       if (freshReqs) {
@@ -171,6 +215,12 @@ function DashboardPage() {
       if (freshStatuses) setStatuses(JSON.parse(freshStatuses));
       const freshFiles = localStorage.getItem(filesKey);
       if (freshFiles) setFiles(JSON.parse(freshFiles));
+
+      const freshAgreements = localStorage.getItem(agreementsKey);
+      if (freshAgreements) setAgreements(JSON.parse(freshAgreements));
+
+      const freshProgress = localStorage.getItem(progressKey);
+      if (freshProgress) setProgress(JSON.parse(freshProgress));
     };
 
     window.addEventListener("storage", handleStorageChange);
@@ -262,6 +312,18 @@ function DashboardPage() {
               </button>
             )}
 
+            <button
+              onClick={() => setActiveTab("agreements")}
+              className={`w-full flex items-center justify-between px-3 py-2 text-xs uppercase tracking-wider rounded-sm transition cursor-pointer font-bold ${
+                activeTab === "agreements" 
+                  ? "bg-volt text-black" 
+                  : "text-neutral-400 hover:bg-neutral-950 hover:text-white"
+              }`}
+            >
+              <span>03 / Agreements</span>
+              <span className="text-[9px] opacity-75">[{agreements.length}]</span>
+            </button>
+
             {isStatusActive && (
               <button
                 onClick={() => setActiveTab("feed")}
@@ -271,7 +333,7 @@ function DashboardPage() {
                     : "text-neutral-400 hover:bg-neutral-950 hover:text-white"
                 }`}
               >
-                <span>03 / Operations Feed</span>
+                <span>04 / Operations Feed</span>
                 <span className="text-[9px] opacity-75">● Live</span>
               </button>
             )}
@@ -305,7 +367,28 @@ function DashboardPage() {
         </header>
 
         {/* Content area */}
-        <div className="flex-grow p-8 overflow-y-auto max-w-5xl w-full">
+        <div className="flex-grow p-8 overflow-y-auto max-w-5xl w-full space-y-8">
+          
+          {/* Project Progress Tracker Banner */}
+          <div className="bg-[#0b0b0b] border border-neutral-800 p-5 rounded-sm flex flex-col md:flex-row md:items-center justify-between gap-6">
+            <div className="space-y-1.5 max-w-xl">
+              <div className="flex items-center gap-2">
+                <span className="h-2 w-2 bg-volt rounded-full animate-pulse" />
+                <span className="text-[10px] text-volt uppercase font-bold tracking-widest font-mono">// ACTIVE PROJECT STATUS</span>
+              </div>
+              <h2 className="text-sm font-bold text-white uppercase tracking-wider">{progress.phase}</h2>
+              <p className="text-xs text-neutral-400 leading-relaxed">{progress.statusText}</p>
+            </div>
+            
+            <div className="shrink-0 flex flex-col items-center justify-center border-t md:border-t-0 md:border-l border-neutral-800 pt-4 md:pt-0 pl-0 md:pl-6">
+              <div className="text-2xl font-bold text-volt tracking-tight">{progress.percentage}%</div>
+              <span className="text-[8px] text-neutral-500 uppercase tracking-widest font-bold mt-1">COMPLETED</span>
+              <div className="w-32 bg-neutral-900 border border-neutral-800 h-1.5 rounded-full overflow-hidden mt-2.5">
+                <div className="bg-volt h-full transition-all duration-500" style={{ width: `${progress.percentage}%` }} />
+              </div>
+            </div>
+          </div>
+
           {activeTab === "requirements" && (
             <div>
               <div className="mb-6">
@@ -409,6 +492,41 @@ function DashboardPage() {
               ) : (
                 <div className="border border-dashed border-neutral-800 rounded-sm p-10 text-center text-xs text-neutral-400">
                   Deliverables vault has been disabled for this client workspace.
+                </div>
+              )}
+            </div>
+          )}
+
+          {activeTab === "agreements" && (
+            <div>
+              <div className="mb-6">
+                <h2 className="text-lg font-bold text-white uppercase tracking-wider">// Corporate Agreements & Contracts</h2>
+                <p className="text-xs text-neutral-400 mt-1">Mandatory contracts, NDAs, and Master Services Agreements signed between companies.</p>
+              </div>
+
+              {agreements.length === 0 ? (
+                <div className="border border-dashed border-neutral-800 rounded-sm p-10 text-center text-xs text-neutral-400">
+                  No active agreements posted for this workspace yet.
+                </div>
+              ) : (
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                  {agreements.map((doc, idx) => (
+                    <div 
+                      key={idx}
+                      className="bg-[#0c0c0c] border border-neutral-800 p-4 rounded-sm hover:border-neutral-700 flex items-center justify-between transition-all"
+                    >
+                      <div className="min-w-0 pr-4">
+                        <div className="text-xs font-bold text-white truncate uppercase tracking-wide">{doc.name}</div>
+                        <div className="text-[10px] text-neutral-500 mt-0.5">Shared: {doc.date}</div>
+                      </div>
+                      <button
+                        onClick={() => alert(`Downloading signed contract: ${doc.name}`)}
+                        className="bg-neutral-900 border border-neutral-800 hover:border-volt text-neutral-300 hover:text-white text-[10px] px-3 py-1.5 rounded-sm uppercase tracking-widest font-bold transition cursor-pointer"
+                      >
+                        Review
+                      </button>
+                    </div>
+                  ))}
                 </div>
               )}
             </div>

@@ -36,6 +36,17 @@ interface VaultFile {
   size: string;
 }
 
+interface AgreementDoc {
+  name: string;
+  date: string;
+}
+
+interface ProjectProgress {
+  percentage: number;
+  phase: string;
+  statusText: string;
+}
+
 const DEFAULT_CLIENTS: Client[] = [
   { id: "startuptalky", name: "Startup Talky", email: "founder@startuptalky.com" },
   { id: "acme", name: "Acme Corp", email: "client@company.com" },
@@ -70,6 +81,12 @@ const DEFAULT_REQUIREMENTS = [
   { id: "req-status-feed", type: "boolean", label: "Enable Real-Time Status Feed", active: true, submitted: false, value: "" }
 ];
 
+const DEFAULT_PROGRESS: ProjectProgress = {
+  percentage: 65,
+  phase: "Phase 2: Strategy Development",
+  statusText: "Auditing current assets and configuring targeted growth pipelines."
+};
+
 const SOCIAL_PLATFORMS = ["LinkedIn", "X (Twitter)", "Instagram", "YouTube", "TikTok", "Facebook"];
 const SOCIAL_SUB_OPTIONS = [
   "Personal Profile URL",
@@ -89,16 +106,26 @@ function AdminPage() {
   // Social Platform builder form state
   const [selPlatform, setSelPlatform] = useState("LinkedIn");
   const [selSubOption, setSelSubOption] = useState("Personal Profile URL");
-  const [socialContext, setSocialContext] = useState(""); // e.g. "Founder 1", "Main Brand"
+  const [socialContext, setSocialContext] = useState("");
 
   // Live feeds forms state
   const [newStatusText, setNewStatusText] = useState("");
   const [newFileName, setNewFileName] = useState("");
+  
+  // Progress tracker state
+  const [progPercent, setProgPercent] = useState<number>(65);
+  const [progPhase, setProgPhase] = useState("");
+  const [progStatusText, setProgStatusText] = useState("");
+
+  // Agreement share form state
+  const [newAgreementName, setNewAgreementName] = useState("");
+
   const [notifyMsg, setNotifyMsg] = useState("");
 
   // Load client configurations
   useEffect(() => {
     const key = `t2_reqs_${selectedClientId}`;
+    const progressKey = `t2_progress_${selectedClientId}`;
     
     const loadData = () => {
       const stored = localStorage.getItem(key);
@@ -115,6 +142,19 @@ function AdminPage() {
         const initial = JSON.parse(JSON.stringify(DEFAULT_REQUIREMENTS));
         setReqs(initial);
         localStorage.setItem(key, JSON.stringify(initial));
+      }
+
+      // Load progress
+      const storedProgress = localStorage.getItem(progressKey);
+      if (storedProgress) {
+        const parsedProg: ProjectProgress = JSON.parse(storedProgress);
+        setProgPercent(parsedProg.percentage);
+        setProgPhase(parsedProg.phase);
+        setProgStatusText(parsedProg.statusText);
+      } else {
+        setProgPercent(DEFAULT_PROGRESS.percentage);
+        setProgPhase(DEFAULT_PROGRESS.phase);
+        setProgStatusText(DEFAULT_PROGRESS.statusText);
       }
     };
 
@@ -197,6 +237,44 @@ function AdminPage() {
     saveConfig(updated);
   };
 
+  // Update Project Progress Tracker
+  const updateProgressTracker = (e: React.FormEvent) => {
+    e.preventDefault();
+    const key = `t2_progress_${selectedClientId}`;
+    const payload: ProjectProgress = {
+      percentage: Number(progPercent),
+      phase: progPhase || "Phase 1: Discovery",
+      statusText: progStatusText || "System updates in progress."
+    };
+
+    localStorage.setItem(key, JSON.stringify(payload));
+    window.dispatchEvent(new Event("storage"));
+    window.dispatchEvent(new Event("t2_storage_update"));
+    setNotifyMsg("PROGRESS UPDATED");
+    setTimeout(() => setNotifyMsg(""), 2000);
+  };
+
+  // Share Agreement / Corporate Contract
+  const addCorporateAgreement = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newAgreementName.trim()) return;
+
+    const key = `t2_agreements_${selectedClientId}`;
+    const current: AgreementDoc[] = JSON.parse(localStorage.getItem(key) || "[]");
+    const now = new Date();
+    const updated = [
+      { name: newAgreementName, date: now.toLocaleDateString() },
+      ...current
+    ];
+
+    localStorage.setItem(key, JSON.stringify(updated));
+    window.dispatchEvent(new Event("storage"));
+    window.dispatchEvent(new Event("t2_storage_update"));
+    setNewAgreementName("");
+    setNotifyMsg("CONTRACT ADDED");
+    setTimeout(() => setNotifyMsg(""), 2000);
+  };
+
   // Log status update
   const addStatusUpdate = (e: React.FormEvent) => {
     e.preventDefault();
@@ -244,6 +322,8 @@ function AdminPage() {
       localStorage.removeItem(`t2_reqs_${selectedClientId}`);
       localStorage.removeItem(`t2_statuses_${selectedClientId}`);
       localStorage.removeItem(`t2_files_${selectedClientId}`);
+      localStorage.removeItem(`t2_progress_${selectedClientId}`);
+      localStorage.removeItem(`t2_agreements_${selectedClientId}`);
       const initial = JSON.parse(JSON.stringify(DEFAULT_REQUIREMENTS));
       setReqs(initial);
       saveConfig(initial);
@@ -282,7 +362,7 @@ function AdminPage() {
         </div>
 
         <div className="text-[9px] text-neutral-500 uppercase">
-          Ops Desk v2.2
+          Ops Desk v2.3
         </div>
       </aside>
 
@@ -307,7 +387,7 @@ function AdminPage() {
                 1. Configured Requirements Checklist
               </h3>
 
-              <div className="space-y-3 max-h-[450px] overflow-y-auto pr-2">
+              <div className="space-y-3 max-h-[380px] overflow-y-auto pr-2">
                 {reqs.map((r) => (
                   <div key={r.id} className="py-2.5 border-b border-neutral-900 last:border-b-0">
                     <div className="flex items-center justify-between">
@@ -323,7 +403,6 @@ function AdminPage() {
                         </span>
                       </label>
                       
-                      {/* Delete buttons for dynamic social and custom elements */}
                       {(r.id.startsWith("req-social-") || r.id.startsWith("req-custom-")) && (
                         <button
                           onClick={() => deleteRequirement(r.id)}
@@ -334,7 +413,6 @@ function AdminPage() {
                       )}
                     </div>
 
-                    {/* Displays submitted data panel from client */}
                     {r.submitted && r.value && (
                       <div className="pl-6 mt-2 flex flex-col sm:flex-row sm:items-center gap-2">
                         <span className="text-[8px] bg-emerald-950/80 text-emerald-400 border border-emerald-900 px-1.5 py-0.5 rounded-sm font-bold uppercase w-fit">
@@ -356,25 +434,100 @@ function AdminPage() {
               </div>
             </div>
 
+            {/* Project Progress Setting Panel */}
+            <div className="bg-[#0c0c0c] border border-neutral-800 p-5 rounded-sm">
+              <h3 className="text-xs font-bold text-white uppercase tracking-wider mb-3 border-b border-neutral-800 pb-2">
+                2. Project Completion Status & Milestones
+              </h3>
+              
+              <form onSubmit={updateProgressTracker} className="space-y-3">
+                <div className="grid grid-cols-1 sm:grid-cols-12 gap-3">
+                  <div className="sm:col-span-8">
+                    <label className="text-[9px] text-neutral-500 uppercase font-bold block mb-1">Active Phase Name</label>
+                    <input
+                      type="text"
+                      value={progPhase}
+                      onChange={(e) => setProgPhase(e.target.value)}
+                      placeholder="e.g. Phase 2: Content Strategy Development"
+                      className="w-full bg-neutral-950 border border-neutral-800 rounded-sm px-3 py-1.5 text-xs text-white focus:outline-none focus:border-volt"
+                    />
+                  </div>
+                  <div className="sm:col-span-4">
+                    <label className="text-[9px] text-neutral-500 uppercase font-bold block mb-1">Progress (%)</label>
+                    <input
+                      type="number"
+                      min={0}
+                      max={100}
+                      value={progPercent}
+                      onChange={(e) => setProgPercent(Number(e.target.value))}
+                      className="w-full bg-neutral-950 border border-neutral-800 rounded-sm px-3 py-1.5 text-xs text-white focus:outline-none focus:border-volt font-bold"
+                    />
+                  </div>
+                </div>
+
+                <div>
+                  <label className="text-[9px] text-neutral-500 uppercase font-bold block mb-1">Operational Milestone Description</label>
+                  <textarea
+                    value={progStatusText}
+                    onChange={(e) => setProgStatusText(e.target.value)}
+                    placeholder="e.g. Auditing raw founder videos and setting up scheduling engines."
+                    rows={2}
+                    className="w-full bg-neutral-950 border border-neutral-800 rounded-sm px-3 py-1.5 text-xs text-white focus:outline-none focus:border-volt"
+                  />
+                </div>
+
+                <button
+                  type="submit"
+                  className="w-full bg-volt text-black hover:bg-white text-xs py-2 uppercase font-bold rounded-sm transition cursor-pointer"
+                >
+                  Save Workspace Progress →
+                </button>
+              </form>
+            </div>
+
             <div className="pt-2">
               <button
                 onClick={resetClientData}
-                className="w-full bg-[#120707] border border-red-950 text-red-500 hover:bg-red-950 hover:text-white text-xs py-2.5 text-center rounded-sm uppercase font-bold transition cursor-pointer"
+                className="w-full bg-[#120707] border border-red-950 text-red-500 hover:bg-red-950 hover:text-white text-xs py-2 text-center rounded-sm uppercase font-bold transition cursor-pointer"
               >
                 ☠ Wipe Client Workspace
               </button>
             </div>
           </div>
 
-          {/* Column 2: Platform Builder / Custom Fields / Timeline updates */}
+          {/* Column 2: Platform Builder / Custom Fields / Agreements / Timeline updates */}
           <div className="lg:col-span-5 space-y-6">
             
+            {/* Share Corporate Agreement/Contract Form */}
+            <div className="bg-[#0c0c0c] border border-neutral-800 p-5 rounded-sm">
+              <h3 className="text-xs font-bold text-white uppercase tracking-wider mb-2 border-b border-neutral-800 pb-2">
+                3. Share Corporate Agreement / Contract
+              </h3>
+              <p className="text-[10px] text-neutral-400 mb-3">Upload signed corporate documents (e.g. MSA, NDA, Scope of Work).</p>
+
+              <form onSubmit={addCorporateAgreement} className="space-y-3">
+                <input
+                  type="text"
+                  value={newAgreementName}
+                  onChange={(e) => setNewAgreementName(e.target.value)}
+                  placeholder="e.g. Master Services Agreement (MSA) - Signed.pdf"
+                  className="w-full bg-neutral-950 border border-neutral-800 rounded-sm px-3.5 py-2 text-xs text-white focus:outline-none focus:border-volt"
+                  required
+                />
+                <button
+                  type="submit"
+                  className="w-full bg-volt text-black hover:bg-white text-xs py-2 uppercase font-bold rounded-sm transition cursor-pointer"
+                >
+                  Post Secure Agreement Document
+                </button>
+              </form>
+            </div>
+
             {/* Social Platform Option Creator */}
             <div className="bg-[#0c0c0c] border border-neutral-800 p-5 rounded-sm">
-              <h3 className="text-xs font-bold text-white uppercase tracking-wider mb-3 border-b border-neutral-800 pb-2">
-                2. Add Social Platform Request
+              <h3 className="text-xs font-bold text-white uppercase tracking-wider mb-2 border-b border-neutral-800 pb-2">
+                4. Add Social Platform Request
               </h3>
-              <p className="text-[10px] text-neutral-400 mb-4">Select platform & sub-option. Add context (e.g. 'Founder 2') to request multiple handles of the same platform.</p>
 
               <form onSubmit={addSocialPlatformReq} className="space-y-3">
                 <div className="grid grid-cols-2 gap-2">
@@ -411,7 +564,7 @@ function AdminPage() {
 
                 <button
                   type="submit"
-                  className="w-full bg-volt text-black hover:bg-white text-xs py-2 uppercase font-bold rounded-sm transition cursor-pointer"
+                  className="w-full bg-[#161616] border border-neutral-800 hover:border-volt text-neutral-300 hover:text-white text-xs py-2 uppercase font-bold rounded-sm transition cursor-pointer"
                 >
                   + Add Platform Requirement
                 </button>
@@ -421,7 +574,7 @@ function AdminPage() {
             {/* Custom URL Collector form (max 3) */}
             <div className="bg-[#0c0c0c] border border-neutral-800 p-5 rounded-sm">
               <h3 className="text-xs font-bold text-white uppercase tracking-wider mb-2 border-b border-neutral-800 pb-2 flex justify-between items-center">
-                <span>3. Add Custom URL Request</span>
+                <span>5. Add Custom URL Request</span>
                 <span className="text-[9px] text-neutral-400 font-normal">Active: {activeCustomsCount}/3</span>
               </h3>
               
@@ -449,7 +602,7 @@ function AdminPage() {
             {/* Post timeline update */}
             <div className="bg-[#0c0c0c] border border-neutral-800 p-5 rounded-sm">
               <h3 className="text-xs font-bold text-white uppercase tracking-wider mb-3 border-b border-neutral-800 pb-2">
-                4. Operational Timeline Updates
+                6. Log Feed Status Checkpoint
               </h3>
 
               <form onSubmit={addStatusUpdate} className="space-y-3">
@@ -473,7 +626,7 @@ function AdminPage() {
             {/* Post document */}
             <div className="bg-[#0c0c0c] border border-neutral-800 p-5 rounded-sm">
               <h3 className="text-xs font-bold text-white uppercase tracking-wider mb-3 border-b border-neutral-800 pb-2">
-                5. Share File in Client Vault
+                7. Share File in Client Vault
               </h3>
 
               <form onSubmit={addVaultDocument} className="space-y-3">
