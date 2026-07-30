@@ -53,22 +53,13 @@ const DEFAULT_REQUIREMENTS = [
 function AdminPage() {
   const [clients] = useState<Client[]>(DEFAULT_CLIENTS);
   const [selectedClientId, setSelectedClientId] = useState<string>("acme");
-  
-  // Requirements config state
   const [reqs, setReqs] = useState<Requirement[]>([]);
-  
-  // Form values for adding new social requirements
   const [socialLabel, setSocialLabel] = useState("");
-  
-  // Form values for status and files
   const [newStatusText, setNewStatusText] = useState("");
   const [newFileName, setNewFileName] = useState("");
-  const [newFileSize, setNewFileSize] = useState("1.5 MB");
-
-  // Notifications
   const [notifyMsg, setNotifyMsg] = useState("");
 
-  // Load client-specific data
+  // Load client configurations
   useEffect(() => {
     const key = `t2_reqs_${selectedClientId}`;
     const stored = localStorage.getItem(key);
@@ -81,12 +72,12 @@ function AdminPage() {
     }
   }, [selectedClientId]);
 
-  // Save requirements config
+  // Save configurations
   const saveConfig = (updatedReqs: Requirement[]) => {
     localStorage.setItem(`t2_reqs_${selectedClientId}`, JSON.stringify(updatedReqs));
     window.dispatchEvent(new Event("storage"));
-    setNotifyMsg("CONFIGURATION UPDATED");
-    setTimeout(() => setNotifyMsg(""), 3000);
+    setNotifyMsg("SAVED");
+    setTimeout(() => setNotifyMsg(""), 2000);
   };
 
   const toggleReqActive = (id: string) => {
@@ -95,14 +86,13 @@ function AdminPage() {
     saveConfig(updated);
   };
 
-  // Add dynamic social handle requirement
+  // Add social handle item
   const addSocialRequirement = (e: React.FormEvent) => {
     e.preventDefault();
     if (!socialLabel.trim()) return;
 
-    const newId = `req-social-${Date.now()}`;
     const newReq: Requirement = {
-      id: newId,
+      id: `req-social-${Date.now()}`,
       type: "social_handle",
       label: socialLabel,
       active: true,
@@ -116,21 +106,20 @@ function AdminPage() {
     setSocialLabel("");
   };
 
-  // Delete requirement
+  // Delete social requirement
   const deleteRequirement = (id: string) => {
     const updated = reqs.filter((r) => r.id !== id);
     setReqs(updated);
     saveConfig(updated);
   };
 
-  // Post Real-time Status Update
+  // Log status update
   const addStatusUpdate = (e: React.FormEvent) => {
     e.preventDefault();
     if (!newStatusText.trim()) return;
 
     const key = `t2_statuses_${selectedClientId}`;
     const current: StatusUpdate[] = JSON.parse(localStorage.getItem(key) || "[]");
-    
     const now = new Date();
     const updated = [
       { text: newStatusText, timestamp: now.toLocaleTimeString() + " - Today" },
@@ -140,33 +129,32 @@ function AdminPage() {
     localStorage.setItem(key, JSON.stringify(updated));
     window.dispatchEvent(new Event("storage"));
     setNewStatusText("");
-    setNotifyMsg("STATUS UPDATE POSTED");
-    setTimeout(() => setNotifyMsg(""), 3000);
+    setNotifyMsg("STATUS ADDED");
+    setTimeout(() => setNotifyMsg(""), 2000);
   };
 
-  // Post Vault Document
+  // Add vault document
   const addVaultDocument = (e: React.FormEvent) => {
     e.preventDefault();
     if (!newFileName.trim()) return;
 
     const key = `t2_files_${selectedClientId}`;
     const current: VaultFile[] = JSON.parse(localStorage.getItem(key) || "[]");
-    
     const updated = [
-      { name: newFileName, size: newFileSize },
+      { name: newFileName, size: "Download" },
       ...current
     ];
 
     localStorage.setItem(key, JSON.stringify(updated));
     window.dispatchEvent(new Event("storage"));
     setNewFileName("");
-    setNotifyMsg("VAULT DOCUMENT ADDED");
-    setTimeout(() => setNotifyMsg(""), 3000);
+    setNotifyMsg("FILE ADDED");
+    setTimeout(() => setNotifyMsg(""), 2000);
   };
 
-  // Reset client data to default
+  // Reset database
   const resetClientData = () => {
-    if (window.confirm("Are you sure you want to clear all requirements and inputs for this client?")) {
+    if (window.confirm("Wipe all configurations for this client?")) {
       localStorage.removeItem(`t2_reqs_${selectedClientId}`);
       localStorage.removeItem(`t2_statuses_${selectedClientId}`);
       localStorage.removeItem(`t2_files_${selectedClientId}`);
@@ -176,220 +164,164 @@ function AdminPage() {
     }
   };
 
+  const selectedClient = clients.find(c => c.id === selectedClientId) || clients[0];
+
   return (
     <div className="flex min-h-screen bg-[#0a0a0a] text-neutral-100 font-mono">
-      {/* Left Sidebar client selector */}
+      {/* Sidebar: Client Selector */}
       <aside className="w-64 border-r border-neutral-800 bg-[#0e0e0e] flex flex-col justify-between p-6 shrink-0 text-left">
         <div>
-          <Link to="/" className="flex items-center gap-2 pb-6 border-b border-neutral-800 mb-8">
+          <Link to="/" className="flex items-center gap-2 pb-5 border-b border-neutral-800 mb-8">
             <span className="h-2 w-2 bg-flame rounded-full blink" />
-            <span className="font-bold text-sm tracking-widest text-white uppercase">TYPTWO // CONTROL</span>
+            <span className="font-bold text-sm tracking-wider text-white uppercase">TYPTWO CONSOLE</span>
           </Link>
 
-          <div className="mb-4">
-            <span className="text-[9px] text-neutral-500 uppercase font-bold tracking-wider">// Active Client Spaces</span>
-          </div>
-
-          <nav className="space-y-1.5">
+          <span className="text-[9px] text-neutral-500 uppercase tracking-widest block mb-4 font-bold">// Select Client Workspace</span>
+          <nav className="space-y-1">
             {clients.map((c) => (
               <button
                 key={c.id}
                 onClick={() => setSelectedClientId(c.id)}
-                className={`w-full text-left px-3 py-2.5 text-xs uppercase tracking-wider rounded-sm transition cursor-pointer font-bold border ${
+                className={`w-full text-left px-3 py-2 text-xs uppercase tracking-wide rounded-sm transition cursor-pointer font-bold ${
                   selectedClientId === c.id
-                    ? "bg-volt border-volt text-black"
-                    : "bg-neutral-900 border-neutral-800 text-neutral-300 hover:border-neutral-700 hover:text-white"
+                    ? "bg-volt text-black"
+                    : "bg-neutral-900 text-neutral-400 hover:text-white"
                 }`}
               >
-                <div>{c.name}</div>
-                <div className={`text-[9px] mt-0.5 ${selectedClientId === c.id ? "text-neutral-900" : "text-neutral-500"}`}>
-                  ID: {c.id}
-                </div>
+                {c.name}
               </button>
             ))}
           </nav>
         </div>
 
-        <div className="pt-6 border-t border-neutral-800 text-neutral-500 text-[9px] uppercase">
-          Ops Panel v2.1 // Protected
+        <div className="text-[9px] text-neutral-500 uppercase">
+          Ops Desk v2.0
         </div>
       </aside>
 
-      {/* Main Mainframe Workspace */}
-      <main className="flex-grow flex flex-col min-w-0 bg-[#070707] text-left">
-        {/* Work top header bar */}
+      {/* Main Panel */}
+      <main className="flex-1 flex flex-col min-w-0 bg-[#070707] text-left">
         <header className="h-14 border-b border-neutral-800 px-8 flex items-center justify-between bg-[#0b0b0b] shrink-0">
-          <div className="flex items-center gap-3">
-            <span className="text-xs uppercase tracking-widest text-neutral-400">// Operations Desk Console:</span>
-            <span className="text-xs text-white uppercase font-bold bg-neutral-900 px-2 py-0.5 border border-neutral-800 rounded-sm">
-              Selected: {selectedClientId.toUpperCase()}
-            </span>
+          <div className="text-xs uppercase tracking-widest text-white font-bold">
+            Configuring: {selectedClient.name} ({selectedClient.email})
           </div>
-          {notifyMsg ? (
-            <div className="text-[10px] text-volt font-bold animate-pulse">
-              ● {notifyMsg}
-            </div>
-          ) : (
-            <div className="text-[10px] text-neutral-400">
-              SYS_OPERATOR // SECURE_DESK
-            </div>
+          {notifyMsg && (
+            <span className="text-[10px] text-volt uppercase font-bold animate-pulse">● {notifyMsg}</span>
           )}
         </header>
 
-        {/* Content Workspace Grid */}
-        <div className="flex-grow p-8 overflow-y-auto grid grid-cols-1 lg:grid-cols-12 gap-8 max-w-6xl w-full">
-          {/* Left panel: Requirements Configuration & Handles */}
-          <div className="lg:col-span-8 space-y-8">
-            <div>
-              <h2 className="text-lg font-bold text-white uppercase tracking-wider">// Active Client Requirements</h2>
-              <p className="text-xs text-neutral-400 mt-1">Activate individual collection slots for the client dashboard workspace.</p>
+        {/* Content layout */}
+        <div className="flex-grow p-8 max-w-5xl w-full grid grid-cols-1 md:grid-cols-2 gap-8">
+          {/* Column 1: Dashboard Requirements configuration */}
+          <div className="space-y-6">
+            <div className="bg-[#0c0c0c] border border-neutral-800 p-5 rounded-sm">
+              <h3 className="text-xs font-bold text-white uppercase tracking-wider mb-4 border-b border-neutral-800 pb-2">
+                1. Enable Inputs on Dashboard
+              </h3>
 
-              {/* Requirement Activation toggles */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mt-4">
-                {reqs.filter(r => r.type === "drive_link" || r.type === "boolean").map((r) => (
-                  <div
-                    key={r.id}
-                    onClick={() => toggleReqActive(r.id)}
-                    className={`p-4 border rounded-sm flex items-center justify-between cursor-pointer transition-all ${
-                      r.active
-                        ? "bg-[#0f1411] border-emerald-900/80 text-white"
-                        : "bg-[#0c0c0c] border-neutral-800 text-neutral-500 opacity-60 hover:border-neutral-700"
-                    }`}
-                  >
-                    <div>
-                      <div className="text-xs font-bold uppercase tracking-wide">{r.label}</div>
-                      <span className="text-[8px] opacity-75 font-bold uppercase">[{r.type}]</span>
-                    </div>
-                    <div className={`h-4.5 w-4.5 rounded-sm border flex items-center justify-center text-[10px] font-bold ${
-                      r.active ? "bg-volt text-black border-volt" : "border-neutral-700 text-transparent"
-                    }`}>
-                      ✓
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
-
-            {/* Custom Social Handles Multiplier */}
-            <div>
-              <h2 className="text-lg font-bold text-white uppercase tracking-wider">// Social Profiles Collection Slots</h2>
-              <p className="text-xs text-neutral-400 mt-1">Add dynamic individual or company social handles collection criteria.</p>
-
-              <div className="space-y-2 mt-4">
-                {reqs.filter(r => r.type === "social_handle").map((r) => (
-                  <div
-                    key={r.id}
-                    className="p-3 bg-[#0c0c0c] border border-neutral-800 rounded-sm flex items-center justify-between"
-                  >
-                    <div className="flex items-center gap-3">
-                      <button
-                        onClick={() => toggleReqActive(r.id)}
-                        className={`h-4 w-4 rounded-sm border flex items-center justify-center text-[9px] font-bold cursor-pointer ${
-                          r.active ? "bg-volt text-black border-volt" : "border-neutral-700 text-transparent"
-                        }`}
-                      >
-                        ✓
-                      </button>
-                      <span className={`text-xs uppercase font-bold ${r.active ? "text-white" : "line-through text-neutral-500"}`}>
+              <div className="space-y-3">
+                {reqs.map((r) => (
+                  <div key={r.id} className="flex items-center justify-between py-1">
+                    <label className="flex items-center gap-2 cursor-pointer select-none">
+                      <input
+                        type="checkbox"
+                        checked={r.active}
+                        onChange={() => toggleReqActive(r.id)}
+                        className="h-4 w-4 bg-neutral-950 border border-neutral-800 text-volt rounded-sm focus:ring-0 cursor-pointer"
+                      />
+                      <span className={`text-xs uppercase tracking-wide font-bold ${r.active ? "text-white" : "text-neutral-500"}`}>
                         {r.label}
                       </span>
-                    </div>
-                    <button
-                      onClick={() => deleteRequirement(r.id)}
-                      className="text-[9px] text-flame underline hover:text-white cursor-pointer"
-                    >
-                      Remove
-                    </button>
+                    </label>
+                    {r.type === "social_handle" && (
+                      <button
+                        onClick={() => deleteRequirement(r.id)}
+                        className="text-[9px] text-flame underline hover:text-white cursor-pointer"
+                      >
+                        Remove
+                      </button>
+                    )}
                   </div>
                 ))}
-
-                {reqs.filter(r => r.type === "social_handle").length === 0 && (
-                  <div className="text-xs text-neutral-500 italic p-3 border border-dashed border-neutral-800 rounded-sm text-center">
-                    No custom handles requested yet.
-                  </div>
-                )}
               </div>
 
-              {/* Form to add handle requirement */}
+              {/* Add dynamic social handle form */}
               <form onSubmit={addSocialRequirement} className="flex gap-2 mt-4 pt-4 border-t border-neutral-800">
                 <input
                   type="text"
                   value={socialLabel}
                   onChange={(e) => setSocialLabel(e.target.value)}
-                  placeholder="e.g. Founder 2 LinkedIn handle..."
-                  className="flex-grow bg-neutral-950 border border-neutral-800 rounded-sm px-3.5 py-2 text-xs focus:outline-none focus:border-volt text-white"
+                  placeholder="Request extra social handle (e.g. Founder 2 LinkedIn)"
+                  className="flex-grow bg-neutral-950 border border-neutral-800 rounded-sm px-3 py-1.5 text-xs text-white focus:outline-none"
                   required
                 />
                 <button
                   type="submit"
-                  className="bg-neutral-900 border border-neutral-800 hover:border-volt text-neutral-300 hover:text-white text-xs px-4 py-2 uppercase font-bold rounded-sm transition cursor-pointer"
+                  className="bg-neutral-800 border border-neutral-700 hover:border-volt text-white text-xs px-3 py-1.5 rounded-sm uppercase tracking-wider font-bold transition cursor-pointer"
                 >
-                  + Add Input
+                  + Add Request
                 </button>
               </form>
             </div>
+
+            <div className="pt-4">
+              <button
+                onClick={resetClientData}
+                className="w-full bg-[#120707] border border-red-950 text-red-500 hover:bg-red-950 hover:text-white text-xs py-2 text-center rounded-sm uppercase font-bold transition cursor-pointer"
+              >
+                ☠ Wipe Client Workspace
+              </button>
+            </div>
           </div>
 
-          {/* Right panel: Live Logs posting and Documents */}
-          <div className="lg:col-span-4 space-y-6">
-            {/* Post Status Update */}
-            <form onSubmit={addStatusUpdate} className="space-y-4 bg-[#0c0c0c] border border-neutral-800 p-4 rounded-sm">
-              <h3 className="text-xs font-bold text-white uppercase tracking-wider">// Log Operation Checkpoint</h3>
-              <div>
+          {/* Column 2: Status Feed and Vault uploads */}
+          <div className="space-y-6">
+            {/* Post timeline update */}
+            <div className="bg-[#0c0c0c] border border-neutral-800 p-5 rounded-sm">
+              <h3 className="text-xs font-bold text-white uppercase tracking-wider mb-4 border-b border-neutral-800 pb-2">
+                2. Post Operations Timeline Update
+              </h3>
+
+              <form onSubmit={addStatusUpdate} className="space-y-3">
                 <textarea
                   value={newStatusText}
                   onChange={(e) => setNewStatusText(e.target.value)}
-                  placeholder="e.g. Deploying vector indexing nodes..."
+                  placeholder="e.g. Completed initial short-form content layout sprint."
                   rows={3}
-                  className="w-full bg-neutral-950 border border-neutral-800 rounded-sm px-3.5 py-2 text-xs focus:outline-none focus:border-volt text-white"
+                  className="w-full bg-neutral-950 border border-neutral-800 rounded-sm px-3.5 py-2 text-xs focus:outline-none text-white"
                   required
                 />
-              </div>
-              <button
-                type="submit"
-                className="w-full bg-volt text-black hover:bg-white text-xs py-2 uppercase font-bold rounded-sm transition cursor-pointer"
-              >
-                Log Status Update
-              </button>
-            </form>
+                <button
+                  type="submit"
+                  className="w-full bg-volt text-black hover:bg-white text-xs py-2 uppercase font-bold rounded-sm transition cursor-pointer text-center"
+                >
+                  Log Update →
+                </button>
+              </form>
+            </div>
 
-            {/* Post Vault Document */}
-            <form onSubmit={addVaultDocument} className="space-y-4 bg-[#0c0c0c] border border-neutral-800 p-4 rounded-sm">
-              <h3 className="text-xs font-bold text-white uppercase tracking-wider">// Upload Vault Document</h3>
-              <div className="grid grid-cols-2 gap-2">
+            {/* Post document */}
+            <div className="bg-[#0c0c0c] border border-neutral-800 p-5 rounded-sm">
+              <h3 className="text-xs font-bold text-white uppercase tracking-wider mb-4 border-b border-neutral-800 pb-2">
+                3. Share File in Client Vault
+              </h3>
+
+              <form onSubmit={addVaultDocument} className="space-y-3">
                 <input
                   type="text"
                   value={newFileName}
                   onChange={(e) => setNewFileName(e.target.value)}
-                  placeholder="filename.json"
-                  className="bg-neutral-950 border border-neutral-800 rounded-sm px-3 py-2 text-xs focus:outline-none focus:border-volt text-white"
+                  placeholder="e.g. brand_assets_blueprint.pdf"
+                  className="w-full bg-neutral-950 border border-neutral-800 rounded-sm px-3 py-2 text-xs focus:outline-none text-white"
                   required
                 />
-                <input
-                  type="text"
-                  value={newFileSize}
-                  onChange={(e) => setNewFileSize(e.target.value)}
-                  placeholder="Size (e.g. 1.2 MB)"
-                  className="bg-neutral-950 border border-neutral-800 rounded-sm px-3 py-2 text-xs focus:outline-none focus:border-volt text-white"
-                  required
-                />
-              </div>
-              <button
-                type="submit"
-                className="w-full bg-neutral-900 border border-neutral-800 hover:border-volt text-neutral-300 hover:text-white text-xs py-2 uppercase font-bold rounded-sm transition cursor-pointer"
-              >
-                Add Document Index
-              </button>
-            </form>
-
-            {/* Clear client workspace */}
-            <div className="pt-4 border-t border-neutral-800">
-              <button
-                onClick={resetClientData}
-                className="w-full border border-red-950 hover:bg-red-950 text-red-500 text-xs py-2.5 rounded-sm uppercase font-bold transition cursor-pointer text-center"
-              >
-                ☠ Wipe Client Workspace
-              </button>
+                <button
+                  type="submit"
+                  className="w-full bg-neutral-900 border border-neutral-800 hover:border-volt text-neutral-300 hover:text-white text-xs py-2 uppercase font-bold rounded-sm transition cursor-pointer text-center"
+                >
+                  Post File Vault Index →
+                </button>
+              </form>
             </div>
           </div>
         </div>
