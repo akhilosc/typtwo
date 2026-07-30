@@ -98,6 +98,7 @@ const DEFAULT_FILES: VaultFile[] = [
 ];
 
 function DashboardPage() {
+  const [isMounted, setIsMounted] = useState(false);
   const [email, setEmail] = useState("");
   const [company, setCompany] = useState("");
   const [clientId, setClientId] = useState("");
@@ -121,6 +122,9 @@ function DashboardPage() {
   const navigate = useNavigate();
 
   useEffect(() => {
+    setIsMounted(true);
+    if (typeof window === "undefined") return;
+
     const session = localStorage.getItem("t2_session");
     if (!session) {
       navigate({ to: "/login" });
@@ -407,6 +411,19 @@ function DashboardPage() {
   const isVaultActive = reqs.find(r => r.id === "req-vault")?.active ?? true;
   const isStatusActive = reqs.find(r => r.id === "req-status-feed")?.active ?? true;
   const activeInputReqs = reqs.filter(r => r.active && r.type !== "boolean");
+
+  if (!isMounted) {
+    return (
+      <div className="flex min-h-screen bg-[#070707] text-neutral-100 font-mono items-center justify-center p-4">
+        <div className="flex items-center gap-3 bg-[#0b0b0b] border border-neutral-800 p-6 rounded-sm">
+          <span className="h-2 w-2 bg-volt rounded-full animate-ping" />
+          <span className="text-xs uppercase tracking-widest text-neutral-300 font-bold">
+            Initializing Typtwo Workspace Node...
+          </span>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="flex min-h-screen bg-[#0a0a0a] text-neutral-100 font-mono">
@@ -863,7 +880,7 @@ function DashboardPage() {
                 <div className="border border-neutral-800 bg-neutral-950 p-6 rounded-sm space-y-4 max-h-[450px] overflow-y-auto font-mono">
                   {auditLogs.map((log) => (
                     <div key={log.id} className="text-[10px] text-neutral-400 leading-normal border-b border-neutral-900 pb-2 last:border-b-0">
-                      <span className="text-neutral-500 font-bold">[{log.timestamp.split(',')[1]?.trim() || log.timestamp}]</span>{" "}
+                      <span className="text-neutral-500 font-bold">[{typeof log.timestamp === "string" ? (log.timestamp.split(',')[1]?.trim() || log.timestamp) : "LOG"}]</span>{" "}
                       <span className="text-volt font-bold">&gt;&gt;</span> {log.message}
                     </div>
                   ))}

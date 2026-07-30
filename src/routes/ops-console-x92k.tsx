@@ -127,6 +127,7 @@ const SOCIAL_SUB_OPTIONS = [
 
 function AdminPage() {
   const navigate = useNavigate();
+  const [isMounted, setIsMounted] = useState(false);
   const [clients, setClients] = useState<Client[]>([]);
   const [allDbClients, setAllDbClients] = useState<any[]>([]);
   const [selectedClientId, setSelectedClientId] = useState<string>("acme");
@@ -137,6 +138,8 @@ function AdminPage() {
 
   // Check sessionStorage on mount
   useEffect(() => {
+    setIsMounted(true);
+    if (typeof window === "undefined") return;
     const auth = sessionStorage.getItem("t2_admin_authorized");
     if (auth === "true") {
       setIsAuthorized(true);
@@ -1049,6 +1052,19 @@ function AdminPage() {
 
   const selectedClient = clients.find(c => c.id === selectedClientId) || clients[0] || { id: "loading", name: "Loading Workspace...", email: "" };
   const activeCustomsCount = reqs.filter(r => r.id.startsWith("req-custom-")).length;
+
+  if (!isMounted) {
+    return (
+      <div className="flex min-h-screen bg-[#070707] text-neutral-100 font-mono items-center justify-center p-4">
+        <div className="flex items-center gap-3 bg-[#0b0b0b] border border-neutral-800 p-6 rounded-sm">
+          <span className="h-2 w-2 bg-volt rounded-full animate-ping" />
+          <span className="text-xs uppercase tracking-widest text-neutral-300 font-bold">
+            Establishing Secure Handshake...
+          </span>
+        </div>
+      </div>
+    );
+  }
 
   if (!isAuthorized) {
     return (
