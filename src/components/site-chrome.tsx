@@ -269,6 +269,7 @@ export function SiteFooter() {
             <FLink to="/clients">03 · Clients</FLink>
             <FLink to="/about">04 · About</FLink>
             <FLink to="/contact">05 · Contact</FLink>
+            <FLink to="/admin">06 · Admin Desk</FLink>
           </FooterCol>
           <FooterCol title="Contact">
             <a href="mailto:hello@typtwo.com" className="hover:bg-volt inline-block">
@@ -308,7 +309,7 @@ function splitChildren(children: ReactNode) {
   const arr = Array.isArray(children) ? children : [children];
   return arr.map((c, i) => <li key={i}>{c}</li>);
 }
-function FLink({ to, children }: { to: (typeof NAV)[number]["to"]; children: ReactNode }) {
+function FLink({ to, children }: { to: (typeof NAV)[number]["to"] | "/admin" | "/dashboard" | "/login"; children: ReactNode }) {
   return (
     <Link to={to} className="hover:bg-volt inline-block">
       {children}
