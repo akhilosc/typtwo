@@ -43,10 +43,24 @@ interface AgreementDoc {
   url: string;
 }
 
-interface ProjectProgress {
+interface MilestoneDeliverable {
+  name: string;
+  url: string;
+}
+
+interface Milestone {
+  id: string;
+  title: string;
   percentage: number;
-  phase: string;
   statusText: string;
+  updatedAt: string;
+  deliverables: MilestoneDeliverable[];
+}
+
+interface MilestoneAuditLog {
+  id: string;
+  message: string;
+  timestamp: string;
 }
 
 const DEFAULT_CLIENTS: Client[] = [
@@ -83,11 +97,23 @@ const DEFAULT_REQUIREMENTS = [
   { id: "req-status-feed", type: "boolean", label: "Enable Real-Time Status Feed", active: true, submitted: false, value: "" }
 ];
 
-const PRESET_PHASES = [
-  { phase: "Phase 1: Discovery & Asset Auditing", percentage: 25, status: "Auditing submitted client files, assets checklists, and social platform configurations." },
-  { phase: "Phase 2: Operational Strategy & Setup", percentage: 50, status: "Drafting campaign blueprints, keyword targeting matrixes, and setting up ad spaces." },
-  { phase: "Phase 3: Campaign Setup & Targeting", percentage: 75, status: "Creating and launching active newsletters, cold campaigns, and short-form video sequences." },
-  { phase: "Phase 4: Scaling & Active Optimization", percentage: 100, status: "Reviewing analytics metrics, refining content pipelines, and generating deliverable reports." }
+const DEFAULT_MILESTONES: Milestone[] = [
+  {
+    id: "m-1",
+    title: "Phase 1: Discovery & Asset Auditing",
+    percentage: 100,
+    statusText: "All core brand kit links, color systems, and media briefs reviewed and logged.",
+    updatedAt: new Date().toLocaleString(),
+    deliverables: [{ name: "Corporate Onboarding Audit Brief", url: "https://drive.google.com" }]
+  },
+  {
+    id: "m-2",
+    title: "Phase 2: Operational Strategy & Setup",
+    percentage: 50,
+    statusText: "Drafting active campaign setup scripts and custom target audience personas.",
+    updatedAt: new Date().toLocaleString(),
+    deliverables: []
+  }
 ];
 
 const SOCIAL_PLATFORMS = ["LinkedIn", "X (Twitter)", "Instagram", "YouTube", "TikTok", "Facebook"];
@@ -121,10 +147,19 @@ function AdminPage() {
   const [newFileName, setNewFileName] = useState("");
   const [newFileUrl, setNewFileUrl] = useState("");
   
-  // Progress tracker state
-  const [progPercent, setProgPercent] = useState<number>(25);
-  const [progPhase, setProgPhase] = useState("Phase 1: Discovery & Asset Auditing");
-  const [progStatusText, setProgStatusText] = useState("Auditing submitted client files, assets checklists, and social platform configurations.");
+  // Milestone state (Multiple Milestones list)
+  const [milestones, setMilestones] = useState<Milestone[]>([]);
+  const [auditLogs, setAuditLogs] = useState<MilestoneAuditLog[]>([]);
+
+  // Milestone builder states
+  const [newMilestoneTitle, setNewMilestoneTitle] = useState("");
+  const [newMilestonePercent, setNewMilestonePercent] = useState<number>(0);
+  const [newMilestoneStatus, setNewMilestoneStatus] = useState("");
+
+  // Deliverable attachment form states (mapped per milestone ID)
+  const [attachedDocName, setAttachedDocName] = useState("");
+  const [attachedDocUrl, setAttachedDocUrl] = useState("");
+  const [activeMilestoneAttachmentId, setActiveMilestoneAttachmentId] = useState<string | null>(null);
 
   // Agreement share form state
   const [newAgreementName, setNewAgreementName] = useState("");
@@ -135,9 +170,11 @@ function AdminPage() {
   // Load client configurations
   useEffect(() => {
     const key = `t2_reqs_${selectedClientId}`;
-    const progressKey = `t2_progress_${selectedClientId}`;
+    const milestonesKey = `t2_milestones_${selectedClientId}`;
+    const auditLogsKey = `t2_milestones_audit_${selectedClientId}`;
     
     const loadData = () => {
+      // 1. Requirements
       const stored = localStorage.getItem(key);
       if (stored) {
         const parsed: Requirement[] = JSON.parse(stored);
@@ -154,17 +191,23 @@ function AdminPage() {
         localStorage.setItem(key, JSON.stringify(initial));
       }
 
-      // Load progress
-      const storedProgress = localStorage.getItem(progressKey);
-      if (storedProgress) {
-        const parsedProg: ProjectProgress = JSON.parse(storedProgress);
-        setProgPercent(parsedProg.percentage);
-        setProgPhase(parsedProg.phase);
-        setProgStatusText(parsedProg.statusText);
+      // 2. Milestones
+      const storedMilestones = localStorage.getItem(milestonesKey);
+      if (storedMilestones) {
+        setMilestones(JSON.parse(storedMilestones));
       } else {
-        setProgPercent(PRESET_PHASES[0].percentage);
-        setProgPhase(PRESET_PHASES[0].phase);
-        setProgStatusText(PRESET_PHASES[0].status);
+        setMilestones(DEFAULT_MILESTONES);
+        localStorage.setItem(milestonesKey, JSON.stringify(DEFAULT_MILESTONES));
+      }
+
+      // 3. Audit Logs
+      const storedAudits = localStorage.getItem(auditLogsKey);
+      if (storedAudits) {
+        setAuditLogs(JSON.parse(storedAudits));
+      } else {
+        const initialAudit = [{ id: "aud-0", message: "Client milestones database initialized.", timestamp: new Date().toLocaleString() }];
+        setAuditLogs(initialAudit);
+        localStorage.setItem(auditLogsKey, JSON.stringify(initialAudit));
       }
     };
 
@@ -247,34 +290,127 @@ function AdminPage() {
     saveConfig(updated);
   };
 
-  // Pre-load phase preset details
-  const handlePhasePresetChange = (phaseName: string) => {
-    const found = PRESET_PHASES.find(p => p.phase === phaseName);
-    if (found) {
-      setProgPhase(found.phase);
-      setProgPercent(found.percentage);
-      setProgStatusText(found.status);
+  // --- MILESTONES ACTIONS ---
+
+  // Helper to save milestones state and dispatch sync events
+  const saveMilestones = (updatedMilestones: Milestone[], newAuditMessage?: string) => {
+    const milestonesKey = `t2_milestones_${selectedClientId}`;
+    const auditLogsKey = `t2_milestones_audit_${selectedClientId}`;
+
+    localStorage.setItem(milestonesKey, JSON.stringify(updatedMilestones));
+    setMilestones(updatedMilestones);
+
+    if (newAuditMessage) {
+      const newLog: MilestoneAuditLog = {
+        id: `aud-${Date.now()}`,
+        message: newAuditMessage,
+        timestamp: new Date().toLocaleString()
+      };
+      const updatedAudits = [newLog, ...auditLogs];
+      localStorage.setItem(auditLogsKey, JSON.stringify(updatedAudits));
+      setAuditLogs(updatedAudits);
     }
-  };
 
-  // Update Project Progress Tracker
-  const updateProgressTracker = (e: React.FormEvent) => {
-    e.preventDefault();
-    const key = `t2_progress_${selectedClientId}`;
-    const payload: ProjectProgress = {
-      percentage: Number(progPercent),
-      phase: progPhase || "Phase 1: Discovery",
-      statusText: progStatusText || "System updates in progress."
-    };
-
-    localStorage.setItem(key, JSON.stringify(payload));
     window.dispatchEvent(new Event("storage"));
     window.dispatchEvent(new Event("t2_storage_update"));
-    setNotifyMsg("PROGRESS UPDATED");
+    setNotifyMsg("MILESTONES SYNCED");
     setTimeout(() => setNotifyMsg(""), 2000);
   };
 
-  // Share Agreement / Corporate Contract with URL
+  // Create Milestone entry
+  const handleCreateMilestone = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newMilestoneTitle.trim()) return;
+
+    const newM: Milestone = {
+      id: `m-${Date.now()}`,
+      title: newMilestoneTitle.trim(),
+      percentage: Number(newMilestonePercent),
+      statusText: newMilestoneStatus.trim() || "Milestone initiated.",
+      updatedAt: new Date().toLocaleString(),
+      deliverables: []
+    };
+
+    const updated = [...milestones, newM];
+    saveMilestones(updated, `Created Milestone: "${newM.title}" at ${newM.percentage}%`);
+    setNewMilestoneTitle("");
+    setNewMilestonePercent(0);
+    setNewMilestoneStatus("");
+  };
+
+  // Update milestone inline fields (Percentage, Description)
+  const handleUpdateMilestone = (id: string, percentage: number, statusText: string) => {
+    const updated = milestones.map((m) => {
+      if (m.id === id) {
+        return {
+          ...m,
+          percentage: Number(percentage),
+          statusText,
+          updatedAt: new Date().toLocaleString()
+        };
+      }
+      return m;
+    });
+
+    const target = milestones.find(m => m.id === id);
+    saveMilestones(updated, `Updated Milestone "${target?.title}" progress to ${percentage}%: "${statusText}"`);
+  };
+
+  // Add deliverable / upload item against milestone
+  const handleAddMilestoneDeliverable = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!activeMilestoneAttachmentId || !attachedDocName.trim()) return;
+
+    const updated = milestones.map((m) => {
+      if (m.id === activeMilestoneAttachmentId) {
+        return {
+          ...m,
+          deliverables: [
+            ...m.deliverables,
+            { name: attachedDocName.trim(), url: attachedDocUrl.trim() || "#" }
+          ],
+          updatedAt: new Date().toLocaleString()
+        };
+      }
+      return m;
+    });
+
+    const target = milestones.find(m => m.id === activeMilestoneAttachmentId);
+    saveMilestones(updated, `Added deliverable "${attachedDocName.trim()}" to Milestone: "${target?.title}"`);
+    setAttachedDocName("");
+    setAttachedDocUrl("");
+    setActiveMilestoneAttachmentId(null);
+  };
+
+  // Delete deliverable from milestone
+  const handleDeleteMilestoneDeliverable = (milestoneId: string, delIdx: number) => {
+    const updated = milestones.map((m) => {
+      if (m.id === milestoneId) {
+        const nextDels = [...m.deliverables];
+        const removed = nextDels.splice(delIdx, 1)[0];
+        return {
+          ...m,
+          deliverables: nextDels,
+          updatedAt: new Date().toLocaleString()
+        };
+      }
+      return m;
+    });
+
+    const target = milestones.find(m => m.id === milestoneId);
+    saveMilestones(updated, `Deleted deliverable from Milestone: "${target?.title}"`);
+  };
+
+  // Delete milestone entry completely
+  const handleDeleteMilestone = (id: string) => {
+    const target = milestones.find(m => m.id === id);
+    if (window.confirm(`Delete milestone "${target?.title}"?`)) {
+      const updated = milestones.filter(m => m.id !== id);
+      saveMilestones(updated, `Deleted Milestone: "${target?.title}"`);
+    }
+  };
+
+  // Share Agreement / Corporate Contract
   const addCorporateAgreement = (e: React.FormEvent) => {
     e.preventDefault();
     if (!newAgreementName.trim()) return;
@@ -317,7 +453,7 @@ function AdminPage() {
     setTimeout(() => setNotifyMsg(""), 2000);
   };
 
-  // Add vault document with URL
+  // Add vault document
   const addVaultDocument = (e: React.FormEvent) => {
     e.preventDefault();
     if (!newFileName.trim()) return;
@@ -344,7 +480,8 @@ function AdminPage() {
       localStorage.removeItem(`t2_reqs_${selectedClientId}`);
       localStorage.removeItem(`t2_statuses_${selectedClientId}`);
       localStorage.removeItem(`t2_files_${selectedClientId}`);
-      localStorage.removeItem(`t2_progress_${selectedClientId}`);
+      localStorage.removeItem(`t2_milestones_${selectedClientId}`);
+      localStorage.removeItem(`t2_milestones_audit_${selectedClientId}`);
       localStorage.removeItem(`t2_agreements_${selectedClientId}`);
       const initial = JSON.parse(JSON.stringify(DEFAULT_REQUIREMENTS));
       setReqs(initial);
@@ -384,7 +521,7 @@ function AdminPage() {
         </div>
 
         <div className="text-[9px] text-neutral-500 uppercase">
-          Ops Desk v2.4
+          Ops Desk v2.5
         </div>
       </aside>
 
@@ -402,8 +539,8 @@ function AdminPage() {
         {/* Content layout */}
         <div className="flex-grow p-8 grid grid-cols-1 lg:grid-cols-12 gap-8 w-full">
           
-          {/* Column 1: Config Toggles & Dynamic lists (Left Side) */}
-          <div className="lg:col-span-6 space-y-6">
+          {/* Column 1: Config Toggles & Checklist (Left Side) */}
+          <div className="lg:col-span-5 space-y-6">
             <div className="bg-[#0c0c0c] border border-neutral-800 p-5 rounded-sm h-full flex flex-col">
               <h3 className="text-xs font-bold text-white uppercase tracking-wider mb-4 border-b border-neutral-800 pb-2">
                 1. Configure Dashboard Checklist
@@ -420,7 +557,7 @@ function AdminPage() {
                           onChange={() => toggleReqActive(r.id)}
                           className="h-4 w-4 bg-neutral-950 border border-neutral-800 text-volt rounded-sm focus:ring-0 cursor-pointer"
                         />
-                        <span className={`text-[11px] uppercase tracking-wide font-bold ${r.active ? "text-white" : "text-neutral-500"}`}>
+                        <span className={`text-[10px] uppercase tracking-wide font-bold ${r.active ? "text-white" : "text-neutral-500"}`}>
                           {r.label}
                         </span>
                       </label>
@@ -438,7 +575,7 @@ function AdminPage() {
                     {r.submitted && r.value && (
                       <div className="pl-6 mt-2 flex flex-col sm:flex-row sm:items-center gap-2">
                         <span className="text-[8px] bg-emerald-950/80 text-emerald-400 border border-emerald-900 px-1.5 py-0.5 rounded-sm font-bold uppercase w-fit shrink-0">
-                          SUBMITTED DATA:
+                          SUBMITTED:
                         </span>
                         <span className="text-[10px] text-neutral-300 font-mono break-all select-all">
                           {r.value.startsWith("http") ? (
@@ -467,39 +604,234 @@ function AdminPage() {
           </div>
 
           {/* Column 2: Tabbed configuration sections (Right Side) */}
-          <div className="lg:col-span-6 space-y-4">
+          <div className="lg:col-span-7 space-y-4">
             
             {/* Header Tabs Navigation */}
             <div className="flex border-b border-neutral-800 bg-[#0e0e0e] p-1 rounded-t-sm gap-1">
-              <button
-                onClick={() => setActiveFormTab("requirements")}
-                className={`flex-1 text-center py-2 text-[10px] uppercase font-bold tracking-wider rounded-sm transition cursor-pointer ${
-                  activeFormTab === "requirements" ? "bg-volt text-black font-extrabold" : "text-neutral-400 hover:text-white"
-                }`}
-              >
-                Req Builder
-              </button>
-              
               <button
                 onClick={() => setActiveFormTab("progress")}
                 className={`flex-1 text-center py-2 text-[10px] uppercase font-bold tracking-wider rounded-sm transition cursor-pointer ${
                   activeFormTab === "progress" ? "bg-volt text-black font-extrabold" : "text-neutral-400 hover:text-white"
                 }`}
               >
-                Milestones
+                Milestones Engine
               </button>
 
+              <button
+                onClick={() => setActiveFormTab("requirements")}
+                className={`flex-1 text-center py-2 text-[10px] uppercase font-bold tracking-wider rounded-sm transition cursor-pointer ${
+                  activeFormTab === "requirements" ? "bg-volt text-black font-extrabold" : "text-neutral-400 hover:text-white"
+                }`}
+              >
+                Asset Req Builder
+              </button>
+              
               <button
                 onClick={() => setActiveFormTab("agreements")}
                 className={`flex-1 text-center py-2 text-[10px] uppercase font-bold tracking-wider rounded-sm transition cursor-pointer ${
                   activeFormTab === "agreements" ? "bg-volt text-black font-extrabold" : "text-neutral-400 hover:text-white"
                 }`}
               >
-                Docs & Vault
+                Contracts & Vault
               </button>
             </div>
 
-            {/* TAB 1: Requirements Builder */}
+            {/* TAB 1: Milestones Engine */}
+            {activeFormTab === "progress" && (
+              <div className="space-y-6">
+                
+                {/* 1. Add New Milestone Form */}
+                <div className="bg-[#0c0c0c] border border-neutral-800 p-5 rounded-sm">
+                  <h3 className="text-xs font-bold text-white uppercase tracking-wider mb-3 border-b border-neutral-800 pb-2">
+                    + Create New Project Milestone
+                  </h3>
+                  
+                  <form onSubmit={handleCreateMilestone} className="space-y-3">
+                    <div className="grid grid-cols-3 gap-3">
+                      <div className="col-span-2">
+                        <input
+                          type="text"
+                          value={newMilestoneTitle}
+                          onChange={(e) => setNewMilestoneTitle(e.target.value)}
+                          placeholder="Milestone Title: e.g. Phase 3: Setup & Launch"
+                          className="w-full bg-neutral-950 border border-neutral-800 rounded-sm px-3 py-1.5 text-xs text-white focus:outline-none focus:border-volt"
+                          required
+                        />
+                      </div>
+                      <div>
+                        <input
+                          type="number"
+                          min="0"
+                          max="100"
+                          value={newMilestonePercent}
+                          onChange={(e) => setNewMilestonePercent(Number(e.target.value))}
+                          placeholder="Progress %"
+                          className="w-full bg-neutral-950 border border-neutral-800 rounded-sm px-3 py-1.5 text-xs text-white focus:outline-none focus:border-volt font-bold"
+                        />
+                      </div>
+                    </div>
+
+                    <input
+                      type="text"
+                      value={newMilestoneStatus}
+                      onChange={(e) => setNewMilestoneStatus(e.target.value)}
+                      placeholder="Status Description (e.g. Configuring campaign assets)"
+                      className="w-full bg-neutral-950 border border-neutral-800 rounded-sm px-3 py-1.5 text-xs text-white focus:outline-none focus:border-volt"
+                    />
+
+                    <button
+                      type="submit"
+                      className="w-full bg-volt text-black hover:bg-white text-xs py-2 uppercase font-bold rounded-sm transition cursor-pointer"
+                    >
+                      Publish New Milestone →
+                    </button>
+                  </form>
+                </div>
+
+                {/* 2. Manage & Edit Existing Milestones */}
+                <div className="bg-[#0c0c0c] border border-neutral-800 p-5 rounded-sm space-y-4">
+                  <h3 className="text-xs font-bold text-white uppercase tracking-wider border-b border-neutral-800 pb-2">
+                    Active Milestones & Deliverables Panel
+                  </h3>
+
+                  <div className="space-y-4 max-h-[350px] overflow-y-auto pr-2">
+                    {milestones.map((m) => (
+                      <div key={m.id} className="p-4 bg-neutral-950 border border-neutral-800 rounded-sm space-y-3">
+                        <div className="flex items-center justify-between border-b border-neutral-900 pb-2">
+                          <span className="text-xs text-white font-bold uppercase truncate">{m.title}</span>
+                          <button
+                            onClick={() => handleDeleteMilestone(m.id)}
+                            className="text-[9px] text-flame underline hover:text-white cursor-pointer"
+                          >
+                            Delete
+                          </button>
+                        </div>
+
+                        {/* Inline editor inputs */}
+                        <div className="grid grid-cols-12 gap-3 items-center">
+                          <div className="col-span-8 flex items-center gap-2">
+                            <input
+                              type="range"
+                              min="0"
+                              max="100"
+                              value={m.percentage}
+                              onChange={(e) => handleUpdateMilestone(m.id, Number(e.target.value), m.statusText)}
+                              className="w-full accent-volt h-1 bg-neutral-900 rounded-sm cursor-pointer"
+                            />
+                            <span className="text-xs text-volt font-bold w-8 text-right">{m.percentage}%</span>
+                          </div>
+                          
+                          <div className="col-span-4 text-right text-[8px] text-neutral-500 font-bold uppercase truncate">
+                            Update: {m.updatedAt.split(',')[0]}
+                          </div>
+                        </div>
+
+                        <div>
+                          <input
+                            type="text"
+                            value={m.statusText}
+                            onChange={(e) => handleUpdateMilestone(m.id, m.percentage, e.target.value)}
+                            placeholder="Milestone description updates..."
+                            className="w-full bg-[#0a0a0a] border border-neutral-900 text-xs px-2 py-1 text-neutral-300 rounded-sm focus:outline-none focus:border-volt"
+                          />
+                        </div>
+
+                        {/* Deliverables posted to this milestone */}
+                        <div className="space-y-1 bg-neutral-900/60 p-2.5 rounded-sm border border-neutral-900">
+                          <span className="text-[8px] text-neutral-500 font-bold uppercase block mb-1">Attached Milestone Deliverables:</span>
+                          {m.deliverables.map((del, delIdx) => (
+                            <div key={delIdx} className="flex justify-between items-center text-[10px] text-neutral-300">
+                              <span className="truncate pr-4">📄 {del.name} ({del.url.substring(0, 20)}...)</span>
+                              <button
+                                onClick={() => handleDeleteMilestoneDeliverable(m.id, delIdx)}
+                                className="text-[8px] text-red-500 hover:text-white cursor-pointer"
+                              >
+                                Remove
+                              </button>
+                            </div>
+                          ))}
+                          
+                          {m.deliverables.length === 0 && (
+                            <span className="text-[9px] text-neutral-600 block italic">No deliverables linked yet.</span>
+                          )}
+
+                          {/* Deliverable posting trigger inline */}
+                          <div className="pt-2 border-t border-neutral-900 mt-2">
+                            {activeMilestoneAttachmentId === m.id ? (
+                              <form onSubmit={handleAddMilestoneDeliverable} className="space-y-2">
+                                <div className="grid grid-cols-2 gap-2">
+                                  <input
+                                    type="text"
+                                    placeholder="Doc Name"
+                                    value={attachedDocName}
+                                    onChange={(e) => setAttachedDocName(e.target.value)}
+                                    className="bg-neutral-950 border border-neutral-850 px-2 py-1 text-[10px] text-white rounded-sm focus:outline-none"
+                                    required
+                                  />
+                                  <input
+                                    type="url"
+                                    placeholder="Doc Access URL"
+                                    value={attachedDocUrl}
+                                    onChange={(e) => setAttachedDocUrl(e.target.value)}
+                                    className="bg-neutral-950 border border-neutral-850 px-2 py-1 text-[10px] text-white rounded-sm focus:outline-none"
+                                    required
+                                  />
+                                </div>
+                                <div className="flex gap-2">
+                                  <button
+                                    type="submit"
+                                    className="flex-1 bg-volt text-black text-[9px] py-1 font-bold rounded-sm"
+                                  >
+                                    Attach Link
+                                  </button>
+                                  <button
+                                    type="button"
+                                    onClick={() => setActiveMilestoneAttachmentId(null)}
+                                    className="bg-neutral-800 text-neutral-400 text-[9px] py-1 px-2.5 rounded-sm"
+                                  >
+                                    Cancel
+                                  </button>
+                                </div>
+                              </form>
+                            ) : (
+                              <button
+                                onClick={() => {
+                                  setActiveMilestoneAttachmentId(m.id);
+                                  setAttachedDocName("");
+                                  setAttachedDocUrl("");
+                                }}
+                                className="text-[9px] text-volt hover:text-white underline font-bold cursor-pointer"
+                              >
+                                + Post Deliverable / URL Link directly to this Milestone
+                              </button>
+                            )}
+                          </div>
+                        </div>
+
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                {/* 3. Terminal Audit log feed trail */}
+                <div className="bg-[#0c0c0c] border border-neutral-800 p-5 rounded-sm">
+                  <h3 className="text-xs font-bold text-white uppercase tracking-wider mb-3 border-b border-neutral-800 pb-2">
+                    Milestones History & Audit trail
+                  </h3>
+                  <div className="bg-neutral-950 border border-neutral-900 p-4 rounded-sm max-h-[150px] overflow-y-auto space-y-1.5">
+                    {auditLogs.map((log) => (
+                      <div key={log.id} className="text-[10px] font-mono text-neutral-400 leading-normal">
+                        <span className="text-neutral-600 font-bold">[{log.timestamp.split(',')[1]?.trim() || log.timestamp}]</span>{" "}
+                        <span className="text-volt font-bold">&gt;&gt;</span> {log.message}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+              </div>
+            )}
+
+            {/* TAB 2: Asset Requirements Builder */}
             {activeFormTab === "requirements" && (
               <div className="space-y-6">
                 {/* Social Platform Option Creator */}
@@ -581,109 +913,6 @@ function AdminPage() {
               </div>
             )}
 
-            {/* TAB 2: Milestones & Progress Updates */}
-            {activeFormTab === "progress" && (
-              <div className="space-y-6">
-                {/* Project Progress Setting Panel */}
-                <div className="bg-[#0c0c0c] border border-neutral-800 p-5 rounded-sm">
-                  <h3 className="text-xs font-bold text-white uppercase tracking-wider mb-3 border-b border-neutral-800 pb-2">
-                    Project Completion Status & Phase Presets
-                  </h3>
-                  
-                  <form onSubmit={updateProgressTracker} className="space-y-4">
-                    <div>
-                      <label className="text-[9px] text-neutral-500 uppercase font-bold block mb-1">Select Preset Phase</label>
-                      <select
-                        onChange={(e) => handlePhasePresetChange(e.target.value)}
-                        value={progPhase}
-                        className="w-full bg-neutral-950 border border-neutral-800 rounded-sm px-3 py-2 text-xs text-white focus:outline-none focus:border-volt cursor-pointer"
-                      >
-                        {PRESET_PHASES.map((p, idx) => (
-                          <option key={idx} value={p.phase}>{p.phase} ({p.percentage}%)</option>
-                        ))}
-                      </select>
-                    </div>
-
-                    <div className="grid grid-cols-1 sm:grid-cols-12 gap-3">
-                      <div className="sm:col-span-8">
-                        <label className="text-[9px] text-neutral-500 uppercase font-bold block mb-1">Phase Title</label>
-                        <input
-                          type="text"
-                          value={progPhase}
-                          onChange={(e) => setProgPhase(e.target.value)}
-                          className="w-full bg-neutral-950 border border-neutral-800 rounded-sm px-3 py-1.5 text-xs text-white focus:outline-none focus:border-volt"
-                        />
-                      </div>
-                      <div className="sm:col-span-4">
-                        <label className="text-[9px] text-neutral-500 uppercase font-bold block mb-1">Progress (%)</label>
-                        <input
-                          type="number"
-                          min={0}
-                          max={100}
-                          value={progPercent}
-                          onChange={(e) => setProgPercent(Number(e.target.value))}
-                          className="w-full bg-neutral-950 border border-neutral-800 rounded-sm px-3 py-1.5 text-xs text-white focus:outline-none focus:border-volt font-bold"
-                        />
-                      </div>
-                    </div>
-
-                    {/* Progress Slider */}
-                    <div>
-                      <input
-                        type="range"
-                        min="0"
-                        max="100"
-                        value={progPercent}
-                        onChange={(e) => setProgPercent(Number(e.target.value))}
-                        className="w-full accent-volt bg-neutral-900 rounded-sm h-1 cursor-pointer"
-                      />
-                    </div>
-
-                    <div>
-                      <label className="text-[9px] text-neutral-500 uppercase font-bold block mb-1">Phase Activity Status Text</label>
-                      <textarea
-                        value={progStatusText}
-                        onChange={(e) => setProgStatusText(e.target.value)}
-                        rows={2}
-                        className="w-full bg-neutral-950 border border-neutral-800 rounded-sm px-3 py-1.5 text-xs text-white focus:outline-none focus:border-volt"
-                      />
-                    </div>
-
-                    <button
-                      type="submit"
-                      className="w-full bg-volt text-black hover:bg-white text-xs py-2 uppercase font-bold rounded-sm transition cursor-pointer"
-                    >
-                      Update Milestone Status →
-                    </button>
-                  </form>
-                </div>
-
-                {/* Operations timeline status log */}
-                <div className="bg-[#0c0c0c] border border-neutral-800 p-5 rounded-sm">
-                  <h3 className="text-xs font-bold text-white uppercase tracking-wider mb-3 border-b border-neutral-800 pb-2">
-                    + Log Feed Checkpoint Check-in
-                  </h3>
-
-                  <form onSubmit={addStatusUpdate} className="space-y-3">
-                    <textarea
-                      value={newStatusText}
-                      onChange={(e) => setNewStatusText(e.target.value)}
-                      placeholder="e.g. Set up target newsletter lists and launched custom templates."
-                      rows={2}
-                      className="w-full bg-neutral-950 border border-neutral-800 rounded-sm px-3.5 py-2 text-xs focus:outline-none text-white focus:border-volt"
-                      required
-                    />
-                    <button
-                      type="submit"
-                      className="w-full bg-neutral-900 border border-neutral-800 hover:border-volt text-neutral-350 hover:text-white text-xs py-2 uppercase font-bold rounded-sm transition cursor-pointer text-center"
-                    >
-                      Publish Timeline Checkpoint
-                    </button>
-                  </form>
-                </div>
-              </div>
-            )}
-
             {/* TAB 3: Contracts, Agreements & Vault Docs */}
             {activeFormTab === "agreements" && (
               <div className="space-y-6">
@@ -736,7 +965,7 @@ function AdminPage() {
                         value={newFileName}
                         onChange={(e) => setNewFileName(e.target.value)}
                         placeholder="File Name: e.g. Campaign_Assets_Blueprint.pdf"
-                        className="w-full bg-neutral-950 border border-neutral-800 rounded-sm px-3.5 py-2 text-xs focus:outline-none text-white focus:border-volt"
+                        className="w-full bg-neutral-950 border border-neutral-805 px-3.5 py-2 text-xs focus:outline-none text-white focus:border-volt"
                         required
                       />
                     </div>
@@ -746,7 +975,7 @@ function AdminPage() {
                         value={newFileUrl}
                         onChange={(e) => setNewFileUrl(e.target.value)}
                         placeholder="File Access Link: e.g. https://drive.google.com/..."
-                        className="w-full bg-neutral-950 border border-neutral-800 rounded-sm px-3.5 py-2 text-xs focus:outline-none text-white focus:border-volt"
+                        className="w-full bg-neutral-950 border border-neutral-805 px-3.5 py-2 text-xs focus:outline-none text-white focus:border-volt"
                         required
                       />
                     </div>
@@ -755,6 +984,30 @@ function AdminPage() {
                       className="w-full bg-neutral-900 border border-neutral-800 hover:border-volt text-neutral-300 hover:text-white text-xs py-2 uppercase font-bold rounded-sm transition cursor-pointer text-center"
                     >
                       Publish Vault File Link
+                    </button>
+                  </form>
+                </div>
+
+                {/* Operations timeline status log */}
+                <div className="bg-[#0c0c0c] border border-neutral-800 p-5 rounded-sm">
+                  <h3 className="text-xs font-bold text-white uppercase tracking-wider mb-3 border-b border-neutral-800 pb-2">
+                    + Log Feed Checkpoint Check-in
+                  </h3>
+
+                  <form onSubmit={addStatusUpdate} className="space-y-3">
+                    <textarea
+                      value={newStatusText}
+                      onChange={(e) => setNewStatusText(e.target.value)}
+                      placeholder="e.g. Set up target newsletter lists and launched custom templates."
+                      rows={2}
+                      className="w-full bg-neutral-950 border border-neutral-800 rounded-sm px-3.5 py-2 text-xs focus:outline-none text-white focus:border-volt"
+                      required
+                    />
+                    <button
+                      type="submit"
+                      className="w-full bg-neutral-900 border border-neutral-800 hover:border-volt text-neutral-350 hover:text-white text-xs py-2 uppercase font-bold rounded-sm transition cursor-pointer text-center"
+                    >
+                      Publish Timeline Checkpoint
                     </button>
                   </form>
                 </div>

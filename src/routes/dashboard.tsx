@@ -107,7 +107,8 @@ function DashboardPage() {
   const [statuses, setStatuses] = useState<StatusUpdate[]>([]);
   const [files, setFiles] = useState<VaultFile[]>([]);
   const [agreements, setAgreements] = useState<AgreementDoc[]>([]);
-  const [progress, setProgress] = useState<ProjectProgress>(DEFAULT_PROGRESS);
+  const [milestones, setMilestones] = useState<Milestone[]>([]);
+  const [auditLogs, setAuditLogs] = useState<MilestoneAuditLog[]>([]);
 
   // Input states for each requirement
   const [inputVals, setInputVals] = useState<Record<string, string>>({});
@@ -190,14 +191,44 @@ function DashboardPage() {
       localStorage.setItem(agreementsKey, JSON.stringify(DEFAULT_AGREEMENTS));
     }
 
-    // 5. Load Project Progress
-    const progressKey = `t2_progress_${id}`;
-    const storedProgress = localStorage.getItem(progressKey);
-    if (storedProgress) {
-      setProgress(JSON.parse(storedProgress));
+    // 5. Load Project Milestones & Audit logs
+    const milestonesKey = `t2_milestones_${id}`;
+    const auditLogsKey = `t2_milestones_audit_${id}`;
+
+    const storedMilestones = localStorage.getItem(milestonesKey);
+    if (storedMilestones) {
+      setMilestones(JSON.parse(storedMilestones));
     } else {
-      setProgress(DEFAULT_PROGRESS);
-      localStorage.setItem(progressKey, JSON.stringify(DEFAULT_PROGRESS));
+      // Setup defaults
+      const defaultM: Milestone[] = [
+        {
+          id: "m-1",
+          title: "Phase 1: Discovery & Asset Auditing",
+          percentage: 100,
+          statusText: "All core brand kit links, color systems, and media briefs reviewed and logged.",
+          updatedAt: new Date().toLocaleString(),
+          deliverables: [{ name: "Corporate Onboarding Audit Brief", url: "https://drive.google.com" }]
+        },
+        {
+          id: "m-2",
+          title: "Phase 2: Operational Strategy & Setup",
+          percentage: 50,
+          statusText: "Drafting active campaign setup scripts and custom target audience personas.",
+          updatedAt: new Date().toLocaleString(),
+          deliverables: []
+        }
+      ];
+      setMilestones(defaultM);
+      localStorage.setItem(milestonesKey, JSON.stringify(defaultM));
+    }
+
+    const storedAudits = localStorage.getItem(auditLogsKey);
+    if (storedAudits) {
+      setAuditLogs(JSON.parse(storedAudits));
+    } else {
+      const initialAudit = [{ id: "aud-0", message: "Client milestones database initialized.", timestamp: new Date().toLocaleString() }];
+      setAuditLogs(initialAudit);
+      localStorage.setItem(auditLogsKey, JSON.stringify(initialAudit));
     }
 
     const handleStorageChange = () => {
@@ -219,8 +250,11 @@ function DashboardPage() {
       const freshAgreements = localStorage.getItem(agreementsKey);
       if (freshAgreements) setAgreements(JSON.parse(freshAgreements));
 
-      const freshProgress = localStorage.getItem(progressKey);
-      if (freshProgress) setProgress(JSON.parse(freshProgress));
+      const freshMilestones = localStorage.getItem(milestonesKey);
+      if (freshMilestones) setMilestones(JSON.parse(freshMilestones));
+
+      const freshAudits = localStorage.getItem(auditLogsKey);
+      if (freshAudits) setAuditLogs(JSON.parse(freshAudits));
     };
 
     window.addEventListener("storage", handleStorageChange);
@@ -370,24 +404,81 @@ function DashboardPage() {
         <div className="flex-grow p-8 overflow-y-auto max-w-5xl w-full space-y-8">
           
           {/* Project Progress Tracker Banner */}
-          <div className="bg-[#0b0b0b] border border-neutral-800 p-5 rounded-sm flex flex-col md:flex-row md:items-center justify-between gap-6">
-            <div className="space-y-1.5 max-w-xl">
-              <div className="flex items-center gap-2">
-                <span className="h-2 w-2 bg-volt rounded-full animate-pulse" />
-                <span className="text-[10px] text-volt uppercase font-bold tracking-widest font-mono">// ACTIVE PROJECT STATUS</span>
+          {(() => {
+            const avgPercentage = milestones.length > 0
+              ? Math.round(milestones.reduce((acc, curr) => acc + curr.percentage, 0) / milestones.length)
+              : 0;
+            const activeMilestone = milestones.find(m => m.percentage < 100) || milestones[milestones.length - 1];
+
+            return (
+              <div className="bg-[#0b0b0b] border border-neutral-800 p-5 rounded-sm flex flex-col md:flex-row md:items-center justify-between gap-6">
+                <div className="space-y-1.5 max-w-xl">
+                  <div className="flex items-center gap-2">
+                    <span className="h-2 w-2 bg-volt rounded-full animate-pulse" />
+                    <span className="text-[10px] text-volt uppercase font-bold tracking-widest font-mono">// SYSTEM CAMPAIGN PROGRESS</span>
+                  </div>
+                  <h2 className="text-sm font-bold text-white uppercase tracking-wider">
+                    {activeMilestone ? activeMilestone.title : "Workspace Ready"}
+                  </h2>
+                  <p className="text-xs text-neutral-400 leading-relaxed">
+                    {activeMilestone ? activeMilestone.statusText : "All onboarding requirements and active setups finalized."}
+                  </p>
+                </div>
+                
+                <div className="shrink-0 flex flex-col items-center justify-center border-t md:border-t-0 md:border-l border-neutral-800 pt-4 md:pt-0 pl-0 md:pl-6">
+                  <div className="text-2xl font-bold text-volt tracking-tight">{avgPercentage}%</div>
+                  <span className="text-[8px] text-neutral-500 uppercase tracking-widest font-bold mt-1">OVERALL COMPLETION</span>
+                  <div className="w-32 bg-neutral-900 border border-neutral-800 h-1.5 rounded-full overflow-hidden mt-2.5">
+                    <div className="bg-volt h-full transition-all duration-500" style={{ width: `${avgPercentage}%` }} />
+                  </div>
+                </div>
               </div>
-              <h2 className="text-sm font-bold text-white uppercase tracking-wider">{progress.phase}</h2>
-              <p className="text-xs text-neutral-400 leading-relaxed">{progress.statusText}</p>
-            </div>
-            
-            <div className="shrink-0 flex flex-col items-center justify-center border-t md:border-t-0 md:border-l border-neutral-800 pt-4 md:pt-0 pl-0 md:pl-6">
-              <div className="text-2xl font-bold text-volt tracking-tight">{progress.percentage}%</div>
-              <span className="text-[8px] text-neutral-500 uppercase tracking-widest font-bold mt-1">COMPLETED</span>
-              <div className="w-32 bg-neutral-900 border border-neutral-800 h-1.5 rounded-full overflow-hidden mt-2.5">
-                <div className="bg-volt h-full transition-all duration-500" style={{ width: `${progress.percentage}%` }} />
+            );
+          })()}
+
+          {/* Onboarding & Campaign Roadmap Grid */}
+          {activeTab === "requirements" && (
+            <div className="bg-[#0b0b0b] border border-neutral-800 p-5 rounded-sm space-y-4">
+              <h3 className="text-xs font-bold text-white uppercase tracking-wider border-b border-neutral-850 pb-2 flex justify-between items-center">
+                <span>// Client Milestones & Onboarding Roadmap</span>
+                <span className="text-[9px] text-neutral-500 font-bold font-mono">TRACKED CHECKS: {milestones.length}</span>
+              </h3>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {milestones.map((m) => (
+                  <div key={m.id} className="p-4 bg-[#0c0c0c] border border-neutral-800 rounded-sm space-y-3 flex flex-col justify-between">
+                    <div className="space-y-2">
+                      <div className="flex justify-between items-start">
+                        <span className="text-xs text-white font-bold uppercase tracking-wide truncate max-w-[200px]">{m.title}</span>
+                        <span className="text-[10px] text-volt font-bold shrink-0">{m.percentage}%</span>
+                      </div>
+                      <div className="w-full bg-neutral-950 h-1 rounded-full overflow-hidden">
+                        <div className="bg-volt h-full transition-all duration-300" style={{ width: `${m.percentage}%` }} />
+                      </div>
+                      <p className="text-[11px] text-neutral-450 leading-relaxed font-bold uppercase">{m.statusText}</p>
+                    </div>
+
+                    {m.deliverables && m.deliverables.length > 0 && (
+                      <div className="pt-2.5 border-t border-neutral-900 mt-2 space-y-1.5">
+                        <span className="text-[8px] text-neutral-500 font-bold uppercase block tracking-wider">Milestone Deliverables:</span>
+                        {m.deliverables.map((del, delIdx) => (
+                          <a
+                            key={delIdx}
+                            href={del.url}
+                            target="_blank"
+                            rel="noreferrer"
+                            className="text-[10px] text-volt hover:text-white underline flex items-center gap-1.5 truncate decoration-transparent font-bold"
+                          >
+                            <span className="text-neutral-500">📄</span> {del.name} ↗
+                          </a>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                ))}
               </div>
             </div>
-          </div>
+          )}
 
           {activeTab === "requirements" && (
             <div>
