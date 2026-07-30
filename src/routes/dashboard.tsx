@@ -110,6 +110,10 @@ function DashboardPage() {
   const [agreements, setAgreements] = useState<AgreementDoc[]>([]);
   const [milestones, setMilestones] = useState<Milestone[]>([]);
   const [auditLogs, setAuditLogs] = useState<MilestoneAuditLog[]>([]);
+  const [approved, setApproved] = useState<boolean>(true);
+  const [members, setMembers] = useState<any[]>([]);
+  const [inviteEmail, setInviteEmail] = useState("");
+  const [notifyMsg, setNotifyMsg] = useState("");
 
   // Input states for each requirement
   const [inputVals, setInputVals] = useState<Record<string, string>>({});
@@ -127,9 +131,7 @@ function DashboardPage() {
     const userCompany = localStorage.getItem("t2_user_company") || "Corporate Partner";
     
     // Determine dynamic client identification key
-    let id = "acme";
-    if (userEmail.includes("startuptalky")) id = "startuptalky";
-    else if (userEmail.includes("bitbns")) id = "bitbns";
+    const id = localStorage.getItem("t2_client_id") || "acme";
 
     setEmail(userEmail);
     setCompany(userCompany);
@@ -167,10 +169,12 @@ function DashboardPage() {
             });
             setInputVals(vals);
 
-            // Load statuses, files, agreements, milestones
+            // Load statuses, files, agreements, milestones, approvals
             setStatuses(data.statuses || DEFAULT_STATUSES);
             setFiles(data.files || DEFAULT_FILES);
             setAgreements(data.agreements || DEFAULT_AGREEMENTS);
+            setApproved(data.approved ?? true);
+            setMembers(data.members || []);
             setMilestones(data.milestones && data.milestones.length > 0 ? data.milestones : [
               {
                 id: "m-1",
@@ -284,6 +288,18 @@ function DashboardPage() {
         const initialAudit = [{ id: "aud-0", message: "Client milestones database initialized.", timestamp: new Date().toLocaleString() }];
         setAuditLogs(initialAudit);
         localStorage.setItem(auditLogsKey, JSON.stringify(initialAudit));
+      }
+
+      // 6. Load local approvals and coworker members list
+      const isApproved = localStorage.getItem(`t2_approved_${id}`) !== "false";
+      setApproved(isApproved);
+
+      const storedMembers = localStorage.getItem(`t2_members_${id}`);
+      if (storedMembers) {
+        setMembers(JSON.parse(storedMembers));
+      } else {
+        setMembers([]);
+        localStorage.setItem(`t2_members_${id}`, JSON.stringify([]));
       }
     };
 
@@ -491,8 +507,68 @@ function DashboardPage() {
         {/* Content area */}
         <div className="flex-grow p-8 overflow-y-auto max-w-5xl w-full space-y-8">
           
-          {/* Project Progress Tracker Banner */}
-          {(() => {
+          {!approved ? (
+            <div className="max-w-2xl mx-auto py-12 space-y-8 text-left">
+              {/* Glowing Clearance Banner */}
+              <div className="bg-[#0b0b0b] border-2 border-flame/40 p-6 rounded-sm text-left space-y-4 shadow-[0_0_15px_rgba(255,100,0,0.05)] relative overflow-hidden">
+                <div className="absolute top-0 right-0 h-16 w-16 bg-flame/5 rounded-full blur-xl translate-x-4 -translate-y-4" />
+                
+                <div className="flex items-center gap-2 text-flame text-[10px] font-bold uppercase tracking-widest font-mono">
+                  <span className="h-2 w-2 bg-flame rounded-full animate-ping" />
+                  // STATUS: AWAITING_OPERATIONAL_HANDSHAKE
+                </div>
+
+                <h2 className="text-lg font-bold text-white uppercase tracking-wider">
+                  Operational Access Restricted
+                </h2>
+
+                <p className="text-xs text-neutral-400 leading-relaxed font-mono">
+                  Your custom client workspace registration has been successfully created. However, full dashboard modules and campaign operations are restricted pending verification and contract alignment by the Typtwo Administration desk.
+                </p>
+
+                <div className="border-t border-neutral-900 pt-4 flex flex-col sm:flex-row justify-between text-[9px] text-neutral-500 gap-2">
+                  <span>CLEARENCE ID: T2_PENDING_GATEWAY_{clientId.toUpperCase()}</span>
+                  <span>REGISTRATION DATE: {new Date().toLocaleDateString()}</span>
+                </div>
+              </div>
+
+              {/* Status checklist grid */}
+              <div className="bg-[#0c0c0c] border border-neutral-800 p-5 rounded-sm space-y-4 font-mono">
+                <h3 className="text-xs font-bold text-white uppercase tracking-wider border-b border-neutral-850 pb-2">
+                  // Compliance Handshake Progress
+                </h3>
+
+                <div className="space-y-4 text-left">
+                  <div className="flex items-start gap-3">
+                    <span className="text-emerald-500 font-bold shrink-0 text-xs">✓ [100%]</span>
+                    <div className="space-y-1">
+                      <h4 className="text-xs text-white uppercase font-bold">Profile Identity Verification</h4>
+                      <p className="text-[10px] text-neutral-550 font-bold uppercase">Corporate domains parsed and registered into Typtwo node vault.</p>
+                    </div>
+                  </div>
+
+                  <div className="flex items-start gap-3">
+                    <span className="text-emerald-500 font-bold shrink-0 text-xs">✓ [100%]</span>
+                    <div className="space-y-1">
+                      <h4 className="text-xs text-white uppercase font-bold">Multi-Factor Authenticator Synced</h4>
+                      <p className="text-[10px] text-neutral-550 font-bold uppercase">Email OTP verification configured and linked for workspace login security.</p>
+                    </div>
+                  </div>
+
+                  <div className="flex items-start gap-3">
+                    <span className="text-flame font-bold shrink-0 text-xs font-mono">○ [05%]</span>
+                    <div className="space-y-1">
+                      <h4 className="text-xs text-white uppercase font-bold">Typtwo Admin Handshake</h4>
+                      <p className="text-[10px] text-neutral-550 font-bold uppercase">Admin audit is scheduled. An onboarding lead will contact you to align project scopes.</p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          ) : (
+            <>
+              {/* Project Progress Tracker Banner */}
+              {(() => {
             const avgPercentage = milestones.length > 0
               ? Math.round(milestones.reduce((acc, curr) => acc + curr.percentage, 0) / milestones.length)
               : 0;
@@ -783,6 +859,66 @@ function DashboardPage() {
                   {auditLogs.length === 0 && (
                     <div className="text-center text-xs text-neutral-500 py-6">
                       No milestone activities logged.
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
+          )}
+            </>
+          )}
+
+          {/* Team Members Invite Widget (Visible when approved) */}
+          {approved && (
+            <div className="bg-[#0b0b0b] border border-neutral-800 p-5 rounded-sm grid grid-cols-1 md:grid-cols-2 gap-8 text-left mt-8">
+              {/* Left Column: Invite Teammate */}
+              <div className="space-y-4 font-mono">
+                <div className="space-y-1.5">
+                  <h3 className="text-xs font-bold text-white uppercase tracking-wider flex items-center gap-2">
+                    <span>// Team Vault Access</span>
+                    {notifyMsg && (
+                      <span className="text-[9px] text-volt uppercase font-bold animate-pulse">● {notifyMsg}</span>
+                    )}
+                  </h3>
+                  <p className="text-[10px] text-neutral-450 font-bold uppercase">
+                    Invite colleagues from your corporate domain to view this campaign board. All invitations require manual verification by Typtwo Operations.
+                  </p>
+                </div>
+
+                <form onSubmit={handleInviteMember} className="flex gap-2">
+                  <input
+                    type="email"
+                    placeholder="coworker@company.com"
+                    value={inviteEmail}
+                    onChange={(e) => setInviteEmail(e.target.value)}
+                    className="flex-grow bg-neutral-950 border border-neutral-800 rounded-sm px-3 py-1.5 text-xs text-white focus:outline-none focus:border-volt"
+                    required
+                  />
+                  <button
+                    type="submit"
+                    className="bg-volt text-black hover:bg-white text-xs px-4 py-1.5 font-bold uppercase rounded-sm cursor-pointer transition"
+                  >
+                    Invite
+                  </button>
+                </form>
+              </div>
+
+              {/* Right Column: Teammates list */}
+              <div className="space-y-3 font-mono">
+                <h4 className="text-[9px] text-neutral-500 uppercase tracking-widest font-bold">// Active Team Access</h4>
+                <div className="space-y-2 max-h-[120px] overflow-y-auto pr-1">
+                  {members.map((m: any, idx: number) => (
+                    <div key={idx} className="bg-neutral-950 border border-neutral-900 px-3 py-2 rounded-sm flex items-center justify-between text-[11px]">
+                      <span className="text-white truncate pr-2">{m.email}</span>
+                      <span className={`text-[9px] font-bold uppercase ${m.approved ? "text-volt" : "text-flame animate-pulse"}`}>
+                        {m.approved ? "Approved ●" : "Awaiting Verification ○"}
+                      </span>
+                    </div>
+                  ))}
+
+                  {members.length === 0 && (
+                    <div className="text-[10px] text-neutral-500 italic py-2">
+                      No other team members have requested access to this workspace.
                     </div>
                   )}
                 </div>

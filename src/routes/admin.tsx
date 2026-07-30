@@ -127,6 +127,7 @@ const SOCIAL_SUB_OPTIONS = [
 
 function AdminPage() {
   const [clients, setClients] = useState<Client[]>([]);
+  const [allDbClients, setAllDbClients] = useState<any[]>([]);
   const [selectedClientId, setSelectedClientId] = useState<string>("acme");
 
   // Onboard new client form states
@@ -136,7 +137,7 @@ function AdminPage() {
   const [reqs, setReqs] = useState<Requirement[]>([]);
   
   // Tab selector for forms panel (on the right)
-  const [activeFormTab, setActiveFormTab] = useState<"requirements" | "progress" | "agreements">("requirements");
+  const [activeFormTab, setActiveFormTab] = useState<"requirements" | "progress" | "agreements" | "approvals">("progress");
 
   // Custom requirement form state
   const [customLabel, setCustomLabel] = useState("");
@@ -180,16 +181,20 @@ function AdminPage() {
         try {
           const { data, error } = await supabase
             .from("clients")
-            .select("id, name, email_domain");
+            .select("*");
           if (data && !error) {
-            const mapped: Client[] = data.map((d: any) => ({
+            setAllDbClients(data);
+            
+            // Only map approved clients to selection list
+            const approvedRows = data.filter((d: any) => d.approved === true);
+            const mapped: Client[] = approvedRows.map((d: any) => ({
               id: d.id,
               name: d.name,
               email: `@${d.email_domain}`
             }));
             setClients(mapped);
             
-            // Set first client as default if none selected or if selected client does not exist
+            // Set first approved client as default if selected client does not exist in approved list
             if (mapped.length > 0 && !mapped.some(c => c.id === selectedClientId)) {
               setSelectedClientId(mapped[0].id);
             }
@@ -203,7 +208,8 @@ function AdminPage() {
       // Local storage fallback list
       const storedList = localStorage.getItem("t2_local_clients_list");
       if (storedList) {
-        setClients(JSON.parse(storedList));
+        const parsed = JSON.parse(storedList);
+        setClients(parsed);
       } else {
         setClients(DEFAULT_CLIENTS);
         localStorage.setItem("t2_local_clients_list", JSON.stringify(DEFAULT_CLIENTS));
@@ -821,6 +827,196 @@ function AdminPage() {
     }
   };
 
+  // Approve a pending workspace registration
+  const handleApproveWorkspace = async (clientIdToApprove: string) => {
+    if (isSupabaseConfigured()) {
+      try {
+        const { error } = await supabase
+          .from("clients")
+          .update({ approved: true })
+          .eq("id", clientIdToApprove);
+        
+        if (!error) {
+          setNotifyMsg("WORKSPACE APPROVED");
+          setTimeout(() => setNotifyMsg(""), 2000);
+          return;
+        }
+        console.error("Supabase approve error", error);
+      } catch (err) {
+        console.error(err);
+      }
+    }
+
+    // Local storage fallback
+    localStorage.setItem(`t2_approved_${clientIdToApprove}`, "true");
+    
+    // Auto approve in local list
+    const localClientsKey = "t2_local_clients_list";
+    const currentList = JSON.parse(localStorage.getItem(localClientsKey) || "[]");
+    const updatedList = currentList.map((c: any) => 
+      c.id === clientIdToApprove ? { ...c, approved: true } : c
+    );
+    localStorage.setItem(localClientsKey, JSON.stringify(updatedList));
+
+    setNotifyMsg("WORKSPACE APPROVED");
+    setTimeout(() => setNotifyMsg(""), 2000);
+    window.dispatchEvent(new Event("storage"));
+    window.dispatchEvent(new Event("t2_storage_update"));
+  };
+
+  // Deny/Delete pending workspace registration
+  const handleDenyWorkspace = async (clientIdToDeny: string) => {
+    if (!window.confirm(`Are you sure you want to reject and delete client workspace "${clientIdToDeny}"?`)) return;
+
+    if (isSupabaseConfigured()) {
+      try {
+        const { error } = await supabase
+          .from("clients")
+          .delete()
+          .eq("id", clientIdToDeny);
+        
+        if (!error) {
+          setNotifyMsg("WORKSPACE REJECTED");
+          setTimeout(() => setNotifyMsg(""), 2000);
+          return;
+        }
+        console.error("Supabase delete error", error);
+      } catch (err) {
+        console.error(err);
+      }
+    }
+
+    // Local storage fallback
+    const localClientsKey = "t2_local_clients_list";
+    const currentList = JSON.parse(localStorage.getItem(localClientsKey) || "[]");
+    const updatedList = currentList.filter((c: any) => c.id !== clientIdToDeny);
+    localStorage.setItem(localClientsKey, JSON.stringify(updatedList));
+    
+    localStorage.removeItem(`t2_reqs_${clientIdToDeny}`);
+    localStorage.removeItem(`t2_milestones_${clientIdToDeny}`);
+    localStorage.removeItem(`t2_milestones_audit_${clientIdToDeny}`);
+    localStorage.removeItem(`t2_approved_${clientIdToDeny}`);
+
+    setNotifyMsg("WORKSPACE REJECTED");
+    setTimeout(() => setNotifyMsg(""), 2000);
+    window.dispatchEvent(new Event("storage"));
+    window.dispatchEvent(new Event("t2_storage_update"));
+  };
+
+  // Approve coworker access request
+  const handleApproveMember = async (targetClientId: string, memberEmail: string) => {
+    if (isSupabaseConfigured()) {
+      try {
+        const { data } = await supabase
+          .from("clients")
+          .select("members")
+          .eq("id", targetClientId)
+          .single();
+
+        const current = data?.members || [];
+        const updated = current.map((m: any) => 
+          m.email === memberEmail ? { ...m, approved: true } : m
+        );
+
+        const { error } = await supabase
+          .from("clients")
+          .update({ members: updated })
+          .eq("id", targetClientId);
+
+        if (!error) {
+          setNotifyMsg("MEMBER GRANTED ACCESS");
+          setTimeout(() => setNotifyMsg(""), 2000);
+          return;
+        }
+      } catch (err) {
+        console.error(err);
+      }
+    }
+
+    // Local storage fallback
+    const key = `t2_members_${targetClientId}`;
+    const current = JSON.parse(localStorage.getItem(key) || "[]");
+    const updated = current.map((m: any) => 
+      m.email === memberEmail ? { ...m, approved: true } : m
+    );
+    localStorage.setItem(key, JSON.stringify(updated));
+
+    setNotifyMsg("MEMBER APPROVED");
+    setTimeout(() => setNotifyMsg(""), 2000);
+    window.dispatchEvent(new Event("storage"));
+    window.dispatchEvent(new Event("t2_storage_update"));
+  };
+
+  // Deny access/Delete coworker request
+  const handleDenyMember = async (targetClientId: string, memberEmail: string) => {
+    if (isSupabaseConfigured()) {
+      try {
+        const { data } = await supabase
+          .from("clients")
+          .select("members")
+          .eq("id", targetClientId)
+          .single();
+
+        const current = data?.members || [];
+        const updated = current.filter((m: any) => m.email !== memberEmail);
+
+        const { error } = await supabase
+          .from("clients")
+          .update({ members: updated })
+          .eq("id", targetClientId);
+
+        if (!error) {
+          setNotifyMsg("MEMBER REJECTED");
+          setTimeout(() => setNotifyMsg(""), 2000);
+          return;
+        }
+      } catch (err) {
+        console.error(err);
+      }
+    }
+
+    // Local storage fallback
+    const key = `t2_members_${targetClientId}`;
+    const current = JSON.parse(localStorage.getItem(key) || "[]");
+    const updated = current.filter((m: any) => m.email !== memberEmail);
+    localStorage.setItem(key, JSON.stringify(updated));
+
+    setNotifyMsg("MEMBER REJECTED");
+    setTimeout(() => setNotifyMsg(""), 2000);
+    window.dispatchEvent(new Event("storage"));
+    window.dispatchEvent(new Event("t2_storage_update"));
+  };
+
+  const getPendingWorkspaces = () => {
+    if (isSupabaseConfigured()) {
+      return allDbClients.filter(c => !c.approved);
+    }
+    // Local storage
+    const storedList = localStorage.getItem("t2_local_clients_list");
+    if (!storedList) return [];
+    const parsed = JSON.parse(storedList);
+    return parsed.filter((c: any) => localStorage.getItem(`t2_approved_${c.id}`) !== "true" && c.id !== "acme" && c.id !== "startuptalky" && c.id !== "bitbns");
+  };
+
+  const getPendingMembers = () => {
+    if (isSupabaseConfigured()) {
+      return allDbClients.flatMap(c => (c.members || []).map((m: any) => ({ ...m, clientId: c.id, clientName: c.name })).filter((m: any) => !m.approved));
+    }
+    // Local storage keys
+    const storedList = localStorage.getItem("t2_local_clients_list");
+    if (!storedList) return [];
+    const parsed = JSON.parse(storedList);
+    return parsed.flatMap((c: any) => {
+      const key = `t2_members_${c.id}`;
+      const list = JSON.parse(localStorage.getItem(key) || "[]");
+      return list.filter((m: any) => !m.approved).map((m: any) => ({ ...m, clientId: c.id, clientName: c.name }));
+    });
+  };
+
+  const pendingWorkspacesList = getPendingWorkspaces();
+  const pendingMembersList = getPendingMembers();
+  const totalPending = pendingWorkspacesList.length + pendingMembersList.length;
+
   const selectedClient = clients.find(c => c.id === selectedClientId) || clients[0] || { id: "loading", name: "Loading Workspace...", email: "" };
   const activeCustomsCount = reqs.filter(r => r.id.startsWith("req-custom-")).length;
 
@@ -1015,6 +1211,18 @@ function AdminPage() {
                 }`}
               >
                 Contracts & Vault
+              </button>
+
+              <button
+                onClick={() => setActiveFormTab("approvals")}
+                className={`flex-1 text-center py-2 text-[10px] uppercase font-bold tracking-wider rounded-sm transition cursor-pointer relative ${
+                  activeFormTab === "approvals" ? "bg-volt text-black font-extrabold" : "text-neutral-400 hover:text-white"
+                }`}
+              >
+                Approvals Center
+                {totalPending > 0 && (
+                  <span className="absolute top-1 right-1 h-2 w-2 bg-flame rounded-full animate-ping" />
+                )}
               </button>
             </div>
 
@@ -1416,6 +1624,97 @@ function AdminPage() {
                       Publish Timeline Checkpoint
                     </button>
                   </form>
+                </div>
+              </div>
+            )}
+
+            {/* TAB 4: Approvals Center */}
+            {activeFormTab === "approvals" && (
+              <div className="space-y-6">
+                {/* 1. Pending Workspace Registrations */}
+                <div className="bg-[#0c0c0c] border border-neutral-800 p-5 rounded-sm">
+                  <h3 className="text-xs font-bold text-volt uppercase tracking-wider mb-4 border-b border-neutral-800 pb-2 flex items-center justify-between">
+                    <span>// Pending Workspace Approvals</span>
+                    <span className="bg-volt/10 text-volt px-2 py-0.5 rounded-sm text-[9px] font-bold">
+                      {pendingWorkspacesList.length} PENDING
+                    </span>
+                  </h3>
+
+                  <div className="space-y-3">
+                    {pendingWorkspacesList.map((clientRow: any) => (
+                      <div key={clientRow.id} className="bg-neutral-950 border border-neutral-900 p-4 rounded-sm flex items-center justify-between">
+                        <div className="space-y-1 text-left">
+                          <h4 className="text-xs font-bold text-white uppercase">{clientRow.name}</h4>
+                          <div className="text-[9px] text-neutral-500 uppercase tracking-wider">
+                            Workspace: <span className="text-neutral-350">{clientRow.id}</span> | Domain: <span className="text-neutral-350">{clientRow.email_domain}</span>
+                          </div>
+                        </div>
+                        <div className="flex gap-2">
+                          <button
+                            onClick={() => handleApproveWorkspace(clientRow.id)}
+                            className="bg-volt text-black hover:bg-white text-[10px] py-1.5 px-3 uppercase font-bold rounded-sm transition cursor-pointer"
+                          >
+                            Approve
+                          </button>
+                          <button
+                            onClick={() => handleDenyWorkspace(clientRow.id)}
+                            className="bg-neutral-900 border border-neutral-800 hover:border-red-500 hover:text-white text-neutral-400 text-[10px] py-1.5 px-3 uppercase font-bold rounded-sm transition cursor-pointer"
+                          >
+                            Deny
+                          </button>
+                        </div>
+                      </div>
+                    ))}
+
+                    {pendingWorkspacesList.length === 0 && (
+                      <div className="text-xs text-neutral-500 italic py-3 text-center">
+                        No pending client workspace registrations.
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+                {/* 2. Pending Member Invitations */}
+                <div className="bg-[#0c0c0c] border border-neutral-800 p-5 rounded-sm">
+                  <h3 className="text-xs font-bold text-volt uppercase tracking-wider mb-4 border-b border-neutral-800 pb-2 flex items-center justify-between">
+                    <span>// Pending Team Member Invites</span>
+                    <span className="bg-volt/10 text-volt px-2 py-0.5 rounded-sm text-[9px] font-bold">
+                      {pendingMembersList.length} PENDING
+                    </span>
+                  </h3>
+
+                  <div className="space-y-3">
+                    {pendingMembersList.map((m: any) => (
+                      <div key={`${m.clientId}-${m.email}`} className="bg-neutral-950 border border-neutral-900 p-4 rounded-sm flex items-center justify-between">
+                        <div className="space-y-1 text-left">
+                          <h4 className="text-xs font-bold text-white">{m.email}</h4>
+                          <div className="text-[9px] text-neutral-500 uppercase tracking-wider">
+                            Company: <span className="text-neutral-350">{m.clientName}</span> ({m.clientId})
+                          </div>
+                        </div>
+                        <div className="flex gap-2">
+                          <button
+                            onClick={() => handleApproveMember(m.clientId, m.email)}
+                            className="bg-volt text-black hover:bg-white text-[10px] py-1.5 px-3 uppercase font-bold rounded-sm transition cursor-pointer"
+                          >
+                            Grant Access
+                          </button>
+                          <button
+                            onClick={() => handleDenyMember(m.clientId, m.email)}
+                            className="bg-neutral-900 border border-neutral-800 hover:border-red-500 hover:text-white text-neutral-400 text-[10px] py-1.5 px-3 uppercase font-bold rounded-sm transition cursor-pointer"
+                          >
+                            Reject
+                          </button>
+                        </div>
+                      </div>
+                    ))}
+
+                    {pendingMembersList.length === 0 && (
+                      <div className="text-xs text-neutral-500 italic py-3 text-center">
+                        No pending coworker access requests.
+                      </div>
+                    )}
+                  </div>
                 </div>
               </div>
             )}
