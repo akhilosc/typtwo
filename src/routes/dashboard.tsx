@@ -101,7 +101,15 @@ function DashboardPage() {
     const storedReqs = localStorage.getItem(reqKey);
     let currentReqs: Requirement[] = [];
     if (storedReqs) {
-      currentReqs = JSON.parse(storedReqs);
+      const parsed: Requirement[] = JSON.parse(storedReqs);
+      const merged = [...parsed];
+      DEFAULT_REQUIREMENTS.forEach((def) => {
+        if (!merged.some((m) => m.id === def.id)) {
+          merged.push(JSON.parse(JSON.stringify(def)));
+        }
+      });
+      currentReqs = merged;
+      localStorage.setItem(reqKey, JSON.stringify(merged));
     } else {
       currentReqs = JSON.parse(JSON.stringify(DEFAULT_REQUIREMENTS));
       localStorage.setItem(reqKey, JSON.stringify(currentReqs));

@@ -71,7 +71,15 @@ function AdminPage() {
     const key = `t2_reqs_${selectedClientId}`;
     const stored = localStorage.getItem(key);
     if (stored) {
-      setReqs(JSON.parse(stored));
+      const parsed: Requirement[] = JSON.parse(stored);
+      const merged = [...parsed];
+      DEFAULT_REQUIREMENTS.forEach((def) => {
+        if (!merged.some((m) => m.id === def.id)) {
+          merged.push(JSON.parse(JSON.stringify(def)));
+        }
+      });
+      setReqs(merged);
+      localStorage.setItem(key, JSON.stringify(merged));
     } else {
       const initial = JSON.parse(JSON.stringify(DEFAULT_REQUIREMENTS));
       setReqs(initial);
