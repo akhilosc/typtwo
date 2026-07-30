@@ -474,12 +474,23 @@ function DashboardPage() {
                         <div className="text-xs font-bold text-white truncate uppercase tracking-wide">{f.name}</div>
                         <div className="text-[10px] text-neutral-500 mt-0.5">{f.size}</div>
                       </div>
-                      <button
-                        onClick={() => alert(`Downloading deliverable: ${f.name}`)}
-                        className="bg-neutral-900 border border-neutral-800 hover:border-volt text-neutral-300 hover:text-white text-[10px] px-3 py-1.5 rounded-sm uppercase tracking-widest font-bold transition cursor-pointer"
-                      >
-                        Get
-                      </button>
+                      {f.url && f.url !== "#" ? (
+                        <a
+                          href={f.url}
+                          target="_blank"
+                          rel="noreferrer"
+                          className="bg-volt text-black hover:bg-white text-[10px] px-3.5 py-1.5 rounded-sm uppercase tracking-widest font-bold transition cursor-pointer text-center decoration-transparent"
+                        >
+                          Get ↗
+                        </a>
+                      ) : (
+                        <button
+                          onClick={() => alert(`Downloading deliverable: ${f.name}`)}
+                          className="bg-neutral-900 border border-neutral-800 hover:border-volt text-neutral-300 hover:text-white text-[10px] px-3 py-1.5 rounded-sm uppercase tracking-widest font-bold transition cursor-pointer"
+                        >
+                          Get
+                        </button>
+                      )}
                     </div>
                   ))}
 
@@ -519,12 +530,23 @@ function DashboardPage() {
                         <div className="text-xs font-bold text-white truncate uppercase tracking-wide">{doc.name}</div>
                         <div className="text-[10px] text-neutral-500 mt-0.5">Shared: {doc.date}</div>
                       </div>
-                      <button
-                        onClick={() => alert(`Downloading signed contract: ${doc.name}`)}
-                        className="bg-neutral-900 border border-neutral-800 hover:border-volt text-neutral-300 hover:text-white text-[10px] px-3 py-1.5 rounded-sm uppercase tracking-widest font-bold transition cursor-pointer"
-                      >
-                        Review
-                      </button>
+                      {doc.url && doc.url !== "#" ? (
+                        <a
+                          href={doc.url}
+                          target="_blank"
+                          rel="noreferrer"
+                          className="bg-volt text-black hover:bg-white text-[10px] px-3.5 py-1.5 rounded-sm uppercase tracking-widest font-bold transition cursor-pointer text-center decoration-transparent"
+                        >
+                          Review ↗
+                        </a>
+                      ) : (
+                        <button
+                          onClick={() => alert(`Reviewing signed contract: ${doc.name}`)}
+                          className="bg-neutral-900 border border-neutral-800 hover:border-volt text-neutral-300 hover:text-white text-[10px] px-3 py-1.5 rounded-sm uppercase tracking-widest font-bold transition cursor-pointer"
+                        >
+                          Review
+                        </button>
+                      )}
                     </div>
                   ))}
                 </div>
