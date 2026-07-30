@@ -103,6 +103,10 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
     ],
     links: [
       { rel: "stylesheet", href: appCss },
+      { rel: "shortcut icon", href: "https://www.typtwo.com/favicon.ico" },
+      { rel: "icon", href: "https://www.typtwo.com/favicon-32x32.png", sizes: "32x32", type: "image/png" },
+      { rel: "icon", href: "https://www.typtwo.com/favicon-16x16.png", sizes: "16x16", type: "image/png" },
+      { rel: "apple-touch-icon", href: "https://www.typtwo.com/apple-touch-icon.png", sizes: "180x180" },
       {
         rel: "icon",
         href: 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" width="32" height="32"><rect width="32" height="32" rx="6" fill="%230b0b0d"/><path d="M11 6h10v2h-3v16h3v2H11v-2h3V8h-3V6z" fill="%23e5c158"/></svg>',
