@@ -7,7 +7,21 @@ export const Route = createFileRoute("/login")({
   head: () => ({
     meta: [
       { title: "Portal Access — Typtwo" },
-      { name: "description", content: "Client portal login and registration." }
+      { name: "description", content: "Client portal login and registration." },
+      { property: "og:site_name", content: "Typtwo" },
+      { property: "og:url", content: "https://www.typtwo.com/login" },
+      { property: "og:title", content: "Portal Access — Typtwo" },
+      { property: "og:description", content: "Client portal login and registration." },
+      { property: "og:type", content: "website" },
+      { property: "og:image", content: "https://www.typtwo.com/og-image.png" },
+      { property: "og:image:secure_url", content: "https://www.typtwo.com/og-image.png" },
+      { property: "og:image:type", content: "image/png" },
+      { property: "og:image:width", content: "1024" },
+      { property: "og:image:height", content: "1024" },
+      { name: "twitter:card", content: "summary_large_image" },
+      { name: "twitter:title", content: "Portal Access — Typtwo" },
+      { name: "twitter:description", content: "Client portal login and registration." },
+      { name: "twitter:image", content: "https://www.typtwo.com/og-image.png" },
     ]
   }),
   component: LoginPage

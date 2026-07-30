@@ -354,6 +354,10 @@ function DashboardPage() {
 
   const handleLogout = () => {
     localStorage.removeItem("t2_session");
+    localStorage.removeItem("t2_user_email");
+    localStorage.removeItem("t2_user_company");
+    localStorage.removeItem("t2_client_id");
+    sessionStorage.clear();
     window.dispatchEvent(new Event("storage"));
     window.dispatchEvent(new Event("t2_storage_update"));
     navigate({ to: "/login" });
@@ -499,8 +503,16 @@ function DashboardPage() {
               UAE_EDGE_T2_{clientId.toUpperCase()}
             </span>
           </div>
-          <div className="text-[10px] text-neutral-400">
-            SYSTEM_SECURE // TLS_1.3_ACTIVE
+          <div className="flex items-center gap-4">
+            <div className="hidden sm:block text-[10px] text-neutral-400">
+              SYSTEM_SECURE // TLS_1.3_ACTIVE
+            </div>
+            <button
+              onClick={handleLogout}
+              className="bg-neutral-900 border border-neutral-800 hover:border-red-500/80 hover:text-red-400 text-neutral-300 text-xs px-3 py-1.5 text-center transition cursor-pointer uppercase font-bold rounded-sm"
+            >
+              ← Exit / Logout
+            </button>
           </div>
         </header>
 

@@ -16,6 +16,7 @@ import { Route as ClientsRouteImport } from './routes/clients'
 import { Route as ContactRouteImport } from './routes/contact'
 import { Route as DashboardRouteImport } from './routes/dashboard'
 import { Route as LoginRouteImport } from './routes/login'
+import { Route as OpsConsoleX92kRouteImport } from './routes/ops-console-x92k'
 import { Route as StudiosRouteImport } from './routes/studios'
 import { Route as TechRouteImport } from './routes/tech'
 
@@ -54,6 +55,11 @@ const LoginRoute = LoginRouteImport.update({
   path: '/login',
   getParentRoute: () => rootRouteImport,
 } as any)
+const OpsConsoleX92kRoute = OpsConsoleX92kRouteImport.update({
+  id: '/ops-console-x92k',
+  path: '/ops-console-x92k',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const StudiosRoute = StudiosRouteImport.update({
   id: '/studios',
   path: '/studios',
@@ -73,6 +79,7 @@ export interface FileRoutesByFullPath {
   '/contact': typeof ContactRoute
   '/dashboard': typeof DashboardRoute
   '/login': typeof LoginRoute
+  '/ops-console-x92k': typeof OpsConsoleX92kRoute
   '/studios': typeof StudiosRoute
   '/tech': typeof TechRoute
 }
@@ -84,6 +91,7 @@ export interface FileRoutesByTo {
   '/contact': typeof ContactRoute
   '/dashboard': typeof DashboardRoute
   '/login': typeof LoginRoute
+  '/ops-console-x92k': typeof OpsConsoleX92kRoute
   '/studios': typeof StudiosRoute
   '/tech': typeof TechRoute
 }
@@ -96,6 +104,7 @@ export interface FileRoutesById {
   '/contact': typeof ContactRoute
   '/dashboard': typeof DashboardRoute
   '/login': typeof LoginRoute
+  '/ops-console-x92k': typeof OpsConsoleX92kRoute
   '/studios': typeof StudiosRoute
   '/tech': typeof TechRoute
 }
@@ -109,6 +118,7 @@ export interface FileRouteTypes {
     | '/contact'
     | '/dashboard'
     | '/login'
+    | '/ops-console-x92k'
     | '/studios'
     | '/tech'
   fileRoutesByTo: FileRoutesByTo
@@ -120,6 +130,7 @@ export interface FileRouteTypes {
     | '/contact'
     | '/dashboard'
     | '/login'
+    | '/ops-console-x92k'
     | '/studios'
     | '/tech'
   id:
@@ -131,6 +142,7 @@ export interface FileRouteTypes {
     | '/contact'
     | '/dashboard'
     | '/login'
+    | '/ops-console-x92k'
     | '/studios'
     | '/tech'
   fileRoutesById: FileRoutesById
@@ -143,6 +155,7 @@ export interface RootRouteChildren {
   ContactRoute: typeof ContactRoute
   DashboardRoute: typeof DashboardRoute
   LoginRoute: typeof LoginRoute
+  OpsConsoleX92kRoute: typeof OpsConsoleX92kRoute
   StudiosRoute: typeof StudiosRoute
   TechRoute: typeof TechRoute
 }
@@ -198,6 +211,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof LoginRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/ops-console-x92k': {
+      id: '/ops-console-x92k'
+      path: '/ops-console-x92k'
+      fullPath: '/ops-console-x92k'
+      preLoaderRoute: typeof OpsConsoleX92kRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/studios': {
       id: '/studios'
       path: '/studios'
@@ -223,6 +243,7 @@ const rootRouteChildren: RootRouteChildren = {
   ContactRoute: ContactRoute,
   DashboardRoute: DashboardRoute,
   LoginRoute: LoginRoute,
+  OpsConsoleX92kRoute: OpsConsoleX92kRoute,
   StudiosRoute: StudiosRoute,
   TechRoute: TechRoute,
 }

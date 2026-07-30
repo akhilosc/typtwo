@@ -88,15 +88,18 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       { name: "author", content: "Typtwo" },
       { property: "og:site_name", content: "Typtwo" },
       { property: "og:type", content: "website" },
+      { property: "og:url", content: "https://www.typtwo.com" },
       { property: "og:title", content: "Typtwo — Creating the Intelligent Enterprise" },
-      { property: "og:description", content: "Typtwo brings technology and creativity together to build the intelligent enterprise — smarter operations and unforgettable brands." },
-      { property: "og:image", content: "/og-image.png" },
-      { property: "og:image:width", content: "1200" },
-      { property: "og:image:height", content: "1200" },
+      { property: "og:description", content: "Typtwo brings technology and creativity together to build the intelligent enterprise — smarter operations through Typtwo Tech and unforgettable brands through Typtwo Studios." },
+      { property: "og:image", content: "https://www.typtwo.com/og-image.png" },
+      { property: "og:image:secure_url", content: "https://www.typtwo.com/og-image.png" },
+      { property: "og:image:type", content: "image/png" },
+      { property: "og:image:width", content: "1024" },
+      { property: "og:image:height", content: "1024" },
       { name: "twitter:card", content: "summary_large_image" },
       { name: "twitter:title", content: "Typtwo — Creating the Intelligent Enterprise" },
-      { name: "twitter:description", content: "Typtwo brings technology and creativity together to build the intelligent enterprise — smarter operations and unforgettable brands." },
-      { name: "twitter:image", content: "/og-image.png" },
+      { name: "twitter:description", content: "Typtwo brings technology and creativity together to build the intelligent enterprise — smarter operations through Typtwo Tech and unforgettable brands through Typtwo Studios." },
+      { name: "twitter:image", content: "https://www.typtwo.com/og-image.png" },
     ],
     links: [
       { rel: "stylesheet", href: appCss },
@@ -136,7 +139,7 @@ function RootShell({ children }: { children: ReactNode }) {
 function RootComponent() {
   const { queryClient } = Route.useRouteContext();
   const location = useLocation();
-  const isStandalone = location.pathname.toLowerCase().startsWith("/dashboard") || location.pathname.toLowerCase().startsWith("/admin");
+  const isStandalone = location.pathname.toLowerCase().startsWith("/dashboard") || location.pathname.toLowerCase().startsWith("/ops-console-x92k");
 
   if (isStandalone) {
     return (
