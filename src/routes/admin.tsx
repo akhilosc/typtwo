@@ -1,11 +1,10 @@
 import { useState, useEffect } from "react";
-import { createFileRoute } from "@tanstack/react-router";
-import { PageHeader, SectionLabel, Eyebrow } from "../components/site-chrome";
+import { createFileRoute, Link } from "@tanstack/react-router";
 
 export const Route = createFileRoute("/admin")({
   head: () => ({
     meta: [
-      { title: "Operations Desk — Typtwo" },
+      { title: "Operations Console — Typtwo" },
       { name: "description", content: "Master requirements controls and client configuration." }
     ]
   }),
@@ -69,14 +68,13 @@ function AdminPage() {
   // Notifications
   const [notifyMsg, setNotifyMsg] = useState("");
 
-  // Load client-specific data whenever selectedClientId changes
+  // Load client-specific data
   useEffect(() => {
     const key = `t2_reqs_${selectedClientId}`;
     const stored = localStorage.getItem(key);
     if (stored) {
       setReqs(JSON.parse(stored));
     } else {
-      // Deep copy defaults
       const initial = JSON.parse(JSON.stringify(DEFAULT_REQUIREMENTS));
       setReqs(initial);
       localStorage.setItem(key, JSON.stringify(initial));
@@ -87,7 +85,7 @@ function AdminPage() {
   const saveConfig = (updatedReqs: Requirement[]) => {
     localStorage.setItem(`t2_reqs_${selectedClientId}`, JSON.stringify(updatedReqs));
     window.dispatchEvent(new Event("storage"));
-    setNotifyMsg("Configuration saved successfully.");
+    setNotifyMsg("CONFIGURATION UPDATED");
     setTimeout(() => setNotifyMsg(""), 3000);
   };
 
@@ -133,7 +131,6 @@ function AdminPage() {
     const key = `t2_statuses_${selectedClientId}`;
     const current: StatusUpdate[] = JSON.parse(localStorage.getItem(key) || "[]");
     
-    // Add to start of list
     const now = new Date();
     const updated = [
       { text: newStatusText, timestamp: now.toLocaleTimeString() + " - Today" },
@@ -143,7 +140,7 @@ function AdminPage() {
     localStorage.setItem(key, JSON.stringify(updated));
     window.dispatchEvent(new Event("storage"));
     setNewStatusText("");
-    setNotifyMsg("Status update posted to client feed.");
+    setNotifyMsg("STATUS UPDATE POSTED");
     setTimeout(() => setNotifyMsg(""), 3000);
   };
 
@@ -163,7 +160,7 @@ function AdminPage() {
     localStorage.setItem(key, JSON.stringify(updated));
     window.dispatchEvent(new Event("storage"));
     setNewFileName("");
-    setNotifyMsg("Document added to client vault.");
+    setNotifyMsg("VAULT DOCUMENT ADDED");
     setTimeout(() => setNotifyMsg(""), 3000);
   };
 
@@ -180,184 +177,192 @@ function AdminPage() {
   };
 
   return (
-    <>
-      <div className="border-b-2 border-ink bg-paper flex items-center justify-between p-6">
+    <div className="flex min-h-screen bg-[#0a0a0a] text-neutral-100 font-mono">
+      {/* Left Sidebar client selector */}
+      <aside className="w-64 border-r border-neutral-800 bg-[#0e0e0e] flex flex-col justify-between p-6 shrink-0 text-left">
         <div>
-          <Eyebrow color="flame">Master Controls</Eyebrow>
-          <div className="display text-2xl font-bold mt-1 uppercase tracking-tight">
-            Operations Admin Panel
+          <Link to="/" className="flex items-center gap-2 pb-6 border-b border-neutral-800 mb-8">
+            <span className="h-2 w-2 bg-flame rounded-full blink" />
+            <span className="font-bold text-sm tracking-widest text-white uppercase">TYPTWO // CONTROL</span>
+          </Link>
+
+          <div className="mb-4">
+            <span className="text-[9px] text-neutral-500 uppercase font-bold tracking-wider">// Active Client Spaces</span>
           </div>
-        </div>
-        {notifyMsg && (
-          <div className="mono text-xs bg-volt text-ink px-4 py-2 border-2 border-ink font-bold animate-pulse">
-            {notifyMsg}
-          </div>
-        )}
-      </div>
 
-      <PageHeader
-        n="A1"
-        kicker="Ops Center"
-        title={
-          <>
-            Client Portal<br />
-            <span className="italic">configuration.</span>
-          </>
-        }
-        lead="Select a client organization, toggle asset requirement forms, duplicate social handle collection boxes, and post status feeds."
-        accent="flame"
-        meta={[
-          { label: "Console", value: "Master Admin Desk" },
-          { label: "Client Space", value: selectedClientId.toUpperCase() },
-          { label: "Hub Link", value: "Dubai Ops Edge Node" }
-        ]}
-      />
-
-      {/* Select Client Section */}
-      <section className="p-6 md:p-10 border-b-2 border-ink bg-paper flex flex-wrap items-center gap-4">
-        <span className="mono text-xs uppercase tracking-widest font-bold text-muted-foreground">Select Active Client:</span>
-        <div className="flex flex-wrap gap-2">
-          {clients.map((c) => (
-            <button
-              key={c.id}
-              onClick={() => setSelectedClientId(c.id)}
-              className={`brute px-5 py-3 mono text-xs uppercase tracking-wider font-bold transition-all cursor-pointer ${
-                selectedClientId === c.id 
-                  ? "bg-ink text-paper border-ink" 
-                  : "bg-paper text-ink border-ink/40 hover:border-ink"
-              }`}
-            >
-              {c.name} ({c.id})
-            </button>
-          ))}
-        </div>
-      </section>
-
-      {/* Grid: Activations & Feeds management */}
-      <section className="grid grid-cols-1 lg:grid-cols-12 items-stretch border-b-2 border-ink">
-        {/* Left: Requirements Toggle & Social Multiplier */}
-        <div className="lg:col-span-7 p-6 md:p-10 border-r-0 lg:border-r-2 border-b-2 lg:border-b-0 border-ink">
-          <SectionLabel n="01" label="Activation Controls" />
-
-          {/* Standard Requirements Grid */}
-          <div className="space-y-4 mt-8">
-            <h4 className="mono text-[10px] text-muted-foreground uppercase">// Master Toggles</h4>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-              {reqs.filter(r => r.type === "drive_link" || r.type === "boolean").map((r) => (
-                <div 
-                  key={r.id}
-                  onClick={() => toggleReqActive(r.id)}
-                  className={`p-4 border-2 border-ink flex items-center justify-between cursor-pointer transition-colors ${
-                    r.active ? "bg-volt/15 border-ink" : "bg-paper border-ink/30 opacity-70"
-                  }`}
-                >
-                  <div>
-                    <div className="display text-sm font-bold">{r.label}</div>
-                    <span className="mono text-[9px] text-muted-foreground uppercase">[{r.type.replace('_', ' ')}]</span>
-                  </div>
-                  <div className={`h-5 w-5 border-2 border-ink flex items-center justify-center ${r.active ? "bg-ink text-paper" : "bg-paper text-ink"}`}>
-                    {r.active && "✓"}
-                  </div>
+          <nav className="space-y-1.5">
+            {clients.map((c) => (
+              <button
+                key={c.id}
+                onClick={() => setSelectedClientId(c.id)}
+                className={`w-full text-left px-3 py-2.5 text-xs uppercase tracking-wider rounded-sm transition cursor-pointer font-bold border ${
+                  selectedClientId === c.id
+                    ? "bg-volt border-volt text-black"
+                    : "bg-neutral-900 border-neutral-800 text-neutral-300 hover:border-neutral-700 hover:text-white"
+                }`}
+              >
+                <div>{c.name}</div>
+                <div className={`text-[9px] mt-0.5 ${selectedClientId === c.id ? "text-neutral-900" : "text-neutral-500"}`}>
+                  ID: {c.id}
                 </div>
-              ))}
-            </div>
-          </div>
+              </button>
+            ))}
+          </nav>
+        </div>
 
-          {/* Social Profiles Multiplier list */}
-          <div className="space-y-4 mt-12">
-            <h4 className="mono text-[10px] text-muted-foreground uppercase">// Custom Social Handles Collection Toggles</h4>
-            
-            <div className="space-y-3">
-              {reqs.filter(r => r.type === "social_handle").map((r) => (
-                <div 
-                  key={r.id}
-                  className="p-4 border-2 border-ink bg-paper flex items-center justify-between"
-                >
-                  <div className="flex items-center gap-3">
-                    <button
-                      onClick={() => toggleReqActive(r.id)}
-                      className={`h-5 w-5 border-2 border-ink flex items-center justify-center cursor-pointer ${
-                        r.active ? "bg-ink text-paper" : "bg-paper text-ink"
-                      }`}
-                    >
-                      {r.active && "✓"}
-                    </button>
+        <div className="pt-6 border-t border-neutral-800 text-neutral-500 text-[9px] uppercase">
+          Ops Panel v2.1 // Protected
+        </div>
+      </aside>
+
+      {/* Main Mainframe Workspace */}
+      <main className="flex-grow flex flex-col min-w-0 bg-[#070707] text-left">
+        {/* Work top header bar */}
+        <header className="h-14 border-b border-neutral-800 px-8 flex items-center justify-between bg-[#0b0b0b] shrink-0">
+          <div className="flex items-center gap-3">
+            <span className="text-xs uppercase tracking-widest text-neutral-400">// Operations Desk Console:</span>
+            <span className="text-xs text-white uppercase font-bold bg-neutral-900 px-2 py-0.5 border border-neutral-800 rounded-sm">
+              Selected: {selectedClientId.toUpperCase()}
+            </span>
+          </div>
+          {notifyMsg ? (
+            <div className="text-[10px] text-volt font-bold animate-pulse">
+              ● {notifyMsg}
+            </div>
+          ) : (
+            <div className="text-[10px] text-neutral-400">
+              SYS_OPERATOR // SECURE_DESK
+            </div>
+          )}
+        </header>
+
+        {/* Content Workspace Grid */}
+        <div className="flex-grow p-8 overflow-y-auto grid grid-cols-1 lg:grid-cols-12 gap-8 max-w-6xl w-full">
+          {/* Left panel: Requirements Configuration & Handles */}
+          <div className="lg:col-span-8 space-y-8">
+            <div>
+              <h2 className="text-lg font-bold text-white uppercase tracking-wider">// Active Client Requirements</h2>
+              <p className="text-xs text-neutral-400 mt-1">Activate individual collection slots for the client dashboard workspace.</p>
+
+              {/* Requirement Activation toggles */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mt-4">
+                {reqs.filter(r => r.type === "drive_link" || r.type === "boolean").map((r) => (
+                  <div
+                    key={r.id}
+                    onClick={() => toggleReqActive(r.id)}
+                    className={`p-4 border rounded-sm flex items-center justify-between cursor-pointer transition-all ${
+                      r.active
+                        ? "bg-[#0f1411] border-emerald-900/80 text-white"
+                        : "bg-[#0c0c0c] border-neutral-800 text-neutral-500 opacity-60 hover:border-neutral-700"
+                    }`}
+                  >
                     <div>
-                      <span className={`display text-sm font-bold ${!r.active ? "line-through text-muted-foreground" : ""}`}>
+                      <div className="text-xs font-bold uppercase tracking-wide">{r.label}</div>
+                      <span className="text-[8px] opacity-75 font-bold uppercase">[{r.type}]</span>
+                    </div>
+                    <div className={`h-4.5 w-4.5 rounded-sm border flex items-center justify-center text-[10px] font-bold ${
+                      r.active ? "bg-volt text-black border-volt" : "border-neutral-700 text-transparent"
+                    }`}>
+                      ✓
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* Custom Social Handles Multiplier */}
+            <div>
+              <h2 className="text-lg font-bold text-white uppercase tracking-wider">// Social Profiles Collection Slots</h2>
+              <p className="text-xs text-neutral-400 mt-1">Add dynamic individual or company social handles collection criteria.</p>
+
+              <div className="space-y-2 mt-4">
+                {reqs.filter(r => r.type === "social_handle").map((r) => (
+                  <div
+                    key={r.id}
+                    className="p-3 bg-[#0c0c0c] border border-neutral-800 rounded-sm flex items-center justify-between"
+                  >
+                    <div className="flex items-center gap-3">
+                      <button
+                        onClick={() => toggleReqActive(r.id)}
+                        className={`h-4 w-4 rounded-sm border flex items-center justify-center text-[9px] font-bold cursor-pointer ${
+                          r.active ? "bg-volt text-black border-volt" : "border-neutral-700 text-transparent"
+                        }`}
+                      >
+                        ✓
+                      </button>
+                      <span className={`text-xs uppercase font-bold ${r.active ? "text-white" : "line-through text-neutral-500"}`}>
                         {r.label}
                       </span>
                     </div>
+                    <button
+                      onClick={() => deleteRequirement(r.id)}
+                      className="text-[9px] text-flame underline hover:text-white cursor-pointer"
+                    >
+                      Remove
+                    </button>
                   </div>
-                  <button 
-                    onClick={() => deleteRequirement(r.id)}
-                    className="mono text-[10px] text-flame underline hover:text-ink cursor-pointer"
-                  >
-                    DELETE
-                  </button>
-                </div>
-              ))}
+                ))}
 
-              {reqs.filter(r => r.type === "social_handle").length === 0 && (
-                <p className="text-xs text-muted-foreground italic">No custom social handles activated yet.</p>
-              )}
+                {reqs.filter(r => r.type === "social_handle").length === 0 && (
+                  <div className="text-xs text-neutral-500 italic p-3 border border-dashed border-neutral-800 rounded-sm text-center">
+                    No custom handles requested yet.
+                  </div>
+                )}
+              </div>
+
+              {/* Form to add handle requirement */}
+              <form onSubmit={addSocialRequirement} className="flex gap-2 mt-4 pt-4 border-t border-neutral-800">
+                <input
+                  type="text"
+                  value={socialLabel}
+                  onChange={(e) => setSocialLabel(e.target.value)}
+                  placeholder="e.g. Founder 2 LinkedIn handle..."
+                  className="flex-grow bg-neutral-950 border border-neutral-800 rounded-sm px-3.5 py-2 text-xs focus:outline-none focus:border-volt text-white"
+                  required
+                />
+                <button
+                  type="submit"
+                  className="bg-neutral-900 border border-neutral-800 hover:border-volt text-neutral-300 hover:text-white text-xs px-4 py-2 uppercase font-bold rounded-sm transition cursor-pointer"
+                >
+                  + Add Input
+                </button>
+              </form>
             </div>
-
-            {/* Form to dynamically add new social handles requirement */}
-            <form onSubmit={addSocialRequirement} className="flex gap-2 mt-4 pt-4 border-t border-ink/20">
-              <input
-                type="text"
-                value={socialLabel}
-                onChange={(e) => setSocialLabel(e.target.value)}
-                placeholder="e.g. Founder 2 Twitter, CEO LinkedIn..."
-                className="flex-grow bg-paper border-2 border-ink px-4 py-3 focus:outline-none focus:bg-volt/10 mono text-xs"
-                required
-              />
-              <button
-                type="submit"
-                className="brute bg-ink text-paper px-4 hover:bg-volt hover:text-ink font-bold mono text-xs uppercase tracking-widest cursor-pointer"
-              >
-                + ADD HANDLE REQUIREMENT
-              </button>
-            </form>
           </div>
-        </div>
 
-        {/* Right: Status Log poster & Document Vault Manager */}
-        <div className="lg:col-span-5 p-6 md:p-10 flex flex-col justify-between gap-8">
-          <div>
-            <SectionLabel n="02" label="Live Feeds & Deliverables" />
-
+          {/* Right panel: Live Logs posting and Documents */}
+          <div className="lg:col-span-4 space-y-6">
             {/* Post Status Update */}
-            <form onSubmit={addStatusUpdate} className="space-y-4 mt-8 p-4 border border-ink/40 bg-paper">
-              <h4 className="mono text-[10px] text-muted-foreground uppercase">// POST REAL-TIME STATUS MESSAGE</h4>
+            <form onSubmit={addStatusUpdate} className="space-y-4 bg-[#0c0c0c] border border-neutral-800 p-4 rounded-sm">
+              <h3 className="text-xs font-bold text-white uppercase tracking-wider">// Log Operation Checkpoint</h3>
               <div>
                 <textarea
                   value={newStatusText}
                   onChange={(e) => setNewStatusText(e.target.value)}
-                  placeholder="Describe status (e.g. 'Deploying vector index on AWS cluster...')"
+                  placeholder="e.g. Deploying vector indexing nodes..."
                   rows={3}
-                  className="w-full bg-paper border-2 border-ink px-3 py-2 focus:outline-none focus:bg-volt/10 mono text-xs"
+                  className="w-full bg-neutral-950 border border-neutral-800 rounded-sm px-3.5 py-2 text-xs focus:outline-none focus:border-volt text-white"
                   required
                 />
               </div>
               <button
                 type="submit"
-                className="w-full brute bg-ink text-paper hover:bg-volt hover:text-ink py-2.5 mono text-[10px] uppercase tracking-widest font-bold cursor-pointer"
+                className="w-full bg-volt text-black hover:bg-white text-xs py-2 uppercase font-bold rounded-sm transition cursor-pointer"
               >
-                Post Status Update →
+                Log Status Update
               </button>
             </form>
 
-            {/* Post Vault File */}
-            <form onSubmit={addVaultDocument} className="space-y-4 mt-8 p-4 border border-ink/40 bg-paper">
-              <h4 className="mono text-[10px] text-muted-foreground uppercase">// UPLOAD DELIVERABLE DOCUMENT</h4>
+            {/* Post Vault Document */}
+            <form onSubmit={addVaultDocument} className="space-y-4 bg-[#0c0c0c] border border-neutral-800 p-4 rounded-sm">
+              <h3 className="text-xs font-bold text-white uppercase tracking-wider">// Upload Vault Document</h3>
               <div className="grid grid-cols-2 gap-2">
                 <input
                   type="text"
                   value={newFileName}
                   onChange={(e) => setNewFileName(e.target.value)}
-                  placeholder="Filename (e.g. schema.json)"
-                  className="bg-paper border-2 border-ink px-3 py-2 focus:outline-none focus:bg-volt/10 mono text-xs"
+                  placeholder="filename.json"
+                  className="bg-neutral-950 border border-neutral-800 rounded-sm px-3 py-2 text-xs focus:outline-none focus:border-volt text-white"
                   required
                 />
                 <input
@@ -365,29 +370,30 @@ function AdminPage() {
                   value={newFileSize}
                   onChange={(e) => setNewFileSize(e.target.value)}
                   placeholder="Size (e.g. 1.2 MB)"
-                  className="bg-paper border-2 border-ink px-3 py-2 focus:outline-none focus:bg-volt/10 mono text-xs"
+                  className="bg-neutral-950 border border-neutral-800 rounded-sm px-3 py-2 text-xs focus:outline-none focus:border-volt text-white"
                   required
                 />
               </div>
               <button
                 type="submit"
-                className="w-full brute bg-flame text-paper hover:bg-ink py-2.5 mono text-[10px] uppercase tracking-widest font-bold cursor-pointer"
+                className="w-full bg-neutral-900 border border-neutral-800 hover:border-volt text-neutral-300 hover:text-white text-xs py-2 uppercase font-bold rounded-sm transition cursor-pointer"
               >
-                Post Deliverable Document →
+                Add Document Index
               </button>
             </form>
-          </div>
 
-          <div className="pt-8 border-t border-ink/20">
-            <button
-              onClick={resetClientData}
-              className="w-full brute border-2 border-flame text-flame hover:bg-flame hover:text-paper py-3 mono text-xs uppercase tracking-widest font-bold cursor-pointer"
-            >
-              ☢ WIPE CLIENT WORKSPACE
-            </button>
+            {/* Clear client workspace */}
+            <div className="pt-4 border-t border-neutral-800">
+              <button
+                onClick={resetClientData}
+                className="w-full border border-red-950 hover:bg-red-950 text-red-500 text-xs py-2.5 rounded-sm uppercase font-bold transition cursor-pointer text-center"
+              >
+                ☠ Wipe Client Workspace
+              </button>
+            </div>
           </div>
         </div>
-      </section>
-    </>
+      </main>
+    </div>
   );
 }

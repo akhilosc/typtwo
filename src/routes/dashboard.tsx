@@ -1,12 +1,11 @@
 import { useState, useEffect } from "react";
-import { createFileRoute, useNavigate } from "@tanstack/react-router";
-import { PageHeader, SectionLabel, Eyebrow } from "../components/site-chrome";
+import { createFileRoute, useNavigate, Link } from "@tanstack/react-router";
 
 export const Route = createFileRoute("/dashboard")({
   head: () => ({
     meta: [
-      { title: "Client Portal — Typtwo" },
-      { name: "description", content: "Active project logs and shared deliverables." }
+      { title: "Client Workspace — Typtwo" },
+      { name: "description", content: "Client Operations Center and Secure Deliverables Vault" }
     ]
   }),
   component: DashboardPage
@@ -59,6 +58,7 @@ function DashboardPage() {
   const [email, setEmail] = useState("");
   const [company, setCompany] = useState("");
   const [clientId, setClientId] = useState("");
+  const [activeTab, setActiveTab] = useState<"requirements" | "vault" | "feed">("requirements");
   
   // Dynamic client states loaded from localStorage
   const [reqs, setReqs] = useState<Requirement[]>([]);
@@ -128,7 +128,6 @@ function DashboardPage() {
       localStorage.setItem(filesKey, JSON.stringify(DEFAULT_FILES));
     }
 
-    // Set up a storage listener so if the admin page changes settings, we reload instantly
     const handleStorageChange = () => {
       const freshReqs = localStorage.getItem(reqKey);
       if (freshReqs) {
@@ -183,161 +182,235 @@ function DashboardPage() {
   const activeInputReqs = reqs.filter(r => r.active && r.type !== "boolean");
 
   return (
-    <>
-      <div className="border-b-2 border-ink bg-paper flex items-center justify-between p-6">
+    <div className="flex min-h-screen bg-[#0a0a0a] text-neutral-100 font-mono">
+      {/* Left Navigation Sidebar */}
+      <aside className="w-64 border-r border-neutral-800 bg-[#0e0e0e] flex flex-col justify-between p-6 shrink-0 text-left">
         <div>
-          <Eyebrow color="flame">Client Portal</Eyebrow>
-          <div className="display text-2xl font-bold mt-1 uppercase tracking-tight">
-            {company}
+          {/* Brand Logo */}
+          <Link to="/" className="flex items-center gap-2 pb-6 border-b border-neutral-800 mb-8">
+            <span className="h-2 w-2 bg-volt rounded-full blink" />
+            <span className="font-bold text-sm tracking-widest text-white uppercase">TYPTWO // OPS</span>
+          </Link>
+
+          {/* User Organization context card */}
+          <div className="bg-neutral-900 border border-neutral-800 p-4 rounded-sm mb-8">
+            <span className="text-[9px] text-volt uppercase font-bold tracking-wider">// Account Space</span>
+            <div className="text-white text-xs font-bold truncate mt-1">{company}</div>
+            <div className="text-[10px] text-neutral-400 truncate mt-0.5">{email}</div>
           </div>
-        </div>
-        <button
-          onClick={handleLogout}
-          className="brute bg-flame text-paper px-4 py-2 mono text-xs uppercase tracking-widest hover:bg-ink transition cursor-pointer"
-        >
-          Logout / Exit →
-        </button>
-      </div>
 
-      <PageHeader
-        n="C1"
-        kicker="Ops Desk Interface"
-        title={
-          <>
-            Client<br />
-            <span className="italic">dashboard.</span>
-          </>
-        }
-        lead={`Authorized dashboard for ${email}. Upload required brand resources, access deliverables, and review live operational status logs.`}
-        accent="volt"
-        meta={[
-          { label: "Account", value: company || "Corporate Client" },
-          { label: "Secure Key", value: `T2-${clientId.toUpperCase()}-SEC` },
-          { label: "Network status", value: "Optimal Link active" }
-        ]}
-      />
+          {/* Navigation Menu */}
+          <nav className="space-y-1.5">
+            <button
+              onClick={() => setActiveTab("requirements")}
+              className={`w-full flex items-center justify-between px-3 py-2 text-xs uppercase tracking-wider rounded-sm transition cursor-pointer font-bold ${
+                activeTab === "requirements" 
+                  ? "bg-volt text-black" 
+                  : "text-neutral-400 hover:bg-neutral-950 hover:text-white"
+              }`}
+            >
+              <span>01 / Action Items</span>
+              <span className="text-[9px] opacity-75">[{activeInputReqs.length}]</span>
+            </button>
 
-      {/* Grid Layout of dynamic criteria */}
-      <section className="grid grid-cols-1 lg:grid-cols-12 items-stretch border-b-2 border-ink">
-        {/* Left: Input Requirements Form Cards */}
-        <div className="lg:col-span-7 p-6 md:p-10 border-r-0 lg:border-r-2 border-b-2 lg:border-b-0 border-ink bg-paper">
-          <SectionLabel n="01" label="Outstanding Deliverables" />
-          
-          <div className="space-y-6 mt-8">
-            {activeInputReqs.map((r) => (
-              <div 
-                key={r.id} 
-                className={`p-6 border-2 border-ink bg-paper relative ${
-                  r.submitted ? "bg-volt/5 border-volt" : "bg-paper border-ink"
+            {isVaultActive && (
+              <button
+                onClick={() => setActiveTab("vault")}
+                className={`w-full flex items-center justify-between px-3 py-2 text-xs uppercase tracking-wider rounded-sm transition cursor-pointer font-bold ${
+                  activeTab === "vault" 
+                    ? "bg-volt text-black" 
+                    : "text-neutral-400 hover:bg-neutral-950 hover:text-white"
                 }`}
               >
-                <div className="flex items-center justify-between">
-                  <div className="mono text-[9px] text-muted-foreground uppercase">// TYPE: {r.type.replace('_', ' ')}</div>
-                  {r.submitted && (
-                    <span className="mono text-[9px] bg-volt text-ink px-2 py-0.5 font-bold">
-                      ✓ SUBMITTED
-                    </span>
-                  )}
-                </div>
-
-                <h4 className="display text-xl font-bold mt-2">{r.label}</h4>
-
-                {r.type === "drive_link" && (
-                  <p className="mono text-[9px] text-flame mt-1 font-bold">
-                    ⚠️ NOTICE: All links should be private and access request shall be generated by the Typtwo team.
-                  </p>
-                )}
-
-                <div className="mt-4 flex gap-2">
-                  <input
-                    type="text"
-                    value={inputVals[r.id] || ""}
-                    onChange={(e) => handleInputChange(r.id, e.target.value)}
-                    placeholder={r.type === "drive_link" ? "Paste secure private drive link URL..." : "Enter @handle profile url..."}
-                    className="flex-grow bg-paper border-2 border-ink px-4 py-2.5 focus:outline-none focus:bg-volt/10 mono text-xs"
-                  />
-                  <button
-                    onClick={() => submitRequirement(r.id)}
-                    className="brute bg-ink text-paper hover:bg-volt hover:text-ink px-5 mono text-xs uppercase tracking-widest font-bold cursor-pointer"
-                  >
-                    SUBMIT
-                  </button>
-                </div>
-              </div>
-            ))}
-
-            {activeInputReqs.length === 0 && (
-              <p className="text-xs text-muted-foreground italic">No outstanding requirements requested by Typtwo operations at this time.</p>
+                <span>02 / Vault Docs</span>
+                <span className="text-[9px] opacity-75">[{files.length}]</span>
+              </button>
             )}
-          </div>
+
+            {isStatusActive && (
+              <button
+                onClick={() => setActiveTab("feed")}
+                className={`w-full flex items-center justify-between px-3 py-2 text-xs uppercase tracking-wider rounded-sm transition cursor-pointer font-bold ${
+                  activeTab === "feed" 
+                    ? "bg-volt text-black" 
+                    : "text-neutral-400 hover:bg-neutral-950 hover:text-white"
+                }`}
+              >
+                <span>03 / Operations Feed</span>
+                <span className="text-[9px] opacity-75">● Live</span>
+              </button>
+            )}
+          </nav>
         </div>
 
-        {/* Right: Files Vault */}
-        <div className="lg:col-span-5 p-6 md:p-10 flex flex-col justify-between">
-          <div>
-            <SectionLabel n="02" label="Deliverables Vault" />
-            
-            {isVaultActive ? (
-              <div className="space-y-3 mt-8">
-                {files.map((f) => (
-                  <div key={f.name} className="p-4 border border-ink/40 flex items-center justify-between hover:bg-volt/10 transition-colors">
-                    <div>
-                      <div className="display text-sm font-bold truncate max-w-[20ch]">{f.name}</div>
-                      <span className="mono text-[9px] text-muted-foreground">{f.size}</span>
+        {/* Logout bottom area */}
+        <div className="pt-6 border-t border-neutral-800">
+          <button
+            onClick={handleLogout}
+            className="w-full bg-neutral-900 border border-neutral-800 hover:bg-neutral-950 hover:border-volt text-neutral-300 text-xs py-2 text-center transition cursor-pointer uppercase font-bold"
+          >
+            ← Exit Workspace
+          </button>
+        </div>
+      </aside>
+
+      {/* Main Mainframe Workspace */}
+      <main className="flex-grow flex flex-col min-w-0 bg-[#070707] text-left">
+        {/* Work top header bar */}
+        <header className="h-14 border-b border-neutral-800 px-8 flex items-center justify-between bg-[#0b0b0b] shrink-0">
+          <div className="flex items-center gap-3">
+            <span className="text-xs uppercase tracking-widest text-neutral-400">// Active Node:</span>
+            <span className="text-xs text-white uppercase font-bold bg-neutral-900 px-2 py-0.5 border border-neutral-800 rounded-sm">
+              UAE_EDGE_T2_{clientId.toUpperCase()}
+            </span>
+          </div>
+          <div className="text-[10px] text-neutral-400">
+            SYSTEM_SECURE // TLS_1.3_ACTIVE
+          </div>
+        </header>
+
+        {/* Content area */}
+        <div className="flex-grow p-8 overflow-y-auto max-w-5xl w-full">
+          {activeTab === "requirements" && (
+            <div>
+              <div className="mb-6">
+                <h2 className="text-lg font-bold text-white uppercase tracking-wider">// Outstanding Operational Assets</h2>
+                <p className="text-xs text-neutral-400 mt-1">Please fill out and submit the requested assets below. Submitted links will be verified by the admin team.</p>
+              </div>
+
+              <div className="space-y-4">
+                {activeInputReqs.map((r) => (
+                  <div 
+                    key={r.id}
+                    className={`p-5 rounded-sm border transition-colors ${
+                      r.submitted 
+                        ? "bg-[#09150f] border-emerald-900/60" 
+                        : "bg-[#0c0c0c] border-neutral-800 hover:border-neutral-700"
+                    }`}
+                  >
+                    <div className="flex items-center justify-between">
+                      <span className="text-[9px] uppercase tracking-wider text-neutral-500 font-bold">
+                        Type: {r.type.replace('_', ' ')}
+                      </span>
+                      {r.submitted ? (
+                        <span className="text-[9px] bg-emerald-950/80 text-emerald-400 border border-emerald-900 px-2.5 py-0.5 font-bold rounded-sm uppercase">
+                          ✓ Submitted OK
+                        </span>
+                      ) : (
+                        <span className="text-[9px] bg-volt/10 text-volt border border-volt/30 px-2.5 py-0.5 font-bold rounded-sm uppercase">
+                          Action Required
+                        </span>
+                      )}
                     </div>
-                    <button
-                      onClick={() => alert(`Downloading document: ${f.name}`)}
-                      className="mono text-[10px] underline hover:text-flame cursor-pointer font-bold"
-                    >
-                      GET
-                    </button>
+
+                    <h3 className="text-sm font-bold text-white mt-2 uppercase tracking-wide">{r.label}</h3>
+
+                    {r.type === "drive_link" && (
+                      <p className="text-[9px] text-amber-500 mt-1 font-bold">
+                        ⚠️ NOTICE: All links should be private; access will be requested by the Typtwo team.
+                      </p>
+                    )}
+
+                    <div className="mt-4 flex gap-2">
+                      <input
+                        type="text"
+                        value={inputVals[r.id] || ""}
+                        onChange={(e) => handleInputChange(r.id, e.target.value)}
+                        placeholder={r.type === "drive_link" ? "Paste secure private drive link..." : "Enter handle link / details..."}
+                        className="flex-grow bg-neutral-950 border border-neutral-800 rounded-sm px-3.5 py-2 text-xs focus:outline-none focus:border-volt text-white"
+                      />
+                      <button
+                        onClick={() => submitRequirement(r.id)}
+                        className="bg-volt text-black hover:bg-white text-xs px-5 py-2 uppercase font-bold rounded-sm transition cursor-pointer"
+                      >
+                        Submit
+                      </button>
+                    </div>
                   </div>
                 ))}
 
-                {files.length === 0 && (
-                  <p className="text-xs text-muted-foreground italic">No documents posted by the team yet.</p>
+                {activeInputReqs.length === 0 && (
+                  <div className="border border-dashed border-neutral-800 rounded-sm p-10 text-center text-xs text-neutral-400">
+                    No active assets collection requests currently active for your profile.
+                  </div>
                 )}
               </div>
-            ) : (
-              <div className="brute border border-dashed border-ink/30 p-8 text-center text-xs text-muted-foreground mt-8">
-                Deliverables vault has been disabled by operational desk.
-              </div>
-            )}
-          </div>
+            </div>
+          )}
 
-          <div className="brute bg-ink text-paper p-6 mt-8">
-            <div className="mono text-[10px] uppercase text-flame mb-2">Security Perimeter</div>
-            <p className="text-[11px] leading-relaxed opacity-85">
-              Access credentials generated on vector schemas are encrypted. Keep private keys stored locally on secure keyservers.
-            </p>
-          </div>
+          {activeTab === "vault" && (
+            <div>
+              <div className="mb-6">
+                <h2 className="text-lg font-bold text-white uppercase tracking-wider">// Shared Deliverables Vault</h2>
+                <p className="text-xs text-neutral-400 mt-1">Access documents and design blueprints compiled specifically for your business team.</p>
+              </div>
+
+              {isVaultActive ? (
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                  {files.map((f) => (
+                    <div 
+                      key={f.name}
+                      className="bg-[#0c0c0c] border border-neutral-800 p-4 rounded-sm hover:border-neutral-700 flex items-center justify-between transition-all"
+                    >
+                      <div className="min-w-0 pr-4">
+                        <div className="text-xs font-bold text-white truncate uppercase tracking-wide">{f.name}</div>
+                        <div className="text-[10px] text-neutral-500 mt-0.5">{f.size}</div>
+                      </div>
+                      <button
+                        onClick={() => alert(`Downloading deliverable: ${f.name}`)}
+                        className="bg-neutral-900 border border-neutral-800 hover:border-volt text-neutral-300 hover:text-white text-[10px] px-3 py-1.5 rounded-sm uppercase tracking-widest font-bold transition cursor-pointer"
+                      >
+                        Get
+                      </button>
+                    </div>
+                  ))}
+
+                  {files.length === 0 && (
+                    <div className="col-span-2 border border-dashed border-neutral-800 rounded-sm p-10 text-center text-xs text-neutral-400">
+                      No files posted to your workspace by the ops team yet.
+                    </div>
+                  )}
+                </div>
+              ) : (
+                <div className="border border-dashed border-neutral-800 rounded-sm p-10 text-center text-xs text-neutral-400">
+                  Deliverables vault has been disabled for this client workspace.
+                </div>
+              )}
+            </div>
+          )}
+
+          {activeTab === "feed" && (
+            <div>
+              <div className="mb-6">
+                <h2 className="text-lg font-bold text-white uppercase tracking-wider">// Operational Timeline Feed</h2>
+                <p className="text-xs text-neutral-400 mt-1">Real-time developer status and deployment checkpoints logged by the engineering team.</p>
+              </div>
+
+              {isStatusActive ? (
+                <div className="border border-neutral-800 bg-[#0c0c0c] rounded-sm p-6 space-y-6">
+                  {statuses.map((s, idx) => (
+                    <div key={idx} className="relative pl-6 border-l border-neutral-800 last:border-l-0 pb-2">
+                      <span className="absolute -left-[5px] top-1.5 h-2.5 w-2.5 rounded-full bg-volt" />
+                      <div className="text-[9px] text-neutral-500 font-bold mb-1 uppercase tracking-wider">{s.timestamp}</div>
+                      <p className="text-xs text-neutral-200 uppercase tracking-wide leading-relaxed font-bold">{s.text}</p>
+                    </div>
+                  ))}
+
+                  {statuses.length === 0 && (
+                    <div className="text-center text-xs text-neutral-500 py-6">
+                      No updates logged on the timeline yet.
+                    </div>
+                  )}
+                </div>
+              ) : (
+                <div className="border border-dashed border-neutral-800 rounded-sm p-10 text-center text-xs text-neutral-400">
+                  Operational timeline log access has been disabled by the operations panel.
+                </div>
+              )}
+            </div>
+          )}
         </div>
-      </section>
-
-      {/* Real-time Status Feed */}
-      <section className="p-6 md:p-10 border-b-2 border-ink bg-paper">
-        <SectionLabel n="03" label="Real-Time Operation Feed" />
-        
-        {isStatusActive ? (
-          <div className="mt-8 border-l-2 border-ink pl-6 space-y-8 max-w-4xl">
-            {statuses.map((s, idx) => (
-              <div key={idx} className="relative">
-                <span className="absolute -left-[31px] top-1.5 h-3.5 w-3.5 rounded-full border-2 border-ink bg-volt" />
-                <div className="mono text-[9px] text-muted-foreground mb-1">{s.timestamp}</div>
-                <p className="text-sm font-mono leading-relaxed text-ink uppercase tracking-wide">{s.text}</p>
-              </div>
-            ))}
-
-            {statuses.length === 0 && (
-              <p className="text-xs text-muted-foreground italic">No status updates logged yet.</p>
-            )}
-          </div>
-        ) : (
-          <div className="brute border border-dashed border-ink/30 p-8 text-center text-xs text-muted-foreground mt-8">
-            Real-time status feed logs has been disabled by operational desk.
-          </div>
-        )}
-      </section>
-    </>
+      </main>
+    </div>
   );
 }

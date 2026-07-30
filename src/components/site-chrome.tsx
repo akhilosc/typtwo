@@ -250,7 +250,7 @@ export function SiteFooter() {
             <FLink to="/clients">03 · Clients</FLink>
             <FLink to="/about">04 · About</FLink>
             <FLink to="/contact">05 · Contact</FLink>
-            <FLink to="/admin">06 · Admin Desk</FLink>
+            <FLink to="/login">06 · Client Portal</FLink>
           </FooterCol>
           <FooterCol title="Contact">
             <a href="mailto:hello@typtwo.com" className="hover:bg-volt inline-block">

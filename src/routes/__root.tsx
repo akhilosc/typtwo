@@ -6,6 +6,7 @@ import {
   useRouter,
   HeadContent,
   Scripts,
+  useLocation,
 } from "@tanstack/react-router";
 import { useEffect, type ReactNode } from "react";
 
@@ -126,6 +127,18 @@ function RootShell({ children }: { children: ReactNode }) {
 
 function RootComponent() {
   const { queryClient } = Route.useRouteContext();
+  const location = useLocation();
+  const isStandalone = location.pathname.startsWith("/dashboard") || location.pathname.startsWith("/admin");
+
+  if (isStandalone) {
+    return (
+      <QueryClientProvider client={queryClient}>
+        <div className="min-h-screen bg-[#0a0a0a] text-neutral-100 selection:bg-volt selection:text-ink">
+          <Outlet />
+        </div>
+      </QueryClientProvider>
+    );
+  }
 
   return (
     <QueryClientProvider client={queryClient}>
