@@ -27,7 +27,7 @@ function AboutPage() {
   return (
     <>
       <PageHeader
-        n="03"
+        n="04"
         kicker="About"
         title={
           <>
@@ -37,6 +37,11 @@ function AboutPage() {
         }
         lead="Tech and Studios. One team. One vision."
         accent="flame"
+        meta={[
+          { label: "Entity", value: "Typtwo Core" },
+          { label: "Hub", value: "Dubai Operations" },
+          { label: "Structure", value: "Tech + Studios" }
+        ]}
       />
 
       <section className="border-b-2 border-ink p-6 md:p-14">

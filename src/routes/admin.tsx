@@ -206,6 +206,11 @@ function AdminPage() {
         }
         lead="Select a client organization, toggle asset requirement forms, duplicate social handle collection boxes, and post status feeds."
         accent="flame"
+        meta={[
+          { label: "Console", value: "Master Admin Desk" },
+          { label: "Client Space", value: selectedClientId.toUpperCase() },
+          { label: "Hub Link", value: "Dubai Ops Edge Node" }
+        ]}
       />
 
       {/* Select Client Section */}

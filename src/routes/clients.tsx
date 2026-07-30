@@ -29,6 +29,11 @@ function ClientsPage() {
         }
         lead="The brains behind disruptive technologies and the institutions scaling national structures. We build in tandem."
         accent="volt"
+        meta={[
+          { label: "Directory", value: "Enterprise Network" },
+          { label: "Roster", value: "14 Key Partners" },
+          { label: "Coverage", value: "Startups & State IP" }
+        ]}
       />
       <section>
         <SectionLabel n="★" label="Client Network Directory" />

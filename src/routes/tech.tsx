@@ -48,6 +48,11 @@ function TechPage() {
         }
         lead="Systems that run the business — quietly, securely, at scale."
         accent="flame"
+        meta={[
+          { label: "Focus", value: "AI & Cloud Ops" },
+          { label: "SLA Status", value: "99.9% Uptime Ready" },
+          { label: "Discovery", value: "7-Day Sprint Setup" }
+        ]}
       />
 
       <section className="border-b-2 border-ink">

@@ -44,7 +44,7 @@ function ContactPage() {
   return (
     <>
       <PageHeader
-        n="04"
+        n="05"
         kicker="Contact / One thread"
         title={
           <>
@@ -54,6 +54,11 @@ function ContactPage() {
         }
         lead="One email reaches both divisions. Tell us what you're building — or what's stuck — and we'll come back with people, not a form response."
         accent="volt"
+        meta={[
+          { label: "Channel", value: "Ops Direct Email" },
+          { label: "Standard SLA", value: "< 24hr Response" },
+          { label: "Fast-Track", value: "48hr Meeting Window" }
+        ]}
       />
 
       <section className="grid md:grid-cols-12 border-b-2 border-ink">

@@ -48,6 +48,11 @@ function StudiosPage() {
         }
         lead="Brands people trust. Stories they remember."
         accent="volt"
+        meta={[
+          { label: "Focus", value: "Brand & Short-form IP" },
+          { label: "Media Engine", value: "Vertical Video Launch" },
+          { label: "Execution", value: "10-14 Day Campaigns" }
+        ]}
       />
 
       <section className="border-b-2 border-ink">

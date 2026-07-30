@@ -59,7 +59,7 @@ function LoginPage() {
   return (
     <>
       <PageHeader
-        n="05"
+        n="06"
         kicker="Portal Access"
         title={
           <>
@@ -69,6 +69,11 @@ function LoginPage() {
         }
         lead={isSignUp ? "Initialize your secure client profile inside the Typtwo cloud network." : "Enter your corporate credentials to access active project tracking and secure deliverables vault."}
         accent="volt"
+        meta={[
+          { label: "Portal", value: "Client Workspace" },
+          { label: "Access", value: "Direct Vault Logs" },
+          { label: "Encryption", value: "AES-256 Sandbox Mode" }
+        ]}
       />
 
       <section className="p-6 md:p-14 max-w-xl mx-auto border-b-2 border-ink">

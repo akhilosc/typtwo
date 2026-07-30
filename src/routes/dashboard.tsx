@@ -210,6 +210,11 @@ function DashboardPage() {
         }
         lead={`Authorized dashboard for ${email}. Upload required brand resources, access deliverables, and review live operational status logs.`}
         accent="volt"
+        meta={[
+          { label: "Account", value: company || "Corporate Client" },
+          { label: "Secure Key", value: `T2-${clientId.toUpperCase()}-SEC` },
+          { label: "Network status", value: "Optimal Link active" }
+        ]}
       />
 
       {/* Grid Layout of dynamic criteria */}

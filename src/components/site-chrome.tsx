@@ -374,15 +374,17 @@ export function PageHeader({
   title,
   lead,
   accent = "flame",
+  meta = [],
 }: {
   n: string;
   kicker: string;
   title: ReactNode;
   lead: string;
   accent?: "flame" | "volt";
+  meta?: Array<{ label: string; value: string }>;
 }) {
   return (
-    <section className="border-b-2 border-ink">
+    <section className="border-b-2 border-ink bg-paper">
       <SectionLabel n={n} label={kicker} />
       <div className="grid grid-cols-12 gap-0">
         <div className="col-span-12 md:col-span-8 p-6 md:p-14 border-r-0 md:border-r-2 border-ink">
@@ -391,27 +393,29 @@ export function PageHeader({
           </h1>
         </div>
         <div className="col-span-12 md:col-span-4 p-6 md:p-14 flex flex-col justify-between gap-8">
-          <p className="text-lg leading-relaxed">{lead}</p>
+          <div>
+            <p className="text-lg leading-relaxed">{lead}</p>
+            {meta.length > 0 && (
+              <div className="border-t border-ink/30 pt-6 mt-6">
+                <div className="mono text-[9px] text-muted-foreground uppercase mb-3">// Specifications</div>
+                <div className="divide-y divide-ink/20">
+                  {meta.map((item, idx) => (
+                    <div key={idx} className="flex justify-between py-2.5 mono text-[10px] uppercase">
+                      <span className="text-muted-foreground">{item.label}</span>
+                      <span className="font-bold text-ink">{item.value}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
           
-          {/* Mini-Terminal Status Widget */}
-          <div className="border-2 border-ink p-4 bg-ink text-paper font-mono text-[9px] uppercase tracking-wider space-y-1 relative brute">
-            <div className="absolute top-3 right-3 flex gap-1">
-              <span className="h-1.5 w-1.5 rounded-full bg-volt blink" />
-              <span className="h-1.5 w-1.5 rounded-full bg-flame" />
-            </div>
-            <div className="text-flame font-bold">// SECURE_SYS_LOG</div>
-            <div className="flex justify-between pt-1">
-              <span className="opacity-60">STATUS:</span>
-              <span className="text-[#00ff66]">ACTIVE_OK</span>
-            </div>
-            <div className="flex justify-between">
-              <span className="opacity-60">NETWORK:</span>
-              <span>T2_NODE_{kicker.replace('/', '_').replace(' ', '_').split('_')[0].toUpperCase()}</span>
-            </div>
-            <div className="flex justify-between">
-              <span className="opacity-60">ACCENT:</span>
-              <span className="text-volt">{accent}</span>
-            </div>
+          <div className="h-6 flex items-center justify-between border-t border-ink/20 pt-4">
+            <span className="mono text-[9px] text-muted-foreground">[ SYSTEM PERIMETER ]</span>
+            <span className="flex items-center gap-1.5 mono text-[10px] font-bold">
+              <span className={`inline-block h-2 w-2 rounded-full ${accent === "flame" ? "bg-flame" : "bg-volt"} blink`} />
+              SECURE
+            </span>
           </div>
         </div>
       </div>
