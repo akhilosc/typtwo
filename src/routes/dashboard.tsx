@@ -646,33 +646,59 @@ function DashboardPage() {
           )}
 
           {activeTab === "feed" && (
-            <div>
-              <div className="mb-6">
-                <h2 className="text-lg font-bold text-white uppercase tracking-wider">// Operational Timeline Feed</h2>
-                <p className="text-xs text-neutral-400 mt-1">Real-time developer status and deployment checkpoints logged by the engineering team.</p>
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+              {/* Left Column: Operations feed logs */}
+              <div>
+                <div className="mb-6">
+                  <h2 className="text-lg font-bold text-white uppercase tracking-wider">// Operations Logs</h2>
+                  <p className="text-xs text-neutral-400 mt-1">Real-time checkpoint entries logged by the engineering team.</p>
+                </div>
+
+                {isStatusActive ? (
+                  <div className="border border-neutral-800 bg-[#0c0c0c] rounded-sm p-6 space-y-6">
+                    {statuses.map((s, idx) => (
+                      <div key={idx} className="relative pl-6 border-l border-neutral-850 last:border-l-0 pb-2">
+                        <span className="absolute -left-[5px] top-1.5 h-2.5 w-2.5 rounded-full bg-volt" />
+                        <div className="text-[9px] text-neutral-500 font-bold mb-1 uppercase tracking-wider">{s.timestamp}</div>
+                        <p className="text-xs text-neutral-200 uppercase tracking-wide leading-relaxed font-bold">{s.text}</p>
+                      </div>
+                    ))}
+
+                    {statuses.length === 0 && (
+                      <div className="text-center text-xs text-neutral-500 py-6">
+                        No operations logs recorded yet.
+                      </div>
+                    )}
+                  </div>
+                ) : (
+                  <div className="border border-dashed border-neutral-800 rounded-sm p-10 text-center text-xs text-neutral-400">
+                    Operations feed access has been disabled by the admin workspace.
+                  </div>
+                )}
               </div>
 
-              {isStatusActive ? (
-                <div className="border border-neutral-800 bg-[#0c0c0c] rounded-sm p-6 space-y-6">
-                  {statuses.map((s, idx) => (
-                    <div key={idx} className="relative pl-6 border-l border-neutral-800 last:border-l-0 pb-2">
-                      <span className="absolute -left-[5px] top-1.5 h-2.5 w-2.5 rounded-full bg-volt" />
-                      <div className="text-[9px] text-neutral-500 font-bold mb-1 uppercase tracking-wider">{s.timestamp}</div>
-                      <p className="text-xs text-neutral-200 uppercase tracking-wide leading-relaxed font-bold">{s.text}</p>
+              {/* Right Column: Milestones Audit logs */}
+              <div>
+                <div className="mb-6">
+                  <h2 className="text-lg font-bold text-white uppercase tracking-wider">// Milestone Audit Logs</h2>
+                  <p className="text-xs text-neutral-400 mt-1">Automated timeline history of milestone changes and deliverable attachment events.</p>
+                </div>
+
+                <div className="border border-neutral-800 bg-neutral-950 p-6 rounded-sm space-y-4 max-h-[450px] overflow-y-auto font-mono">
+                  {auditLogs.map((log) => (
+                    <div key={log.id} className="text-[10px] text-neutral-400 leading-normal border-b border-neutral-900 pb-2 last:border-b-0">
+                      <span className="text-neutral-500 font-bold">[{log.timestamp.split(',')[1]?.trim() || log.timestamp}]</span>{" "}
+                      <span className="text-volt font-bold">&gt;&gt;</span> {log.message}
                     </div>
                   ))}
 
-                  {statuses.length === 0 && (
+                  {auditLogs.length === 0 && (
                     <div className="text-center text-xs text-neutral-500 py-6">
-                      No updates logged on the timeline yet.
+                      No milestone activities logged.
                     </div>
                   )}
                 </div>
-              ) : (
-                <div className="border border-dashed border-neutral-800 rounded-sm p-10 text-center text-xs text-neutral-400">
-                  Operational timeline log access has been disabled by the operations panel.
-                </div>
-              )}
+              </div>
             </div>
           )}
         </div>
