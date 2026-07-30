@@ -324,12 +324,7 @@ function LoginPage() {
               We generated a secure verification code to verify access for <span className="text-white font-bold">{pendingSession?.email}</span>.
             </p>
 
-            <div className="bg-volt/10 border border-volt/20 p-2.5 rounded-sm flex items-center justify-between text-[10px]">
-              <span className="text-volt font-bold uppercase tracking-wider">🔑 DEMO OTP LOG:</span>
-              <span className="text-white font-bold bg-neutral-900 border border-volt px-2 py-0.5 rounded-sm font-mono tracking-widest text-xs select-all">
-                {generatedOtp}
-              </span>
-            </div>
+
 
             {otpError && (
               <div className="p-3 bg-red-950/60 border border-red-900 text-red-400 text-[10px] uppercase font-bold tracking-wide">
