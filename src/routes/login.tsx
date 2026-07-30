@@ -45,7 +45,13 @@ function LoginPage() {
       navigate({ to: "/dashboard" });
     } else {
       localStorage.setItem("t2_user_email", email);
-      if (!localStorage.getItem("t2_user_company")) {
+      if (email === "founder@startuptalky.com") {
+        localStorage.setItem("t2_user_company", "Startup Talky");
+      } else if (email === "team@bitbns.com") {
+        localStorage.setItem("t2_user_company", "BitBNS");
+      } else if (email === "client@company.com") {
+        localStorage.setItem("t2_user_company", "Acme Corp");
+      } else if (!localStorage.getItem("t2_user_company")) {
         localStorage.setItem("t2_user_company", "Marquee Client Corp");
       }
       localStorage.setItem("t2_session", "active");
