@@ -130,6 +130,29 @@ function AdminPage() {
   const [allDbClients, setAllDbClients] = useState<any[]>([]);
   const [selectedClientId, setSelectedClientId] = useState<string>("acme");
 
+  const [adminPasscode, setAdminPasscode] = useState("");
+  const [isAuthorized, setIsAuthorized] = useState(false);
+  const [passcodeError, setPasscodeError] = useState("");
+
+  // Check sessionStorage on mount
+  useEffect(() => {
+    const auth = sessionStorage.getItem("t2_admin_authorized");
+    if (auth === "true") {
+      setIsAuthorized(true);
+    }
+  }, []);
+
+  const handleVerifyPasscode = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (adminPasscode === "T2-OPS-2026") {
+      setIsAuthorized(true);
+      sessionStorage.setItem("t2_admin_authorized", "true");
+      setPasscodeError("");
+    } else {
+      setPasscodeError("Invalid Administrator Passcode. Access Denied.");
+    }
+  };
+
   // Onboard new client form states
   const [onboardId, setOnboardId] = useState("");
   const [onboardName, setOnboardName] = useState("");
@@ -1019,6 +1042,64 @@ function AdminPage() {
 
   const selectedClient = clients.find(c => c.id === selectedClientId) || clients[0] || { id: "loading", name: "Loading Workspace...", email: "" };
   const activeCustomsCount = reqs.filter(r => r.id.startsWith("req-custom-")).length;
+
+  if (!isAuthorized) {
+    return (
+      <div className="flex min-h-screen bg-[#070707] text-neutral-100 font-mono items-center justify-center p-4">
+        <div className="max-w-md w-full bg-[#0b0b0b] border-2 border-flame/50 p-8 rounded-sm space-y-6 shadow-[0_0_30px_rgba(255,80,0,0.1)] text-left relative overflow-hidden">
+          <div className="absolute top-0 right-0 h-24 w-24 bg-flame/5 rounded-full blur-2xl translate-x-6 -translate-y-6" />
+          
+          <div className="flex items-center gap-2 text-flame text-[10px] font-bold uppercase tracking-widest">
+            <span className="h-1.5 w-1.5 bg-flame rounded-full animate-ping" />
+            // OPERATIONAL_CONTROL_GATEWAY
+          </div>
+
+          <div className="space-y-1.5">
+            <h2 className="text-base font-bold text-white uppercase tracking-wider">
+              Verification Required
+            </h2>
+            <p className="text-xs text-neutral-400 leading-relaxed">
+              This terminal controls client workspaces, operational milestones, and deliverables vaults. Enter the Administrator Authorization Passcode to establish session handshake.
+            </p>
+          </div>
+
+          {passcodeError && (
+            <div className="p-3 bg-red-950/60 border border-red-900 text-red-400 text-[10px] uppercase font-bold tracking-wide">
+              !! ERROR: {passcodeError}
+            </div>
+          )}
+
+          <form onSubmit={handleVerifyPasscode} className="space-y-4">
+            <div className="space-y-2">
+              <label className="text-[9px] text-neutral-500 uppercase tracking-widest font-bold block">// Admin Access Key</label>
+              <input
+                type="password"
+                placeholder="Enter passcode..."
+                value={adminPasscode}
+                onChange={(e) => setAdminPasscode(e.target.value)}
+                className="w-full bg-neutral-950 border border-neutral-800 rounded-sm px-4 py-3 text-xs text-white focus:outline-none focus:border-flame font-mono tracking-widest text-center"
+                required
+                autoFocus
+              />
+            </div>
+
+            <button
+              type="submit"
+              className="w-full bg-neutral-900 border border-neutral-850 hover:border-flame hover:text-flame py-3 text-xs uppercase tracking-widest font-bold transition cursor-pointer text-neutral-350"
+            >
+              Verify Credentials →
+            </button>
+          </form>
+
+          <div className="border-t border-neutral-900 pt-4 text-center">
+            <Link to="/" className="text-[10px] text-neutral-500 hover:text-white uppercase tracking-wider transition underline decoration-transparent">
+              ← Return to Public Portal
+            </Link>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="flex min-h-screen bg-[#0a0a0a] text-neutral-100 font-mono text-left">

@@ -136,7 +136,7 @@ function RootShell({ children }: { children: ReactNode }) {
 function RootComponent() {
   const { queryClient } = Route.useRouteContext();
   const location = useLocation();
-  const isStandalone = location.pathname.startsWith("/dashboard") || location.pathname.startsWith("/admin");
+  const isStandalone = location.pathname.toLowerCase().startsWith("/dashboard") || location.pathname.toLowerCase().startsWith("/admin");
 
   if (isStandalone) {
     return (
