@@ -126,8 +126,13 @@ const SOCIAL_SUB_OPTIONS = [
 ];
 
 function AdminPage() {
-  const [clients] = useState<Client[]>(DEFAULT_CLIENTS);
+  const [clients, setClients] = useState<Client[]>([]);
   const [selectedClientId, setSelectedClientId] = useState<string>("acme");
+
+  // Onboard new client form states
+  const [onboardId, setOnboardId] = useState("");
+  const [onboardName, setOnboardName] = useState("");
+  const [onboardDomain, setOnboardDomain] = useState("");
   const [reqs, setReqs] = useState<Requirement[]>([]);
   
   // Tab selector for forms panel (on the right)
@@ -167,6 +172,112 @@ function AdminPage() {
   const [newAgreementUrl, setNewAgreementUrl] = useState("");
 
   const [notifyMsg, setNotifyMsg] = useState("");
+
+  // Load clients list dynamically
+  useEffect(() => {
+    const fetchClients = async () => {
+      if (isSupabaseConfigured()) {
+        try {
+          const { data, error } = await supabase
+            .from("clients")
+            .select("id, name, email_domain");
+          if (data && !error) {
+            const mapped: Client[] = data.map((d: any) => ({
+              id: d.id,
+              name: d.name,
+              email: `@${d.email_domain}`
+            }));
+            setClients(mapped);
+            
+            // Set first client as default if none selected or if selected client does not exist
+            if (mapped.length > 0 && !mapped.some(c => c.id === selectedClientId)) {
+              setSelectedClientId(mapped[0].id);
+            }
+            return;
+          }
+        } catch (err) {
+          console.error("Failed to load clients list from Supabase", err);
+        }
+      }
+
+      // Local storage fallback list
+      const storedList = localStorage.getItem("t2_local_clients_list");
+      if (storedList) {
+        setClients(JSON.parse(storedList));
+      } else {
+        setClients(DEFAULT_CLIENTS);
+        localStorage.setItem("t2_local_clients_list", JSON.stringify(DEFAULT_CLIENTS));
+      }
+    };
+    fetchClients();
+  }, [notifyMsg, selectedClientId]);
+
+  // Onboard new client workspace submit handler
+  const handleOnboardClient = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!onboardId.trim() || !onboardName.trim() || !onboardDomain.trim()) {
+      alert("Please fill all onboarding fields.");
+      return;
+    }
+
+    const cleanId = onboardId.trim().toLowerCase().replace(/\s+/g, "");
+    const cleanDomain = onboardDomain.trim().toLowerCase().replace(/\s+/g, "");
+
+    const newClientObj = {
+      id: cleanId,
+      name: onboardName.trim(),
+      email_domain: cleanDomain,
+      reqs: [],
+      files: [],
+      agreements: [],
+      milestones: DEFAULT_MILESTONES,
+      audit_logs: [{ id: "aud-0", message: "Client milestones database initialized.", timestamp: new Date().toLocaleString() }],
+      statuses: []
+    };
+
+    if (isSupabaseConfigured()) {
+      try {
+        const { error } = await supabase
+          .from("clients")
+          .insert(newClientObj);
+
+        if (!error) {
+          setNotifyMsg("CLIENT CREATED");
+          setTimeout(() => setNotifyMsg(""), 2000);
+          setSelectedClientId(cleanId);
+          setOnboardId("");
+          setOnboardName("");
+          setOnboardDomain("");
+          return;
+        }
+        alert(`Failed to create client in Supabase: ${error.message}`);
+        return;
+      } catch (err) {
+        console.error(err);
+        alert("Supabase integration error occurred.");
+      }
+    }
+
+    // Local Storage Fallback
+    const localClientsKey = "t2_local_clients_list";
+    const currentClients: Client[] = JSON.parse(localStorage.getItem(localClientsKey) || JSON.stringify(DEFAULT_CLIENTS));
+    if (currentClients.some(c => c.id === cleanId)) {
+      alert("A client workspace with this ID already exists.");
+      return;
+    }
+
+    const nextClientsList = [...currentClients, { id: cleanId, name: onboardName.trim(), email: `@${cleanDomain}` }];
+    localStorage.setItem(localClientsKey, JSON.stringify(nextClientsList));
+    localStorage.setItem(`t2_reqs_${cleanId}`, JSON.stringify([]));
+    localStorage.setItem(`t2_milestones_${cleanId}`, JSON.stringify(DEFAULT_MILESTONES));
+    
+    setNotifyMsg("CLIENT CREATED");
+    setTimeout(() => setNotifyMsg(""), 2000);
+    setSelectedClientId(cleanId);
+    setOnboardId("");
+    setOnboardName("");
+    setOnboardDomain("");
+  };
 
   // Load client configurations
   useEffect(() => {
@@ -710,35 +821,85 @@ function AdminPage() {
     }
   };
 
-  const selectedClient = clients.find(c => c.id === selectedClientId) || clients[0];
+  const selectedClient = clients.find(c => c.id === selectedClientId) || clients[0] || { id: "loading", name: "Loading Workspace...", email: "" };
   const activeCustomsCount = reqs.filter(r => r.id.startsWith("req-custom-")).length;
 
   return (
     <div className="flex min-h-screen bg-[#0a0a0a] text-neutral-100 font-mono text-left">
       {/* Sidebar: Client Selector */}
       <aside className="w-64 border-r border-neutral-800 bg-[#0e0e0e] flex flex-col justify-between p-6 shrink-0">
-        <div>
-          <Link to="/" className="flex items-center gap-2 pb-5 border-b border-neutral-800 mb-8">
-            <span className="h-2 w-2 bg-flame rounded-full blink" />
-            <span className="font-bold text-sm tracking-wider text-white uppercase">TYPTWO CONSOLE</span>
-          </Link>
+        <div className="space-y-6">
+          <div>
+            <Link to="/" className="flex items-center gap-2 pb-5 border-b border-neutral-800 mb-8">
+              <span className="h-2 w-2 bg-flame rounded-full blink" />
+              <span className="font-bold text-sm tracking-wider text-white uppercase">TYPTWO CONSOLE</span>
+            </Link>
 
-          <span className="text-[9px] text-neutral-500 uppercase tracking-widest block mb-4 font-bold">// Select Client Workspace</span>
-          <nav className="space-y-1">
-            {clients.map((c) => (
+            <span className="text-[9px] text-neutral-500 uppercase tracking-widest block mb-4 font-bold">// Select Client Workspace</span>
+            <nav className="space-y-1 max-h-[180px] overflow-y-auto pr-1">
+              {clients.map((c) => (
+                <button
+                  key={c.id}
+                  onClick={() => setSelectedClientId(c.id)}
+                  className={`w-full text-left px-3 py-2 text-xs uppercase tracking-wide rounded-sm transition cursor-pointer font-bold ${
+                    selectedClientId === c.id
+                      ? "bg-volt text-black"
+                      : "bg-neutral-900 text-neutral-400 hover:text-white"
+                  }`}
+                >
+                  {c.name}
+                </button>
+              ))}
+              {clients.length === 0 && (
+                <div className="text-[10px] text-neutral-500 italic py-2">No active clients found.</div>
+              )}
+            </nav>
+          </div>
+
+          {/* Onboard New Client Form */}
+          <div className="pt-6 border-t border-neutral-800">
+            <h4 className="text-[9px] text-volt uppercase tracking-widest font-bold mb-3">
+              // Onboard Client Workspace
+            </h4>
+            <form onSubmit={handleOnboardClient} className="space-y-2">
+              <div>
+                <input
+                  type="text"
+                  placeholder="ID: e.g. netflix"
+                  value={onboardId}
+                  onChange={(e) => setOnboardId(e.target.value.toLowerCase().replace(/\s+/g, ""))}
+                  className="w-full bg-neutral-950 border border-neutral-850 rounded-sm px-2.5 py-1.5 text-[10px] text-white focus:outline-none focus:border-volt"
+                  required
+                />
+              </div>
+              <div>
+                <input
+                  type="text"
+                  placeholder="Company Name: Netflix"
+                  value={onboardName}
+                  onChange={(e) => setOnboardName(e.target.value)}
+                  className="w-full bg-neutral-950 border border-neutral-850 rounded-sm px-2.5 py-1.5 text-[10px] text-white focus:outline-none focus:border-volt"
+                  required
+                />
+              </div>
+              <div>
+                <input
+                  type="text"
+                  placeholder="Domain: netflix.com"
+                  value={onboardDomain}
+                  onChange={(e) => setOnboardDomain(e.target.value.toLowerCase().replace(/\s+/g, ""))}
+                  className="w-full bg-neutral-950 border border-neutral-850 rounded-sm px-2.5 py-1.5 text-[10px] text-white focus:outline-none focus:border-volt"
+                  required
+                />
+              </div>
               <button
-                key={c.id}
-                onClick={() => setSelectedClientId(c.id)}
-                className={`w-full text-left px-3 py-2 text-xs uppercase tracking-wide rounded-sm transition cursor-pointer font-bold ${
-                  selectedClientId === c.id
-                    ? "bg-volt text-black"
-                    : "bg-neutral-900 text-neutral-400 hover:text-white"
-                }`}
+                type="submit"
+                className="w-full bg-neutral-900 border border-neutral-800 hover:border-volt text-neutral-350 hover:text-white text-[10px] py-1.5 font-bold uppercase rounded-sm cursor-pointer transition text-center"
               >
-                {c.name}
+                Create Workspace
               </button>
-            ))}
-          </nav>
+            </form>
+          </div>
         </div>
 
         <div className="text-[9px] text-neutral-500 uppercase">

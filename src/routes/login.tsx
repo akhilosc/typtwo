@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { PageHeader } from "../components/site-chrome";
+import { supabase, isSupabaseConfigured } from "../lib/supabase";
 
 export const Route = createFileRoute("/login")({
   head: () => ({
@@ -26,7 +27,7 @@ function LoginPage() {
     }
   }, [navigate]);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError("");
 
@@ -44,19 +45,69 @@ function LoginPage() {
       window.dispatchEvent(new Event("storage"));
       navigate({ to: "/dashboard" });
     } else {
-      localStorage.setItem("t2_user_email", email);
-      if (email === "founder@startuptalky.com") {
-        localStorage.setItem("t2_user_company", "Startup Talky");
-      } else if (email === "team@bitbns.com") {
-        localStorage.setItem("t2_user_company", "BitBNS");
-      } else if (email === "client@company.com") {
-        localStorage.setItem("t2_user_company", "Acme Corp");
-      } else if (!localStorage.getItem("t2_user_company")) {
-        localStorage.setItem("t2_user_company", "Marquee Client Corp");
+      const cleanEmail = email.trim();
+      const domain = cleanEmail.split("@")[1]?.toLowerCase();
+      
+      if (!domain) {
+        setError("Invalid email address format.");
+        return;
       }
+
+      // Check Supabase first
+      if (isSupabaseConfigured()) {
+        try {
+          const { data, error } = await supabase
+            .from("clients")
+            .select("*")
+            .eq("email_domain", domain)
+            .single();
+
+          if (data && !error) {
+            localStorage.setItem("t2_user_email", cleanEmail);
+            localStorage.setItem("t2_user_company", data.name);
+            localStorage.setItem("t2_session", "active");
+            
+            window.dispatchEvent(new Event("storage"));
+            navigate({ to: "/dashboard" });
+            return;
+          } else {
+            setError("Workspace domain not registered. Contact agency administrator.");
+            return;
+          }
+        } catch (err) {
+          console.error("Login dynamic query failed, using localStorage fallback", err);
+        }
+      }
+
+      // Local Storage Fallback
+      localStorage.setItem("t2_user_email", cleanEmail);
+      
+      // Look up local storage clients list
+      const storedList = localStorage.getItem("t2_local_clients_list");
+      let foundCompany = "";
+      if (storedList) {
+        const parsedList = JSON.parse(storedList);
+        const match = parsedList.find((c: any) => c.email.includes(domain) || c.email === `@${domain}`);
+        if (match) {
+          foundCompany = match.name;
+        }
+      }
+
+      if (!foundCompany) {
+        if (cleanEmail === "founder@startuptalky.com") {
+          foundCompany = "Startup Talky";
+        } else if (cleanEmail === "team@bitbns.com") {
+          foundCompany = "BitBNS";
+        } else if (cleanEmail === "client@company.com") {
+          foundCompany = "Acme Corp";
+        } else {
+          foundCompany = "Marquee Client Corp";
+        }
+      }
+
+      localStorage.setItem("t2_user_company", foundCompany);
       localStorage.setItem("t2_session", "active");
       
-      // Dispatch storage event to notify SiteHeader
       window.dispatchEvent(new Event("storage"));
       navigate({ to: "/dashboard" });
     }
