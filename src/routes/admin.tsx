@@ -45,23 +45,32 @@ const DEFAULT_CLIENTS: Client[] = [
 const DEFAULT_REQUIREMENTS = [
   { id: "req-brand-kit", type: "drive_link", label: "Brand Kit (Logos, Fonts, Colors) Drive Link", active: true, submitted: false, value: "" },
   { id: "req-brand-assets", type: "drive_link", label: "Creative Assets (Raw Footage, Testimonials) Drive Link", active: true, submitted: false, value: "" },
-  { id: "req-icp-profile", type: "drive_link", label: "Ideal Customer Profile (ICP) & Target Audience Doc", active: false, submitted: false, value: "" },
-  { id: "req-competitor-list", type: "drive_link", label: "Competitor Accounts & Inspiration References", active: false, submitted: false, value: "" },
-  { id: "req-ad-account-access", type: "drive_link", label: "Ad Account Access (Meta, LinkedIn Campaign Manager)", active: false, submitted: false, value: "" },
-  { id: "req-newsletter-access", type: "drive_link", label: "Newsletter Access (Beehiiv / Substack / Mailchimp)", active: false, submitted: false, value: "" },
-  { id: "req-seo-keywords", type: "drive_link", label: "Target SEO Keywords & Search Focus List", active: false, submitted: false, value: "" },
-  { id: "req-founder-tone", type: "drive_link", label: "Founder Tone of Voice & Bio Document Link", active: false, submitted: false, value: "" },
-  { id: "req-product-deck", type: "drive_link", label: "Product Demo & Core Sales Deck Link", active: false, submitted: false, value: "" },
-  { id: "req-credentials", type: "drive_link", label: "Credentials & API Tokens Secure File Link", active: false, submitted: false, value: "" },
   { id: "req-vault", type: "boolean", label: "Enable Shared Deliverables Vault", active: true, submitted: false, value: "" },
   { id: "req-status-feed", type: "boolean", label: "Enable Real-Time Status Feed", active: true, submitted: false, value: "" }
+];
+
+const SOCIAL_PLATFORMS = ["LinkedIn", "X (Twitter)", "Instagram", "YouTube", "TikTok", "Facebook"];
+const SOCIAL_SUB_OPTIONS = [
+  "Personal Profile URL",
+  "Business Page URL",
+  "Analytics Admin Invite",
+  "Platform Credentials"
 ];
 
 function AdminPage() {
   const [clients] = useState<Client[]>(DEFAULT_CLIENTS);
   const [selectedClientId, setSelectedClientId] = useState<string>("acme");
   const [reqs, setReqs] = useState<Requirement[]>([]);
-  const [socialLabel, setSocialLabel] = useState("");
+  
+  // Custom requirement form state
+  const [customLabel, setCustomLabel] = useState("");
+  
+  // Social Platform builder form state
+  const [selPlatform, setSelPlatform] = useState("LinkedIn");
+  const [selSubOption, setSelSubOption] = useState("Personal Profile URL");
+  const [socialContext, setSocialContext] = useState(""); // e.g. "Founder 1", "Main Brand"
+
+  // Live feeds forms state
   const [newStatusText, setNewStatusText] = useState("");
   const [newFileName, setNewFileName] = useState("");
   const [notifyMsg, setNotifyMsg] = useState("");
@@ -113,15 +122,16 @@ function AdminPage() {
     saveConfig(updated);
   };
 
-  // Add social handle item
-  const addSocialRequirement = (e: React.FormEvent) => {
+  // Add structured social platform requirement
+  const addSocialPlatformReq = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!socialLabel.trim()) return;
+    const contextSuffix = socialContext.trim() ? ` (${socialContext.trim()})` : "";
+    const fullLabel = `${selPlatform} - ${selSubOption}${contextSuffix}`;
 
     const newReq: Requirement = {
       id: `req-social-${Date.now()}`,
       type: "social_handle",
-      label: socialLabel,
+      label: fullLabel,
       active: true,
       submitted: false,
       value: ""
@@ -130,10 +140,36 @@ function AdminPage() {
     const updated = [...reqs, newReq];
     setReqs(updated);
     saveConfig(updated);
-    setSocialLabel("");
+    setSocialContext("");
   };
 
-  // Delete social requirement
+  // Add custom URL requirement (Max 3)
+  const addCustomRequirement = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!customLabel.trim()) return;
+
+    const activeCustomsCount = reqs.filter(r => r.id.startsWith("req-custom-")).length;
+    if (activeCustomsCount >= 3) {
+      alert("Maximum of 3 custom requirements has been reached. Please delete one to add another.");
+      return;
+    }
+
+    const newReq: Requirement = {
+      id: `req-custom-${Date.now()}`,
+      type: "drive_link",
+      label: `Custom: ${customLabel}`,
+      active: true,
+      submitted: false,
+      value: ""
+    };
+
+    const updated = [...reqs, newReq];
+    setReqs(updated);
+    saveConfig(updated);
+    setCustomLabel("");
+  };
+
+  // Delete dynamic requirement
   const deleteRequirement = (id: string) => {
     const updated = reqs.filter((r) => r.id !== id);
     setReqs(updated);
@@ -194,11 +230,12 @@ function AdminPage() {
   };
 
   const selectedClient = clients.find(c => c.id === selectedClientId) || clients[0];
+  const activeCustomsCount = reqs.filter(r => r.id.startsWith("req-custom-")).length;
 
   return (
-    <div className="flex min-h-screen bg-[#0a0a0a] text-neutral-100 font-mono">
+    <div className="flex min-h-screen bg-[#0a0a0a] text-neutral-100 font-mono text-left">
       {/* Sidebar: Client Selector */}
-      <aside className="w-64 border-r border-neutral-800 bg-[#0e0e0e] flex flex-col justify-between p-6 shrink-0 text-left">
+      <aside className="w-64 border-r border-neutral-800 bg-[#0e0e0e] flex flex-col justify-between p-6 shrink-0">
         <div>
           <Link to="/" className="flex items-center gap-2 pb-5 border-b border-neutral-800 mb-8">
             <span className="h-2 w-2 bg-flame rounded-full blink" />
@@ -224,12 +261,12 @@ function AdminPage() {
         </div>
 
         <div className="text-[9px] text-neutral-500 uppercase">
-          Ops Desk v2.0
+          Ops Desk v2.2
         </div>
       </aside>
 
       {/* Main Panel */}
-      <main className="flex-1 flex flex-col min-w-0 bg-[#070707] text-left">
+      <main className="flex-grow flex flex-col min-w-0 bg-[#070707]">
         <header className="h-14 border-b border-neutral-800 px-8 flex items-center justify-between bg-[#0b0b0b] shrink-0">
           <div className="text-xs uppercase tracking-widest text-white font-bold">
             Configuring: {selectedClient.name} ({selectedClient.email})
@@ -240,19 +277,20 @@ function AdminPage() {
         </header>
 
         {/* Content layout */}
-        <div className="flex-grow p-8 max-w-5xl w-full grid grid-cols-1 md:grid-cols-2 gap-8">
-          {/* Column 1: Dashboard Requirements configuration */}
-          <div className="space-y-6">
+        <div className="flex-grow p-8 grid grid-cols-1 lg:grid-cols-12 gap-8 w-full">
+          
+          {/* Column 1: Config Toggles & Dynamic lists */}
+          <div className="lg:col-span-7 space-y-6">
             <div className="bg-[#0c0c0c] border border-neutral-800 p-5 rounded-sm">
               <h3 className="text-xs font-bold text-white uppercase tracking-wider mb-4 border-b border-neutral-800 pb-2">
-                1. Enable Inputs on Dashboard
+                1. Configured Requirements Checklist
               </h3>
 
-              <div className="space-y-3">
+              <div className="space-y-3 max-h-[450px] overflow-y-auto pr-2">
                 {reqs.map((r) => (
-                  <div key={r.id} className="py-2 border-b border-neutral-800 last:border-b-0">
+                  <div key={r.id} className="py-2.5 border-b border-neutral-900 last:border-b-0">
                     <div className="flex items-center justify-between">
-                      <label className="flex items-center gap-2 cursor-pointer select-none">
+                      <label className="flex items-center gap-2.5 cursor-pointer select-none">
                         <input
                           type="checkbox"
                           checked={r.active}
@@ -263,7 +301,9 @@ function AdminPage() {
                           {r.label}
                         </span>
                       </label>
-                      {r.type === "social_handle" && (
+                      
+                      {/* Delete buttons for dynamic social and custom elements */}
+                      {(r.id.startsWith("req-social-") || r.id.startsWith("req-custom-")) && (
                         <button
                           onClick={() => deleteRequirement(r.id)}
                           className="text-[9px] text-flame underline hover:text-white cursor-pointer"
@@ -272,8 +312,10 @@ function AdminPage() {
                         </button>
                       )}
                     </div>
+
+                    {/* Displays submitted data panel from client */}
                     {r.submitted && r.value && (
-                      <div className="pl-6 mt-1.5 flex flex-col sm:flex-row sm:items-center gap-2">
+                      <div className="pl-6 mt-2 flex flex-col sm:flex-row sm:items-center gap-2">
                         <span className="text-[8px] bg-emerald-950/80 text-emerald-400 border border-emerald-900 px-1.5 py-0.5 rounded-sm font-bold uppercase w-fit">
                           SUBMITTED DATA:
                         </span>
@@ -291,66 +333,126 @@ function AdminPage() {
                   </div>
                 ))}
               </div>
-
-              {/* Add dynamic social handle form */}
-              <form onSubmit={addSocialRequirement} className="flex gap-2 mt-4 pt-4 border-t border-neutral-800">
-                <input
-                  type="text"
-                  value={socialLabel}
-                  onChange={(e) => setSocialLabel(e.target.value)}
-                  placeholder="Request extra social handle (e.g. Founder 2 LinkedIn)"
-                  className="flex-grow bg-neutral-950 border border-neutral-800 rounded-sm px-3 py-1.5 text-xs text-white focus:outline-none"
-                  required
-                />
-                <button
-                  type="submit"
-                  className="bg-neutral-800 border border-neutral-700 hover:border-volt text-white text-xs px-3 py-1.5 rounded-sm uppercase tracking-wider font-bold transition cursor-pointer"
-                >
-                  + Add Request
-                </button>
-              </form>
             </div>
 
-            <div className="pt-4">
+            <div className="pt-2">
               <button
                 onClick={resetClientData}
-                className="w-full bg-[#120707] border border-red-950 text-red-500 hover:bg-red-950 hover:text-white text-xs py-2 text-center rounded-sm uppercase font-bold transition cursor-pointer"
+                className="w-full bg-[#120707] border border-red-950 text-red-500 hover:bg-red-950 hover:text-white text-xs py-2.5 text-center rounded-sm uppercase font-bold transition cursor-pointer"
               >
                 ☠ Wipe Client Workspace
               </button>
             </div>
           </div>
 
-          {/* Column 2: Status Feed and Vault uploads */}
-          <div className="space-y-6">
+          {/* Column 2: Platform Builder / Custom Fields / Timeline updates */}
+          <div className="lg:col-span-5 space-y-6">
+            
+            {/* Social Platform Option Creator */}
+            <div className="bg-[#0c0c0c] border border-neutral-800 p-5 rounded-sm">
+              <h3 className="text-xs font-bold text-white uppercase tracking-wider mb-3 border-b border-neutral-800 pb-2">
+                2. Add Social Platform Request
+              </h3>
+              <p className="text-[10px] text-neutral-400 mb-4">Select platform & sub-option. Add context (e.g. 'Founder 2') to request multiple handles of the same platform.</p>
+
+              <form onSubmit={addSocialPlatformReq} className="space-y-3">
+                <div className="grid grid-cols-2 gap-2">
+                  <select
+                    value={selPlatform}
+                    onChange={(e) => setSelPlatform(e.target.value)}
+                    className="bg-neutral-950 border border-neutral-800 rounded-sm px-3 py-2 text-xs text-white focus:outline-none focus:border-volt"
+                  >
+                    {SOCIAL_PLATFORMS.map(p => (
+                      <option key={p} value={p}>{p}</option>
+                    ))}
+                  </select>
+
+                  <select
+                    value={selSubOption}
+                    onChange={(e) => setSelSubOption(e.target.value)}
+                    className="bg-neutral-950 border border-neutral-800 rounded-sm px-3 py-2 text-xs text-white focus:outline-none focus:border-volt"
+                  >
+                    {SOCIAL_SUB_OPTIONS.map(o => (
+                      <option key={o} value={o}>{o}</option>
+                    ))}
+                  </select>
+                </div>
+
+                <div>
+                  <input
+                    type="text"
+                    value={socialContext}
+                    onChange={(e) => setSocialContext(e.target.value)}
+                    placeholder="Context label: e.g. Founder 1, Brand Page"
+                    className="w-full bg-neutral-950 border border-neutral-800 rounded-sm px-3.5 py-2 text-xs text-white focus:outline-none focus:border-volt"
+                  />
+                </div>
+
+                <button
+                  type="submit"
+                  className="w-full bg-volt text-black hover:bg-white text-xs py-2 uppercase font-bold rounded-sm transition cursor-pointer"
+                >
+                  + Add Platform Requirement
+                </button>
+              </form>
+            </div>
+
+            {/* Custom URL Collector form (max 3) */}
+            <div className="bg-[#0c0c0c] border border-neutral-800 p-5 rounded-sm">
+              <h3 className="text-xs font-bold text-white uppercase tracking-wider mb-2 border-b border-neutral-800 pb-2 flex justify-between items-center">
+                <span>3. Add Custom URL Request</span>
+                <span className="text-[9px] text-neutral-400 font-normal">Active: {activeCustomsCount}/3</span>
+              </h3>
+              
+              <form onSubmit={addCustomRequirement} className="space-y-3">
+                <input
+                  type="text"
+                  value={customLabel}
+                  onChange={(e) => setCustomLabel(e.target.value)}
+                  placeholder="e.g. Pitch Video Link, Figma Deck..."
+                  disabled={activeCustomsCount >= 3}
+                  className="w-full bg-neutral-950 border border-neutral-800 rounded-sm px-3.5 py-2 text-xs text-white focus:outline-none focus:border-volt disabled:opacity-50 disabled:cursor-not-allowed"
+                  required
+                />
+                
+                <button
+                  type="submit"
+                  disabled={activeCustomsCount >= 3}
+                  className="w-full bg-neutral-900 border border-neutral-800 hover:border-volt text-neutral-300 hover:text-white text-xs py-2 uppercase font-bold rounded-sm transition cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  {activeCustomsCount >= 3 ? "Custom Limits Reached (Max 3)" : "+ Add Custom URL Request"}
+                </button>
+              </form>
+            </div>
+
             {/* Post timeline update */}
             <div className="bg-[#0c0c0c] border border-neutral-800 p-5 rounded-sm">
-              <h3 className="text-xs font-bold text-white uppercase tracking-wider mb-4 border-b border-neutral-800 pb-2">
-                2. Post Operations Timeline Update
+              <h3 className="text-xs font-bold text-white uppercase tracking-wider mb-3 border-b border-neutral-800 pb-2">
+                4. Operational Timeline Updates
               </h3>
 
               <form onSubmit={addStatusUpdate} className="space-y-3">
                 <textarea
                   value={newStatusText}
                   onChange={(e) => setNewStatusText(e.target.value)}
-                  placeholder="e.g. Completed initial short-form content layout sprint."
-                  rows={3}
+                  placeholder="e.g. Completed initial short-form campaign layouts..."
+                  rows={2}
                   className="w-full bg-neutral-950 border border-neutral-800 rounded-sm px-3.5 py-2 text-xs focus:outline-none text-white"
                   required
                 />
                 <button
                   type="submit"
-                  className="w-full bg-volt text-black hover:bg-white text-xs py-2 uppercase font-bold rounded-sm transition cursor-pointer text-center"
+                  className="w-full bg-neutral-900 border border-neutral-800 hover:border-volt text-neutral-300 hover:text-white text-xs py-1.5 uppercase font-bold rounded-sm transition cursor-pointer text-center"
                 >
-                  Log Update →
+                  Log Update
                 </button>
               </form>
             </div>
 
             {/* Post document */}
             <div className="bg-[#0c0c0c] border border-neutral-800 p-5 rounded-sm">
-              <h3 className="text-xs font-bold text-white uppercase tracking-wider mb-4 border-b border-neutral-800 pb-2">
-                3. Share File in Client Vault
+              <h3 className="text-xs font-bold text-white uppercase tracking-wider mb-3 border-b border-neutral-800 pb-2">
+                5. Share File in Client Vault
               </h3>
 
               <form onSubmit={addVaultDocument} className="space-y-3">
@@ -364,13 +466,15 @@ function AdminPage() {
                 />
                 <button
                   type="submit"
-                  className="w-full bg-neutral-900 border border-neutral-800 hover:border-volt text-neutral-300 hover:text-white text-xs py-2 uppercase font-bold rounded-sm transition cursor-pointer text-center"
+                  className="w-full bg-neutral-900 border border-neutral-800 hover:border-volt text-neutral-300 hover:text-white text-xs py-1.5 uppercase font-bold rounded-sm transition cursor-pointer text-center"
                 >
-                  Post File Vault Index →
+                  Post File Vault Index
                 </button>
               </form>
             </div>
+
           </div>
+
         </div>
       </main>
     </div>
