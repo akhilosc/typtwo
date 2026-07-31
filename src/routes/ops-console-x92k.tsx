@@ -149,6 +149,29 @@ function AdminPage() {
     return [];
   };
 
+  const getSafeLocalStorage = (key: string): string | null => {
+    if (typeof window === "undefined") return null;
+    try {
+      return localStorage.getItem(key);
+    } catch {
+      return null;
+    }
+  };
+
+  const setSafeLocalStorage = (key: string, val: string): void => {
+    if (typeof window === "undefined") return;
+    try {
+      localStorage.setItem(key, val);
+    } catch {}
+  };
+
+  const removeSafeLocalStorage = (key: string): void => {
+    if (typeof window === "undefined") return;
+    try {
+      localStorage.removeItem(key);
+    } catch {}
+  };
+
   // Check sessionStorage on mount
   useEffect(() => {
     setIsMounted(true);
@@ -250,13 +273,13 @@ function AdminPage() {
       }
 
       // Local storage fallback list
-      const storedList = localStorage.getItem("t2_local_clients_list");
+      const storedList = getSafeLocalStorage("t2_local_clients_list");
       if (storedList) {
-        const parsed = JSON.parse(storedList);
-        setClients(parsed);
+        const parsed = parseArray(storedList);
+        setClients(parsed.length > 0 ? parsed : DEFAULT_CLIENTS);
       } else {
         setClients(DEFAULT_CLIENTS);
-        localStorage.setItem("t2_local_clients_list", JSON.stringify(DEFAULT_CLIENTS));
+        setSafeLocalStorage("t2_local_clients_list", JSON.stringify(DEFAULT_CLIENTS));
       }
     };
     fetchClients();
@@ -310,16 +333,16 @@ function AdminPage() {
 
     // Local Storage Fallback
     const localClientsKey = "t2_local_clients_list";
-    const currentClients: Client[] = JSON.parse(localStorage.getItem(localClientsKey) || JSON.stringify(DEFAULT_CLIENTS));
+    const currentClients: Client[] = parseArray(getSafeLocalStorage(localClientsKey) || JSON.stringify(DEFAULT_CLIENTS));
     if (currentClients.some(c => c.id === cleanId)) {
       alert("A client workspace with this ID already exists.");
       return;
     }
 
     const nextClientsList = [...currentClients, { id: cleanId, name: onboardName.trim(), email: `@${cleanDomain}` }];
-    localStorage.setItem(localClientsKey, JSON.stringify(nextClientsList));
-    localStorage.setItem(`t2_reqs_${cleanId}`, JSON.stringify([]));
-    localStorage.setItem(`t2_milestones_${cleanId}`, JSON.stringify(DEFAULT_MILESTONES));
+    setSafeLocalStorage(localClientsKey, JSON.stringify(nextClientsList));
+    setSafeLocalStorage(`t2_reqs_${cleanId}`, JSON.stringify([]));
+    setSafeLocalStorage(`t2_milestones_${cleanId}`, JSON.stringify(DEFAULT_MILESTONES));
     
     setNotifyMsg("CLIENT CREATED");
     setTimeout(() => setNotifyMsg(""), 2000);
@@ -343,9 +366,9 @@ function AdminPage() {
     setAuditLogs([]);
 
     const loadData = async () => {
-      const storedLocalReqs = typeof window !== "undefined" ? localStorage.getItem(key) : null;
-      const storedLocalMilestones = typeof window !== "undefined" ? localStorage.getItem(milestonesKey) : null;
-      const storedLocalAudits = typeof window !== "undefined" ? localStorage.getItem(auditLogsKey) : null;
+      const storedLocalReqs = getSafeLocalStorage(key);
+      const storedLocalMilestones = getSafeLocalStorage(milestonesKey);
+      const storedLocalAudits = getSafeLocalStorage(auditLogsKey);
 
       if (isSupabaseConfigured()) {
         try {
@@ -365,14 +388,14 @@ function AdminPage() {
                 }
               });
               setReqs(merged);
-              localStorage.setItem(key, JSON.stringify(merged));
+              setSafeLocalStorage(key, JSON.stringify(merged));
             } else if (storedLocalReqs) {
               const parsed = parseArray(storedLocalReqs);
               setReqs(parsed.length > 0 ? parsed : JSON.parse(JSON.stringify(DEFAULT_REQUIREMENTS)));
             } else {
               const initial = JSON.parse(JSON.stringify(DEFAULT_REQUIREMENTS));
               setReqs(initial);
-              localStorage.setItem(key, JSON.stringify(initial));
+              setSafeLocalStorage(key, JSON.stringify(initial));
             }
 
             const dbMilestones = parseArray(data.milestones);
@@ -402,7 +425,7 @@ function AdminPage() {
       } else {
         const initial = JSON.parse(JSON.stringify(DEFAULT_REQUIREMENTS));
         setReqs(initial);
-        localStorage.setItem(key, JSON.stringify(initial));
+        setSafeLocalStorage(key, JSON.stringify(initial));
       }
 
       // 2. Milestones Local Fallback
@@ -1169,11 +1192,11 @@ function AdminPage() {
     if (isSupabaseConfigured() && Array.isArray(allDbClients) && allDbClients.length > 0) {
       return allDbClients.filter(c => !c.approved);
     }
-    const storedList = typeof window !== "undefined" ? localStorage.getItem("t2_local_clients_list") : null;
+    const storedList = getSafeLocalStorage("t2_local_clients_list");
     if (!storedList) return [];
     try {
       const parsed = parseArray(storedList);
-      return parsed.filter((c: any) => localStorage.getItem(`t2_approved_${c.id}`) !== "true" && c.id !== "acme" && c.id !== "startuptalky" && c.id !== "bitbns");
+      return parsed.filter((c: any) => getSafeLocalStorage(`t2_approved_${c.id}`) !== "true" && c.id !== "acme" && c.id !== "startuptalky" && c.id !== "bitbns");
     } catch {
       return [];
     }
@@ -1183,13 +1206,13 @@ function AdminPage() {
     if (isSupabaseConfigured() && Array.isArray(allDbClients) && allDbClients.length > 0) {
       return allDbClients.flatMap(c => parseArray(c.members).map((m: any) => ({ ...m, clientId: c.id, clientName: c.name })).filter((m: any) => !m.approved));
     }
-    const storedList = typeof window !== "undefined" ? localStorage.getItem("t2_local_clients_list") : null;
+    const storedList = getSafeLocalStorage("t2_local_clients_list");
     if (!storedList) return [];
     try {
       const parsed = parseArray(storedList);
       return parsed.flatMap((c: any) => {
         const key = `t2_members_${c.id}`;
-        const list = parseArray(localStorage.getItem(key));
+        const list = parseArray(getSafeLocalStorage(key));
         return list.filter((m: any) => !m.approved).map((m: any) => ({ ...m, clientId: c.id, clientName: c.name }));
       });
     } catch {
@@ -1202,13 +1225,13 @@ function AdminPage() {
     if (isSupabaseConfigured() && Array.isArray(allDbClients) && allDbClients.length > 0) {
       list = allDbClients.flatMap(c => parseArray(c.members).map((m: any) => ({ ...m, clientId: c.id, clientName: c.name })));
     } else {
-      const storedList = typeof window !== "undefined" ? localStorage.getItem("t2_local_clients_list") : null;
+      const storedList = getSafeLocalStorage("t2_local_clients_list");
       if (storedList) {
         try {
           const parsed = parseArray(storedList);
           list = parsed.flatMap((c: any) => {
             const key = `t2_members_${c.id}`;
-            const mList = parseArray(localStorage.getItem(key));
+            const mList = parseArray(getSafeLocalStorage(key));
             return mList.map((m: any) => ({ ...m, clientId: c.id, clientName: c.name }));
           });
         } catch {
