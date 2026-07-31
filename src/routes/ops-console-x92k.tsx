@@ -860,60 +860,126 @@ function AdminPage() {
     }
   };
 
-  // Approve a pending workspace registration
+    // 1. Approve company workspace
   const handleApproveWorkspace = async (clientIdToApprove: string) => {
     if (isSupabaseConfigured()) {
       try {
         const { error } = await supabase
           .from("clients")
-          .update({ approved: true })
+          .update({ approved: true, disabled: false })
           .eq("id", clientIdToApprove);
-        
         if (!error) {
-          setNotifyMsg("WORKSPACE APPROVED");
+          setNotifyMsg("COMPANY APPROVED");
           setTimeout(() => setNotifyMsg(""), 2000);
           return;
         }
-        console.error("Supabase approve error", error);
       } catch (err) {
         console.error(err);
       }
     }
 
-    // Local storage fallback
     localStorage.setItem(`t2_approved_${clientIdToApprove}`, "true");
+    localStorage.setItem(`t2_disabled_${clientIdToApprove}`, "false");
     
-    // Auto approve in local list
-    const localClientsKey = "t2_local_clients_list";
-    const currentList = JSON.parse(localStorage.getItem(localClientsKey) || "[]");
-    const updatedList = currentList.map((c: any) => 
-      c.id === clientIdToApprove ? { ...c, approved: true } : c
-    );
-    localStorage.setItem(localClientsKey, JSON.stringify(updatedList));
-
-    setNotifyMsg("WORKSPACE APPROVED");
+    setNotifyMsg("COMPANY APPROVED");
     setTimeout(() => setNotifyMsg(""), 2000);
     window.dispatchEvent(new Event("storage"));
     window.dispatchEvent(new Event("t2_storage_update"));
   };
 
-  // Deny/Delete pending workspace registration
-  const handleDenyWorkspace = async (clientIdToDeny: string) => {
-    if (!window.confirm(`Are you sure you want to reject and delete client workspace "${clientIdToDeny}"?`)) return;
+  // 2. Reject / Set Pending company workspace
+  const handleRejectWorkspace = async (clientIdToReject: string) => {
+    if (isSupabaseConfigured()) {
+      try {
+        const { error } = await supabase
+          .from("clients")
+          .update({ approved: false })
+          .eq("id", clientIdToReject);
+        if (!error) {
+          setNotifyMsg("COMPANY REJECTED / PENDING");
+          setTimeout(() => setNotifyMsg(""), 2000);
+          return;
+        }
+      } catch (err) {
+        console.error(err);
+      }
+    }
+
+    localStorage.setItem(`t2_approved_${clientIdToReject}`, "false");
+    setNotifyMsg("COMPANY REJECTED / PENDING");
+    setTimeout(() => setNotifyMsg(""), 2000);
+    window.dispatchEvent(new Event("storage"));
+    window.dispatchEvent(new Event("t2_storage_update"));
+  };
+
+  // 3. Disable company login
+  const handleDisableWorkspace = async (clientIdToDisable: string) => {
+    if (isSupabaseConfigured()) {
+      try {
+        const { error } = await supabase
+          .from("clients")
+          .update({ disabled: true })
+          .eq("id", clientIdToDisable);
+        if (!error) {
+          setNotifyMsg("COMPANY LOGIN DISABLED");
+          setTimeout(() => setNotifyMsg(""), 2000);
+          return;
+        }
+      } catch (err) {
+        console.error(err);
+      }
+    }
+
+    localStorage.setItem(`t2_disabled_${clientIdToDisable}`, "true");
+    setNotifyMsg("COMPANY LOGIN DISABLED");
+    setTimeout(() => setNotifyMsg(""), 2000);
+    window.dispatchEvent(new Event("storage"));
+    window.dispatchEvent(new Event("t2_storage_update"));
+  };
+
+  // 4. Enable company login
+  const handleEnableWorkspace = async (clientIdToEnable: string) => {
+    if (isSupabaseConfigured()) {
+      try {
+        const { error } = await supabase
+          .from("clients")
+          .update({ disabled: false, approved: true })
+          .eq("id", clientIdToEnable);
+        if (!error) {
+          setNotifyMsg("COMPANY LOGIN ENABLED");
+          setTimeout(() => setNotifyMsg(""), 2000);
+          return;
+        }
+      } catch (err) {
+        console.error(err);
+      }
+    }
+
+    localStorage.setItem(`t2_disabled_${clientIdToEnable}`, "false");
+    localStorage.setItem(`t2_approved_${clientIdToEnable}`, "true");
+    setNotifyMsg("COMPANY LOGIN ENABLED");
+    setTimeout(() => setNotifyMsg(""), 2000);
+    window.dispatchEvent(new Event("storage"));
+    window.dispatchEvent(new Event("t2_storage_update"));
+  };
+
+  // 5. Delete company permanently
+  const handleDeleteWorkspace = async (clientIdToDelete: string) => {
+    if (!window.confirm(`Are you sure you want to PERMANENTLY DELETE company workspace "${clientIdToDelete}"? This action cannot be undone.`)) return;
 
     if (isSupabaseConfigured()) {
       try {
         const { error } = await supabase
           .from("clients")
           .delete()
-          .eq("id", clientIdToDeny);
+          .eq("id", clientIdToDelete);
         
         if (!error) {
-          setNotifyMsg("WORKSPACE REJECTED");
+          setNotifyMsg("COMPANY DELETED");
           setTimeout(() => setNotifyMsg(""), 2000);
           return;
         }
-        console.error("Supabase delete error", error);
+        alert(`Failed to delete company: ${error.message}`);
       } catch (err) {
         console.error(err);
       }
@@ -922,22 +988,17 @@ function AdminPage() {
     // Local storage fallback
     const localClientsKey = "t2_local_clients_list";
     const currentList = JSON.parse(localStorage.getItem(localClientsKey) || "[]");
-    const updatedList = currentList.filter((c: any) => c.id !== clientIdToDeny);
+    const updatedList = currentList.filter((c: any) => c.id !== clientIdToDelete);
     localStorage.setItem(localClientsKey, JSON.stringify(updatedList));
-    
-    localStorage.removeItem(`t2_reqs_${clientIdToDeny}`);
-    localStorage.removeItem(`t2_milestones_${clientIdToDeny}`);
-    localStorage.removeItem(`t2_milestones_audit_${clientIdToDeny}`);
-    localStorage.removeItem(`t2_approved_${clientIdToDeny}`);
 
-    setNotifyMsg("WORKSPACE REJECTED");
+    setNotifyMsg("COMPANY DELETED");
     setTimeout(() => setNotifyMsg(""), 2000);
     window.dispatchEvent(new Event("storage"));
     window.dispatchEvent(new Event("t2_storage_update"));
   };
 
-  // Approve coworker access request
-  const handleApproveMember = async (targetClientId: string, memberEmail: string) => {
+  // 6. Master approve coworker / member email access request
+  const handleMasterApproveMember = async (targetClientId: string, memberEmail: string) => {
     if (isSupabaseConfigured()) {
       try {
         const { data } = await supabase
@@ -948,7 +1009,7 @@ function AdminPage() {
 
         const current = data?.members || [];
         const updated = current.map((m: any) => 
-          m.email === memberEmail ? { ...m, approved: true } : m
+          m.email === memberEmail ? { ...m, approved: true, disabled: false } : m
         );
 
         const { error } = await supabase
@@ -957,7 +1018,7 @@ function AdminPage() {
           .eq("id", targetClientId);
 
         if (!error) {
-          setNotifyMsg("MEMBER GRANTED ACCESS");
+          setNotifyMsg("EMAIL MASTER APPROVED");
           setTimeout(() => setNotifyMsg(""), 2000);
           return;
         }
@@ -970,18 +1031,80 @@ function AdminPage() {
     const key = `t2_members_${targetClientId}`;
     const current = JSON.parse(localStorage.getItem(key) || "[]");
     const updated = current.map((m: any) => 
-      m.email === memberEmail ? { ...m, approved: true } : m
+      m.email === memberEmail ? { ...m, approved: true, disabled: false } : m
     );
     localStorage.setItem(key, JSON.stringify(updated));
 
-    setNotifyMsg("MEMBER APPROVED");
+    setNotifyMsg("EMAIL MASTER APPROVED");
     setTimeout(() => setNotifyMsg(""), 2000);
     window.dispatchEvent(new Event("storage"));
     window.dispatchEvent(new Event("t2_storage_update"));
   };
 
-  // Deny access/Delete coworker request
-  const handleDenyMember = async (targetClientId: string, memberEmail: string) => {
+  // 7. Disable member email
+  const handleDisableMember = async (targetClientId: string, memberEmail: string) => {
+    if (isSupabaseConfigured()) {
+      try {
+        const { data } = await supabase
+          .from("clients")
+          .select("members")
+          .eq("id", targetClientId)
+          .single();
+
+        const current = data?.members || [];
+        const updated = current.map((m: any) => 
+          m.email === memberEmail ? { ...m, disabled: true } : m
+        );
+
+        const { error } = await supabase
+          .from("clients")
+          .update({ members: updated })
+          .eq("id", targetClientId);
+
+        if (!error) {
+          setNotifyMsg("EMAIL DISABLED");
+          setTimeout(() => setNotifyMsg(""), 2000);
+          return;
+        }
+      } catch (err) {
+        console.error(err);
+      }
+    }
+  };
+
+  // 8. Enable member email
+  const handleEnableMember = async (targetClientId: string, memberEmail: string) => {
+    if (isSupabaseConfigured()) {
+      try {
+        const { data } = await supabase
+          .from("clients")
+          .select("members")
+          .eq("id", targetClientId)
+          .single();
+
+        const current = data?.members || [];
+        const updated = current.map((m: any) => 
+          m.email === memberEmail ? { ...m, disabled: false, approved: true } : m
+        );
+
+        const { error } = await supabase
+          .from("clients")
+          .update({ members: updated })
+          .eq("id", targetClientId);
+
+        if (!error) {
+          setNotifyMsg("EMAIL ENABLED");
+          setTimeout(() => setNotifyMsg(""), 2000);
+          return;
+        }
+      } catch (err) {
+        console.error(err);
+      }
+    }
+  };
+
+  // 9. Delete member email
+  const handleDeleteMember = async (targetClientId: string, memberEmail: string) => {
     if (isSupabaseConfigured()) {
       try {
         const { data } = await supabase
@@ -999,7 +1122,7 @@ function AdminPage() {
           .eq("id", targetClientId);
 
         if (!error) {
-          setNotifyMsg("MEMBER REJECTED");
+          setNotifyMsg("MEMBER REMOVED");
           setTimeout(() => setNotifyMsg(""), 2000);
           return;
         }
@@ -1014,7 +1137,7 @@ function AdminPage() {
     const updated = current.filter((m: any) => m.email !== memberEmail);
     localStorage.setItem(key, JSON.stringify(updated));
 
-    setNotifyMsg("MEMBER REJECTED");
+    setNotifyMsg("MEMBER REMOVED");
     setTimeout(() => setNotifyMsg(""), 2000);
     window.dispatchEvent(new Event("storage"));
     window.dispatchEvent(new Event("t2_storage_update"));
@@ -1748,90 +1871,177 @@ function AdminPage() {
               </div>
             )}
 
-            {/* TAB 4: Approvals Center */}
+            {/* TAB 4: Enterprise Access & Approvals Control Center */}
             {activeFormTab === "approvals" && (
-              <div className="space-y-6">
-                {/* 1. Pending Workspace Registrations */}
-                <div className="bg-[#0c0c0c] border border-neutral-800 p-5 rounded-sm">
-                  <h3 className="text-xs font-bold text-volt uppercase tracking-wider mb-4 border-b border-neutral-800 pb-2 flex items-center justify-between">
-                    <span>// Pending Workspace Approvals</span>
+              <div className="space-y-6 text-left">
+                {/* 1. All Registered Companies Control Table */}
+                <div className="bg-[#0c0c0c] border border-neutral-800 p-5 rounded-sm space-y-4 font-mono">
+                  <div className="flex items-center justify-between border-b border-neutral-800 pb-3">
+                    <div>
+                      <h3 className="text-xs font-bold text-volt uppercase tracking-wider">// Company Workspaces Directory</h3>
+                      <p className="text-[10px] text-neutral-400 mt-0.5">Approve, reject, disable login, or permanently delete registered enterprise companies.</p>
+                    </div>
                     <span className="bg-volt/10 text-volt px-2 py-0.5 rounded-sm text-[9px] font-bold">
-                      {pendingWorkspacesList.length} PENDING
+                      {allDbClients.length || clients.length} TOTAL COMPANIES
                     </span>
-                  </h3>
+                  </div>
 
                   <div className="space-y-3">
-                    {pendingWorkspacesList.map((clientRow: any) => (
-                      <div key={clientRow.id} className="bg-neutral-950 border border-neutral-900 p-4 rounded-sm flex items-center justify-between">
-                        <div className="space-y-1 text-left">
-                          <h4 className="text-xs font-bold text-white uppercase">{clientRow.name}</h4>
-                          <div className="text-[9px] text-neutral-500 uppercase tracking-wider">
-                            Workspace: <span className="text-neutral-350">{clientRow.id}</span> | Domain: <span className="text-neutral-350">{clientRow.email_domain}</span>
+                    {(allDbClients.length > 0 ? allDbClients : clients).map((c: any) => {
+                      const isAppr = c.approved ?? true;
+                      const isDis = c.disabled ?? false;
+
+                      return (
+                        <div key={c.id} className="bg-neutral-950 border border-neutral-850 p-4 rounded-sm flex flex-col md:flex-row md:items-center justify-between gap-4">
+                          <div className="space-y-1 text-left">
+                            <div className="flex items-center gap-2">
+                              <h4 className="text-xs font-bold text-white uppercase">{c.name}</h4>
+                              {isDis ? (
+                                <span className="bg-red-950 text-red-400 border border-red-900 text-[9px] px-2 py-0.5 font-bold uppercase rounded-sm">
+                                  ● LOGIN DISABLED
+                                </span>
+                              ) : isAppr ? (
+                                <span className="bg-emerald-950 text-emerald-400 border border-emerald-900 text-[9px] px-2 py-0.5 font-bold uppercase rounded-sm">
+                                  ✓ APPROVED
+                                </span>
+                              ) : (
+                                <span className="bg-amber-950 text-amber-400 border border-amber-900 text-[9px] px-2 py-0.5 font-bold uppercase rounded-sm animate-pulse">
+                                  ⏱ AWAITING APPROVAL
+                                </span>
+                              )}
+                            </div>
+                            <div className="text-[9px] text-neutral-500 uppercase tracking-wider">
+                              ID: <span className="text-neutral-350">{c.id}</span> | Domain: <span className="text-neutral-350">{c.email_domain || c.email || "N/A"}</span>
+                            </div>
+                          </div>
+
+                          {/* Company Action Controls */}
+                          <div className="flex flex-wrap items-center gap-2">
+                            {!isAppr && (
+                              <button
+                                onClick={() => handleApproveWorkspace(c.id)}
+                                className="bg-volt text-black hover:bg-white text-[9px] py-1.5 px-3 uppercase font-bold rounded-sm transition cursor-pointer"
+                              >
+                                Approve
+                              </button>
+                            )}
+                            {isAppr && (
+                              <button
+                                onClick={() => handleRejectWorkspace(c.id)}
+                                className="bg-neutral-900 border border-amber-800/60 hover:border-amber-500 text-amber-400 text-[9px] py-1.5 px-2.5 uppercase font-bold rounded-sm transition cursor-pointer"
+                              >
+                                Reject / Set Pending
+                              </button>
+                            )}
+
+                            {isDis ? (
+                              <button
+                                onClick={() => handleEnableWorkspace(c.id)}
+                                className="bg-emerald-900/60 border border-emerald-800 text-emerald-300 hover:bg-emerald-800 text-[9px] py-1.5 px-2.5 uppercase font-bold rounded-sm transition cursor-pointer"
+                              >
+                                Enable Login
+                              </button>
+                            ) : (
+                              <button
+                                onClick={() => handleDisableWorkspace(c.id)}
+                                className="bg-neutral-900 border border-neutral-800 hover:border-amber-500 hover:text-amber-300 text-neutral-400 text-[9px] py-1.5 px-2.5 uppercase font-bold rounded-sm transition cursor-pointer"
+                              >
+                                Disable Login
+                              </button>
+                            )}
+
+                            <button
+                              onClick={() => handleDeleteWorkspace(c.id)}
+                              className="bg-neutral-900 border border-neutral-800 hover:border-red-500 hover:text-red-400 text-neutral-400 text-[9px] py-1.5 px-2.5 uppercase font-bold rounded-sm transition cursor-pointer"
+                            >
+                              Delete Company
+                            </button>
                           </div>
                         </div>
-                        <div className="flex gap-2">
-                          <button
-                            onClick={() => handleApproveWorkspace(clientRow.id)}
-                            className="bg-volt text-black hover:bg-white text-[10px] py-1.5 px-3 uppercase font-bold rounded-sm transition cursor-pointer"
-                          >
-                            Approve
-                          </button>
-                          <button
-                            onClick={() => handleDenyWorkspace(clientRow.id)}
-                            className="bg-neutral-900 border border-neutral-800 hover:border-red-500 hover:text-white text-neutral-400 text-[10px] py-1.5 px-3 uppercase font-bold rounded-sm transition cursor-pointer"
-                          >
-                            Deny
-                          </button>
-                        </div>
-                      </div>
-                    ))}
-
-                    {pendingWorkspacesList.length === 0 && (
-                      <div className="text-xs text-neutral-500 italic py-3 text-center">
-                        No pending client workspace registrations.
-                      </div>
-                    )}
+                      );
+                    })}
                   </div>
                 </div>
 
-                {/* 2. Pending Member Invitations */}
-                <div className="bg-[#0c0c0c] border border-neutral-800 p-5 rounded-sm">
-                  <h3 className="text-xs font-bold text-volt uppercase tracking-wider mb-4 border-b border-neutral-800 pb-2 flex items-center justify-between">
-                    <span>// Pending Team Member Invites</span>
-                    <span className="bg-volt/10 text-volt px-2 py-0.5 rounded-sm text-[9px] font-bold">
-                      {pendingMembersList.length} PENDING
-                    </span>
-                  </h3>
+                {/* 2. Team Member Email Directory & Master Approvals */}
+                <div className="bg-[#0c0c0c] border border-neutral-800 p-5 rounded-sm space-y-4 font-mono">
+                  <div className="flex items-center justify-between border-b border-neutral-800 pb-3">
+                    <div>
+                      <h3 className="text-xs font-bold text-volt uppercase tracking-wider">// Team Member Email Access Directory</h3>
+                      <p className="text-[10px] text-neutral-400 mt-0.5">Master approve invited team member emails or disable specific email logins.</p>
+                    </div>
+                  </div>
 
                   <div className="space-y-3">
-                    {pendingMembersList.map((m: any) => (
-                      <div key={`${m.clientId}-${m.email}`} className="bg-neutral-950 border border-neutral-900 p-4 rounded-sm flex items-center justify-between">
-                        <div className="space-y-1 text-left">
-                          <h4 className="text-xs font-bold text-white">{m.email}</h4>
-                          <div className="text-[9px] text-neutral-500 uppercase tracking-wider">
-                            Company: <span className="text-neutral-350">{m.clientName}</span> ({m.clientId})
+                    {getAllMembersList().map((m: any) => {
+                      const isAppr = m.approved ?? false;
+                      const isDis = m.disabled ?? false;
+
+                      return (
+                        <div key={`${m.clientId}-${m.email}`} className="bg-neutral-950 border border-neutral-850 p-4 rounded-sm flex flex-col md:flex-row md:items-center justify-between gap-4">
+                          <div className="space-y-1 text-left">
+                            <div className="flex items-center gap-2">
+                              <h4 className="text-xs font-bold text-white">{m.email}</h4>
+                              {isDis ? (
+                                <span className="bg-red-950 text-red-400 border border-red-900 text-[9px] px-2 py-0.5 font-bold uppercase rounded-sm">
+                                  ● EMAIL DISABLED
+                                </span>
+                              ) : isAppr ? (
+                                <span className="bg-emerald-950 text-emerald-400 border border-emerald-900 text-[9px] px-2 py-0.5 font-bold uppercase rounded-sm">
+                                  ✓ MASTER APPROVED
+                                </span>
+                              ) : (
+                                <span className="bg-amber-950 text-amber-400 border border-amber-900 text-[9px] px-2 py-0.5 font-bold uppercase rounded-sm animate-pulse">
+                                  ⏱ PENDING APPROVAL
+                                </span>
+                              )}
+                            </div>
+                            <div className="text-[9px] text-neutral-500 uppercase tracking-wider">
+                              Workspace: <span className="text-neutral-350">{m.clientName}</span> ({m.clientId})
+                            </div>
+                          </div>
+
+                          {/* Member Action Controls */}
+                          <div className="flex flex-wrap items-center gap-2">
+                            {!isAppr && (
+                              <button
+                                onClick={() => handleMasterApproveMember(m.clientId, m.email)}
+                                className="bg-volt text-black hover:bg-white text-[9px] py-1.5 px-3 uppercase font-bold rounded-sm transition cursor-pointer"
+                              >
+                                Master Approve
+                              </button>
+                            )}
+
+                            {isDis ? (
+                              <button
+                                onClick={() => handleEnableMember(m.clientId, m.email)}
+                                className="bg-emerald-900/60 border border-emerald-800 text-emerald-300 hover:bg-emerald-800 text-[9px] py-1.5 px-2.5 uppercase font-bold rounded-sm transition cursor-pointer"
+                              >
+                                Enable Email
+                              </button>
+                            ) : (
+                              <button
+                                onClick={() => handleDisableMember(m.clientId, m.email)}
+                                className="bg-neutral-900 border border-neutral-800 hover:border-amber-500 hover:text-amber-300 text-neutral-400 text-[9px] py-1.5 px-2.5 uppercase font-bold rounded-sm transition cursor-pointer"
+                              >
+                                Disable Email
+                              </button>
+                            )}
+
+                            <button
+                              onClick={() => handleDeleteMember(m.clientId, m.email)}
+                              className="bg-neutral-900 border border-neutral-800 hover:border-red-500 hover:text-red-400 text-neutral-400 text-[9px] py-1.5 px-2.5 uppercase font-bold rounded-sm transition cursor-pointer"
+                            >
+                              Delete Email
+                            </button>
                           </div>
                         </div>
-                        <div className="flex gap-2">
-                          <button
-                            onClick={() => handleApproveMember(m.clientId, m.email)}
-                            className="bg-volt text-black hover:bg-white text-[10px] py-1.5 px-3 uppercase font-bold rounded-sm transition cursor-pointer"
-                          >
-                            Grant Access
-                          </button>
-                          <button
-                            onClick={() => handleDenyMember(m.clientId, m.email)}
-                            className="bg-neutral-900 border border-neutral-800 hover:border-red-500 hover:text-white text-neutral-400 text-[10px] py-1.5 px-3 uppercase font-bold rounded-sm transition cursor-pointer"
-                          >
-                            Reject
-                          </button>
-                        </div>
-                      </div>
-                    ))}
+                      );
+                    })}
 
-                    {pendingMembersList.length === 0 && (
+                    {getAllMembersList().length === 0 && (
                       <div className="text-xs text-neutral-500 italic py-3 text-center">
-                        No pending coworker access requests.
+                        No member email invitations or secondary accounts registered yet.
                       </div>
                     )}
                   </div>

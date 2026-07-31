@@ -82,6 +82,17 @@ function LoginPage() {
             .single();
 
           if (data && !fetchErr) {
+            if (data.disabled === true) {
+              setError("This corporate workspace login has been disabled by the administrator.");
+              return;
+            }
+
+            const memberObj = (data.members || []).find((m: any) => m.email === cleanEmail);
+            if (memberObj && memberObj.disabled === true) {
+              setError("Your member email access has been disabled by the administrator.");
+              return;
+            }
+
             companyName = data.name;
             targetClientId = data.id;
           } else {
