@@ -1127,10 +1127,10 @@ function AdminPage() {
           .eq("id", clientIdToApprove)
           .single();
 
-        const currentReqs = data?.reqs || [];
-        const currentAudits = data?.audit_logs || [];
+        const currentReqs = parseArray(data?.reqs);
+        const currentAudits = parseArray(data?.audit_logs);
 
-        const updatedReqs = currentReqs.filter((r: any) => r.id !== "sys-approval");
+        const updatedReqs = currentReqs.filter((r: any) => r && r.id !== "sys-approval");
         updatedReqs.push({ id: "sys-approval", approved: true, disabled: false });
 
         const updatedAudits = [...currentAudits, { id: `aud-${Date.now()}`, message: "Master Approved by Administrator.", timestamp: new Date().toLocaleString() }];
@@ -1141,6 +1141,7 @@ function AdminPage() {
           .eq("id", clientIdToApprove);
 
         if (!error) {
+          setAllDbClients((prev) => prev.map((c) => c.id === clientIdToApprove ? { ...c, reqs: updatedReqs, audit_logs: updatedAudits } : c));
           setNotifyMsg("COMPANY APPROVED");
           setTimeout(() => setNotifyMsg(""), 2000);
           return;
@@ -1169,8 +1170,8 @@ function AdminPage() {
           .eq("id", clientIdToReject)
           .single();
 
-        const currentReqs = data?.reqs || [];
-        const updatedReqs = currentReqs.filter((r: any) => r.id !== "sys-approval");
+        const currentReqs = parseArray(data?.reqs);
+        const updatedReqs = currentReqs.filter((r: any) => r && r.id !== "sys-approval");
         updatedReqs.push({ id: "sys-approval", approved: false, disabled: false });
 
         const { error } = await supabase
@@ -1179,6 +1180,7 @@ function AdminPage() {
           .eq("id", clientIdToReject);
 
         if (!error) {
+          setAllDbClients((prev) => prev.map((c) => c.id === clientIdToReject ? { ...c, reqs: updatedReqs } : c));
           setNotifyMsg("COMPANY REJECTED / PENDING");
           setTimeout(() => setNotifyMsg(""), 2000);
           return;
@@ -1205,8 +1207,8 @@ function AdminPage() {
           .eq("id", clientIdToDisable)
           .single();
 
-        const currentReqs = data?.reqs || [];
-        const updatedReqs = currentReqs.filter((r: any) => r.id !== "sys-approval");
+        const currentReqs = parseArray(data?.reqs);
+        const updatedReqs = currentReqs.filter((r: any) => r && r.id !== "sys-approval");
         updatedReqs.push({ id: "sys-approval", approved: false, disabled: true });
 
         const { error } = await supabase
@@ -1215,6 +1217,7 @@ function AdminPage() {
           .eq("id", clientIdToDisable);
 
         if (!error) {
+          setAllDbClients((prev) => prev.map((c) => c.id === clientIdToDisable ? { ...c, reqs: updatedReqs } : c));
           setNotifyMsg("COMPANY LOGIN DISABLED");
           setTimeout(() => setNotifyMsg(""), 2000);
           return;
@@ -1438,18 +1441,30 @@ function AdminPage() {
     window.dispatchEvent(new Event("t2_storage_update"));
   };
 
+  const getCompanyApprovalStatus = (c: any) => {
+    if (!c) return { approved: false, disabled: false };
+    const reqs = parseArray(c.reqs);
+    const sysApproval = reqs.find((r: any) => r && r.id === "sys-approval");
+    if (sysApproval) {
+      return {
+        approved: sysApproval.approved === true,
+        disabled: sysApproval.disabled === true
+      };
+    }
+    const auditLogs = parseArray(c.audit_logs);
+    const isMasterApproved = auditLogs.some((a: any) => a && typeof a.message === "string" && a.message.includes("Master Approved"));
+    const localApproved = getSafeLocalStorage(`t2_approved_${c.id}`) === "true";
+    const localDisabled = getSafeLocalStorage(`t2_disabled_${c.id}`) === "true";
+
+    return {
+      approved: isMasterApproved || localApproved,
+      disabled: localDisabled
+    };
+  };
+
   const getPendingWorkspaces = () => {
-    if (isSupabaseConfigured() && Array.isArray(allDbClients) && allDbClients.length > 0) {
-      return allDbClients.filter(c => !c.approved);
-    }
-    const storedList = getSafeLocalStorage("t2_local_clients_list");
-    if (!storedList) return [];
-    try {
-      const parsed = parseArray(storedList);
-      return parsed.filter((c: any) => getSafeLocalStorage(`t2_approved_${c.id}`) !== "true" && c.id !== "acme" && c.id !== "startuptalky" && c.id !== "bitbns");
-    } catch {
-      return [];
-    }
+    const list = isSupabaseConfigured() && Array.isArray(allDbClients) && allDbClients.length > 0 ? allDbClients : clients;
+    return list.filter(c => !getCompanyApprovalStatus(c).approved);
   };
 
   const getPendingMembers = () => {
@@ -1796,8 +1811,7 @@ function AdminPage() {
 
               <div className="space-y-3">
                 {(allDbClients.length > 0 ? allDbClients : clients).map((c: any) => {
-                  const isAppr = c.approved ?? true;
-                  const isDis = c.disabled ?? false;
+                  const { approved: isAppr, disabled: isDis } = getCompanyApprovalStatus(c);
 
                   return (
                     <div key={c.id} className="bg-neutral-950 border border-neutral-850 p-4 rounded-sm flex flex-col lg:flex-row lg:items-center justify-between gap-4">
