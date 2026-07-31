@@ -2134,6 +2134,9 @@ function AdminPage() {
 
                     <form onSubmit={addCorporateAgreement} className="space-y-3">
                       <div>
+                        <label className="text-[9px] text-neutral-500 uppercase font-bold block mb-1">
+                          Document Title
+                        </label>
                         <input
                           type="text"
                           value={newAgreementName}
@@ -2142,7 +2145,11 @@ function AdminPage() {
                           className="w-full bg-neutral-950 border border-neutral-800 rounded-sm px-3.5 py-2 text-xs text-white focus:outline-none focus:border-volt"
                         />
                       </div>
+
                       <div>
+                        <label className="text-[9px] text-neutral-500 uppercase font-bold block mb-1">
+                          Option 1: Paste Online Document / Drive Link
+                        </label>
                         <input
                           type="text"
                           value={newAgreementUrl}
@@ -2151,9 +2158,26 @@ function AdminPage() {
                           className="w-full bg-neutral-950 border border-neutral-800 rounded-sm px-3.5 py-2 text-xs text-white focus:outline-none focus:border-volt"
                         />
                       </div>
+
+                      <div className="border-t border-neutral-900 pt-3 space-y-1">
+                        <label className="text-[9px] text-volt uppercase font-bold block">
+                          Option 2: Upload Local File from Device
+                        </label>
+                        <input
+                          type="file"
+                          onChange={(e) => handleLocalFileUpload(e, setNewAgreementName, setNewAgreementUrl)}
+                          className="w-full text-xs text-neutral-400 file:mr-3 file:py-1.5 file:px-3 file:rounded-sm file:border-0 file:text-[9px] file:font-bold file:uppercase file:bg-neutral-850 file:text-white hover:file:bg-volt hover:file:text-black cursor-pointer"
+                        />
+                        {newAgreementUrl.startsWith("data:") && (
+                          <div className="text-[9px] text-emerald-400 font-mono mt-1">
+                            ✓ Local File Loaded ({newAgreementName})
+                          </div>
+                        )}
+                      </div>
+
                       <button
                         type="submit"
-                        className="w-full bg-volt text-black hover:bg-white text-xs py-2 uppercase font-bold rounded-sm transition cursor-pointer"
+                        className="w-full bg-volt text-black hover:bg-white text-xs py-2 uppercase font-bold rounded-sm transition cursor-pointer mt-2"
                       >
                         Publish Agreement Link
                       </button>
@@ -2169,6 +2193,9 @@ function AdminPage() {
 
                     <form onSubmit={addVaultDocument} className="space-y-3">
                       <div>
+                        <label className="text-[9px] text-neutral-500 uppercase font-bold block mb-1">
+                          File Display Name
+                        </label>
                         <input
                           type="text"
                           value={newFileName}
@@ -2177,7 +2204,11 @@ function AdminPage() {
                           className="w-full bg-neutral-950 border border-neutral-805 px-3.5 py-2 text-xs focus:outline-none text-white focus:border-volt"
                         />
                       </div>
+
                       <div>
+                        <label className="text-[9px] text-neutral-500 uppercase font-bold block mb-1">
+                          Option 1: Paste Download Link / Cloud URL
+                        </label>
                         <input
                           type="text"
                           value={newFileUrl}
@@ -2186,9 +2217,26 @@ function AdminPage() {
                           className="w-full bg-neutral-950 border border-neutral-805 px-3.5 py-2 text-xs focus:outline-none text-white focus:border-volt"
                         />
                       </div>
+
+                      <div className="border-t border-neutral-900 pt-3 space-y-1">
+                        <label className="text-[9px] text-volt uppercase font-bold block">
+                          Option 2: Upload Local File from Device
+                        </label>
+                        <input
+                          type="file"
+                          onChange={(e) => handleLocalFileUpload(e, setNewFileName, setNewFileUrl)}
+                          className="w-full text-xs text-neutral-400 file:mr-3 file:py-1.5 file:px-3 file:rounded-sm file:border-0 file:text-[9px] file:font-bold file:uppercase file:bg-neutral-850 file:text-white hover:file:bg-volt hover:file:text-black cursor-pointer"
+                        />
+                        {newFileUrl.startsWith("data:") && (
+                          <div className="text-[9px] text-emerald-400 font-mono mt-1">
+                            ✓ Local File Loaded ({newFileName})
+                          </div>
+                        )}
+                      </div>
+
                       <button
                         type="submit"
-                        className="w-full bg-neutral-900 border border-neutral-800 hover:border-volt text-neutral-300 hover:text-white text-xs py-2 uppercase font-bold rounded-sm transition cursor-pointer text-center"
+                        className="w-full bg-neutral-900 border border-neutral-800 hover:border-volt text-neutral-300 hover:text-white text-xs py-2 uppercase font-bold rounded-sm transition cursor-pointer text-center mt-2"
                       >
                         Publish Vault File Link
                       </button>
