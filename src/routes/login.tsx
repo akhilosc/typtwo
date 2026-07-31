@@ -62,17 +62,15 @@ function LoginPage() {
     }
 
     if (isSignInWithEmailLink(firebaseAuth, window.location.href)) {
-      let emailForSignIn = window.localStorage.getItem("t2_email_for_signIn");
-      if (!emailForSignIn) {
-        emailForSignIn = window.prompt("Please confirm your corporate email address to complete workspace sign-in:");
-      }
+      const urlParams = new URLSearchParams(window.location.search);
+      let emailForSignIn = urlParams.get("email") || window.localStorage.getItem("t2_email_for_signIn");
 
       if (emailForSignIn) {
         setLoading(true);
         signInWithEmailLink(firebaseAuth, emailForSignIn, window.location.href)
           .then(async (result) => {
             window.localStorage.removeItem("t2_email_for_signIn");
-            const verifiedEmail = result.user.email || emailForSignIn!;
+            const verifiedEmail = result.user?.email || emailForSignIn!;
             const domain = verifiedEmail.split("@")[1]?.toLowerCase();
             
             let companyName = "Corporate Partner";
@@ -192,8 +190,9 @@ function LoginPage() {
       }
 
       // Send 1-Click Firebase Auth Email Link
+      const linkBaseUrl = typeof window !== "undefined" ? `${window.location.origin}/login` : "https://www.typtwo.com/login";
       const actionCodeSettings = {
-        url: typeof window !== "undefined" ? window.location.href : "https://www.typtwo.com/login",
+        url: `${linkBaseUrl}?email=${encodeURIComponent(cleanEmail)}`,
         handleCodeInApp: true
       };
 
