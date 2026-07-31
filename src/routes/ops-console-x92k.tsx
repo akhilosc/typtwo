@@ -1056,10 +1056,13 @@ function AdminPage() {
   // Add deliverable / upload item against milestone
   const handleAddMilestoneDeliverable = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!activeMilestoneAttachmentId || !attachedDocName.trim() || !attachedDocUrl.trim()) {
-      alert("Please fill document name and paste URL OR upload a local file.");
+    const docUrl = attachedDocUrl.trim();
+    if (!activeMilestoneAttachmentId || !docUrl) {
+      alert("Please upload a local file OR paste a URL link before attaching.");
       return;
     }
+
+    const docName = attachedDocName.trim() || "Milestone Attachment";
 
     const updated = milestones.map((m) => {
       if (m.id === activeMilestoneAttachmentId) {
@@ -1067,7 +1070,7 @@ function AdminPage() {
           ...m,
           deliverables: [
             ...m.deliverables,
-            { name: attachedDocName.trim(), url: attachedDocUrl.trim() || "#" }
+            { name: docName, url: docUrl }
           ],
           updatedAt: new Date().toLocaleString()
         };
@@ -1076,7 +1079,7 @@ function AdminPage() {
     });
 
     const target = milestones.find(m => m.id === activeMilestoneAttachmentId);
-    saveMilestones(updated, `Added deliverable "${attachedDocName.trim()}" to Milestone: "${target?.title}"`);
+    saveMilestones(updated, `Added deliverable "${docName}" to Milestone: "${target?.title}"`);
     setAttachedDocName("");
     setAttachedDocUrl("");
     setActiveMilestoneAttachmentId(null);
@@ -1113,12 +1116,14 @@ function AdminPage() {
   // Share Agreement / Corporate Contract
   const addCorporateAgreement = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!newAgreementName.trim() || !newAgreementUrl.trim()) {
-      alert("Please fill name and paste URL OR upload a local file.");
+    const docUrl = newAgreementUrl.trim();
+    if (!docUrl) {
+      alert("Please upload a local file OR paste a URL link before publishing.");
       return;
     }
 
-    const newDoc = { name: newAgreementName, date: new Date().toLocaleDateString(), url: newAgreementUrl.trim() };
+    const docName = newAgreementName.trim() || "Corporate Agreement Document";
+    const newDoc = { name: docName, date: new Date().toLocaleDateString(), url: docUrl };
 
     if (isSupabaseConfigured()) {
       try {
@@ -1210,12 +1215,14 @@ function AdminPage() {
   // Add vault document
   const addVaultDocument = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!newFileName.trim() || !newFileUrl.trim()) {
-      alert("Please fill file name and paste URL OR upload a local file.");
+    const fileUrl = newFileUrl.trim();
+    if (!fileUrl) {
+      alert("Please upload a local file OR paste a URL link before publishing.");
       return;
     }
 
-    const newFile = { name: newFileName, size: "Download link shared", url: newFileUrl.trim() };
+    const fileName = newFileName.trim() || "Vault Deliverable Document";
+    const newFile = { name: fileName, size: "Downloadable File", url: fileUrl };
 
     if (isSupabaseConfigured()) {
       try {
