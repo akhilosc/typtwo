@@ -103,6 +103,7 @@ function LoginPage() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [company, setCompany] = useState("");
+  const [isBypassMode, setIsBypassMode] = useState(false);
   
   // OTP Verification States
   const [otpSent, setOtpSent] = useState(false);
