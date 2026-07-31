@@ -132,6 +132,8 @@ export async function sendOtpEmail(toEmail: string, otpCode: string): Promise<{ 
     { from: "Typtwo Operations <onboarding@resend.dev>", to: [toEmail] }
   ];
 
+  let lastErrorMsg = "Failed to dispatch email via Resend API";
+
   for (const senderOpt of sendOptions) {
     try {
       const res = await fetch("https://api.resend.com/emails", {
@@ -153,11 +155,13 @@ export async function sendOtpEmail(toEmail: string, otpCode: string): Promise<{ 
         console.log(`Resend Email dispatched successfully via ${senderOpt.from}:`, data.id);
         return { success: true };
       }
+      lastErrorMsg = data.message || lastErrorMsg;
       console.warn(`Resend attempt failed with sender ${senderOpt.from}:`, data);
     } catch (err: any) {
+      lastErrorMsg = err.message || lastErrorMsg;
       console.error(`Resend fetch error with ${senderOpt.from}:`, err);
     }
   }
 
-  return { success: false, error: "Failed to dispatch email via Resend API" };
+  return { success: false, error: lastErrorMsg };
 }

@@ -279,6 +279,28 @@ function LoginPage() {
     }
   };
 
+  const handleResendOtp = async () => {
+    setError("");
+    setEmailSentStatus("");
+    setLoading(true);
+
+    const cleanEmail = email.trim();
+    const code = Math.floor(100000 + Math.random() * 900000).toString();
+    setGeneratedOtp(code);
+    sessionStorage.setItem("t2_active_otp", code);
+
+    const resendResult = await sendOtpEmail(cleanEmail, code);
+
+    if (resendResult.success) {
+      setEmailSentStatus("✓ Fresh 6-Digit Passcode dispatched to your email inbox.");
+    } else {
+      setError(resendResult.error || "Failed to resend email passcode via Resend API.");
+    }
+
+    setOtpDigits(["", "", "", "", "", ""]);
+    setLoading(false);
+  };
+
   return (
     <>
       <PageHeader
@@ -318,7 +340,13 @@ function LoginPage() {
 
           {error && (
             <div className="p-4 mb-6 bg-flame text-paper mono text-[11px] uppercase tracking-wider font-bold">
-              !! ERROR: {error}
+              !! NOTICE: {error}
+            </div>
+          )}
+
+          {emailSentStatus && !error && (
+            <div className="p-3 mb-6 bg-emerald-950 text-emerald-300 border border-emerald-800 mono text-[10px] uppercase font-bold tracking-wider text-center">
+              {emailSentStatus}
             </div>
           )}
 
@@ -370,10 +398,19 @@ function LoginPage() {
 
                 <button
                   type="button"
-                  onClick={() => setOtpSent(false)}
-                  className="w-full bg-paper border border-ink text-ink hover:bg-neutral-200 py-2.5 mono text-[10px] uppercase tracking-wider font-bold transition-colors cursor-pointer"
+                  onClick={handleResendOtp}
+                  disabled={loading}
+                  className="w-full bg-paper border border-ink text-ink hover:bg-neutral-200 py-3 mono text-xs uppercase tracking-wider font-bold transition-colors cursor-pointer disabled:opacity-50"
                 >
-                  ← Request New Passcode or Change Email
+                  {loading ? "Re-dispatching Passcode..." : "↻ Resend Verification Code"}
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => setOtpSent(false)}
+                  className="mono text-[10px] text-neutral-500 hover:text-ink uppercase tracking-wider font-bold underline transition-colors cursor-pointer block mx-auto pt-1"
+                >
+                  ← Change Email Address
                 </button>
               </div>
             </form>
