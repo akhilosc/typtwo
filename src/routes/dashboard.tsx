@@ -410,15 +410,37 @@ function DashboardPage() {
             });
             setInputVals(vals);
 
-            // Load statuses, files, agreements, milestones, approvals
+            // Load statuses, files, agreements, milestones, approvals (Filtered to eliminate dummy samples)
             const rawStatuses = parseJsonArray(data.statuses);
-            setStatuses(rawStatuses.length > 0 ? rawStatuses : DEFAULT_STATUSES);
+            const cleanStatuses = rawStatuses.filter(
+              (s: any) => s && typeof s.text === "string" && !s.text.includes("Private local LLM configuration") && !s.text.includes("Initial brand positioning")
+            );
+            setStatuses(cleanStatuses);
 
             const rawFiles = parseJsonArray(data.files);
-            setFiles(rawFiles.length > 0 ? rawFiles : DEFAULT_FILES);
+            const cleanFiles = rawFiles.filter(
+              (f: any) => f && f.name !== "typtwo_ops_blueprint_v2.pdf" && f.name !== "cloud_deployment_schema.json"
+            );
+            setFiles(cleanFiles);
 
             const rawAgreements = parseJsonArray(data.agreements);
-            setAgreements(rawAgreements.length > 0 ? rawAgreements : DEFAULT_AGREEMENTS);
+            const cleanAgreements = rawAgreements.filter(
+              (a: any) => a && a.name !== "Master Services Agreement (MSA) - Signed.pdf" && a.name !== "Non-Disclosure Agreement (NDA) - Executed.pdf"
+            );
+            setAgreements(cleanAgreements);
+
+            // Auto-clean database record if dummy sample files were stored in Supabase row
+            if (rawFiles.length !== cleanFiles.length || rawAgreements.length !== cleanAgreements.length || rawStatuses.length !== cleanStatuses.length) {
+              supabase
+                .from("clients")
+                .update({
+                  files: cleanFiles,
+                  agreements: cleanAgreements,
+                  statuses: cleanStatuses
+                })
+                .eq("id", id)
+                .then(() => {});
+            }
 
             const sysApproval = rawReqs.find((r: any) => r && r.id === "sys-approval");
             const rawAudits = parseJsonArray(data.audit_logs);
@@ -486,28 +508,37 @@ function DashboardPage() {
       // 2. Load status logs
       const storedStatuses = localStorage.getItem(statusKey);
       if (storedStatuses) {
-        setStatuses(JSON.parse(storedStatuses));
+        const parsed = JSON.parse(storedStatuses);
+        const clean = Array.isArray(parsed) ? parsed.filter((s: any) => s && typeof s.text === "string" && !s.text.includes("Private local LLM configuration")) : [];
+        setStatuses(clean);
+        localStorage.setItem(statusKey, JSON.stringify(clean));
       } else {
-        setStatuses(DEFAULT_STATUSES);
-        localStorage.setItem(statusKey, JSON.stringify(DEFAULT_STATUSES));
+        setStatuses([]);
+        localStorage.setItem(statusKey, JSON.stringify([]));
       }
 
       // 3. Load files
       const storedFiles = localStorage.getItem(filesKey);
       if (storedFiles) {
-        setFiles(JSON.parse(storedFiles));
+        const parsed = JSON.parse(storedFiles);
+        const clean = Array.isArray(parsed) ? parsed.filter((f: any) => f && f.name !== "typtwo_ops_blueprint_v2.pdf" && f.name !== "cloud_deployment_schema.json") : [];
+        setFiles(clean);
+        localStorage.setItem(filesKey, JSON.stringify(clean));
       } else {
-        setFiles(DEFAULT_FILES);
-        localStorage.setItem(filesKey, JSON.stringify(DEFAULT_FILES));
+        setFiles([]);
+        localStorage.setItem(filesKey, JSON.stringify([]));
       }
 
       // 4. Load Agreements
       const storedAgreements = localStorage.getItem(agreementsKey);
       if (storedAgreements) {
-        setAgreements(JSON.parse(storedAgreements));
+        const parsed = JSON.parse(storedAgreements);
+        const clean = Array.isArray(parsed) ? parsed.filter((a: any) => a && a.name !== "Master Services Agreement (MSA) - Signed.pdf") : [];
+        setAgreements(clean);
+        localStorage.setItem(agreementsKey, JSON.stringify(clean));
       } else {
-        setAgreements(DEFAULT_AGREEMENTS);
-        localStorage.setItem(agreementsKey, JSON.stringify(DEFAULT_AGREEMENTS));
+        setAgreements([]);
+        localStorage.setItem(agreementsKey, JSON.stringify([]));
       }
 
       // 5. Load Project Milestones & Audit logs
