@@ -1121,10 +1121,25 @@ function AdminPage() {
   const handleApproveWorkspace = async (clientIdToApprove: string) => {
     if (isSupabaseConfigured()) {
       try {
+        const { data } = await supabase
+          .from("clients")
+          .select("reqs, audit_logs")
+          .eq("id", clientIdToApprove)
+          .single();
+
+        const currentReqs = data?.reqs || [];
+        const currentAudits = data?.audit_logs || [];
+
+        const updatedReqs = currentReqs.filter((r: any) => r.id !== "sys-approval");
+        updatedReqs.push({ id: "sys-approval", approved: true, disabled: false });
+
+        const updatedAudits = [...currentAudits, { id: `aud-${Date.now()}`, message: "Master Approved by Administrator.", timestamp: new Date().toLocaleString() }];
+
         const { error } = await supabase
           .from("clients")
-          .update({ approved: true, disabled: false })
+          .update({ reqs: updatedReqs, audit_logs: updatedAudits })
           .eq("id", clientIdToApprove);
+
         if (!error) {
           setNotifyMsg("COMPANY APPROVED");
           setTimeout(() => setNotifyMsg(""), 2000);
@@ -1148,10 +1163,21 @@ function AdminPage() {
   const handleRejectWorkspace = async (clientIdToReject: string) => {
     if (isSupabaseConfigured()) {
       try {
+        const { data } = await supabase
+          .from("clients")
+          .select("reqs")
+          .eq("id", clientIdToReject)
+          .single();
+
+        const currentReqs = data?.reqs || [];
+        const updatedReqs = currentReqs.filter((r: any) => r.id !== "sys-approval");
+        updatedReqs.push({ id: "sys-approval", approved: false, disabled: false });
+
         const { error } = await supabase
           .from("clients")
-          .update({ approved: false })
+          .update({ reqs: updatedReqs })
           .eq("id", clientIdToReject);
+
         if (!error) {
           setNotifyMsg("COMPANY REJECTED / PENDING");
           setTimeout(() => setNotifyMsg(""), 2000);
@@ -1173,10 +1199,21 @@ function AdminPage() {
   const handleDisableWorkspace = async (clientIdToDisable: string) => {
     if (isSupabaseConfigured()) {
       try {
+        const { data } = await supabase
+          .from("clients")
+          .select("reqs")
+          .eq("id", clientIdToDisable)
+          .single();
+
+        const currentReqs = data?.reqs || [];
+        const updatedReqs = currentReqs.filter((r: any) => r.id !== "sys-approval");
+        updatedReqs.push({ id: "sys-approval", approved: false, disabled: true });
+
         const { error } = await supabase
           .from("clients")
-          .update({ disabled: true })
+          .update({ reqs: updatedReqs })
           .eq("id", clientIdToDisable);
+
         if (!error) {
           setNotifyMsg("COMPANY LOGIN DISABLED");
           setTimeout(() => setNotifyMsg(""), 2000);

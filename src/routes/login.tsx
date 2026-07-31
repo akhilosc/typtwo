@@ -228,20 +228,22 @@ function LoginPage() {
           email_domain: domain || "",
           is_vault_active: true,
           is_status_active: true,
-          reqs: [],
+          reqs: [
+            { id: "sys-approval", approved: false, disabled: false, registered_email: cleanEmail }
+          ],
           files: [],
           agreements: [],
           milestones: [
             {
               id: "m-1",
-              title: "Phase 1: Discovery & Asset Auditing",
+              title: "Phase 1: Onboarding & Discovery",
               percentage: 0,
-              statusText: "Onboarding requested. Awaiting administrator review.",
+              statusText: "Onboarding requested. Awaiting administrator approval.",
               updatedAt: new Date().toLocaleString(),
               deliverables: []
             }
           ],
-          audit_logs: [{ id: "aud-0", message: `Workspace registered by ${cleanEmail}. Awaiting operational handshake.`, timestamp: new Date().toLocaleString() }],
+          audit_logs: [{ id: "aud-0", message: `Workspace registered by ${cleanEmail}. Awaiting administrator review.`, timestamp: new Date().toLocaleString() }],
           statuses: []
         };
 

@@ -266,7 +266,10 @@ function DashboardPage() {
             setStatuses(data.statuses || DEFAULT_STATUSES);
             setFiles(data.files || DEFAULT_FILES);
             setAgreements(data.agreements || DEFAULT_AGREEMENTS);
-            setApproved(data.approved ?? true);
+            
+            const sysApproval = (data.reqs || []).find((r: any) => r.id === "sys-approval");
+            const isApprovedInDb = sysApproval ? sysApproval.approved === true : (data.audit_logs || []).some((a: any) => a.message?.includes("Master Approved"));
+            setApproved(isApprovedInDb);
             setMembers(data.members || []);
             setMilestones(data.milestones && data.milestones.length > 0 ? data.milestones : [
               {
