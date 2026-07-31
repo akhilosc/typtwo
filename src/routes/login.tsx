@@ -30,6 +30,20 @@ export const Route = createFileRoute("/login")({
       { name: "twitter:image", content: "https://www.typtwo.com/og-image.png" },
     ]
   }),
+  errorComponent: ({ error }: { error: any }) => (
+    <div className="p-8 max-w-2xl mx-auto my-12 bg-red-950 text-red-200 border-2 border-red-800 font-mono text-left space-y-4">
+      <h2 className="text-sm font-bold uppercase text-red-400">// ROUTE RENDER ERROR LOG</h2>
+      <div className="p-4 bg-black border border-red-900 text-xs text-red-300 overflow-x-auto long-words font-mono whitespace-pre-wrap">
+        {String(error?.stack || error?.message || error)}
+      </div>
+      <button 
+        onClick={() => window.location.reload()} 
+        className="px-4 py-2 bg-red-800 text-white text-xs font-bold uppercase hover:bg-red-700 cursor-pointer"
+      >
+        ↻ Reload Login Page
+      </button>
+    </div>
+  ),
   component: LoginPage
 });
 
@@ -44,6 +58,38 @@ const parseJsonArray = (input: any): any[] => {
     }
   }
   return [];
+};
+
+const getSafeLocal = (key: string): string | null => {
+  if (typeof window === "undefined") return null;
+  try {
+    return localStorage.getItem(key);
+  } catch {
+    return null;
+  }
+};
+
+const setSafeLocal = (key: string, val: string): void => {
+  if (typeof window === "undefined") return;
+  try {
+    localStorage.setItem(key, val);
+  } catch {}
+};
+
+const getSafeSession = (key: string): string | null => {
+  if (typeof window === "undefined") return null;
+  try {
+    return sessionStorage.getItem(key);
+  } catch {
+    return null;
+  }
+};
+
+const setSafeSession = (key: string, val: string): void => {
+  if (typeof window === "undefined") return;
+  try {
+    sessionStorage.setItem(key, val);
+  } catch {}
 };
 
 const DEFAULT_CLIENTS = [
@@ -72,7 +118,7 @@ function LoginPage() {
   useEffect(() => {
     if (typeof window === "undefined") return;
 
-    if (localStorage.getItem("t2_session")) {
+    if (getSafeLocal("t2_session")) {
       navigate({ to: "/dashboard" });
     }
   }, [navigate]);
@@ -131,7 +177,7 @@ function LoginPage() {
 
     if (!isBypass) {
       const targetId = cleanEmail.split("@")[0].toLowerCase();
-      if (localStorage.getItem(`t2_otp_bypass_${targetId}`) === "true" || localStorage.getItem(`t2_password_${targetId}`)) {
+      if (getSafeLocal(`t2_otp_bypass_${targetId}`) === "true" || getSafeLocal(`t2_password_${targetId}`)) {
         isBypass = true;
       }
     }
@@ -147,8 +193,8 @@ function LoginPage() {
 
     const code = Math.floor(100000 + Math.random() * 900000).toString();
     setGeneratedOtp(code);
-    sessionStorage.setItem("t2_active_otp", code);
-    sessionStorage.setItem("t2_otp_email", cleanEmail);
+    setSafeSession("t2_active_otp", code);
+    setSafeSession("t2_otp_email", cleanEmail);
 
     const resendResult = await sendOtpEmail(cleanEmail, code);
     if (resendResult.success) {
@@ -219,7 +265,7 @@ function LoginPage() {
           targetClientId = match.id;
           const reqs = parseJsonArray(match.reqs);
           const sysAppr = reqs.find((r: any) => r && r.id === "sys-approval");
-          const expectedPassword = sysAppr?.password || localStorage.getItem(`t2_password_${match.id}`);
+          const expectedPassword = sysAppr?.password || getSafeLocal(`t2_password_${match.id}`);
 
           if (expectedPassword && password.trim() !== expectedPassword.trim()) {
             setError("Incorrect password. Please verify your password and try again.");
@@ -232,18 +278,20 @@ function LoginPage() {
       }
     }
 
-    sessionStorage.setItem("t2_client_id", targetClientId);
-    sessionStorage.setItem("t2_client_name", companyName || targetClientId.toUpperCase());
-    sessionStorage.setItem("t2_user_email", cleanEmail);
-    sessionStorage.setItem("t2_user_role", "client_admin");
+    setSafeSession("t2_client_id", targetClientId);
+    setSafeSession("t2_client_name", companyName || targetClientId.toUpperCase());
+    setSafeSession("t2_user_email", cleanEmail);
+    setSafeSession("t2_user_role", "client_admin");
 
-    localStorage.setItem("t2_user_email", cleanEmail);
-    localStorage.setItem("t2_user_company", companyName || targetClientId.toUpperCase());
-    localStorage.setItem("t2_client_id", targetClientId);
-    localStorage.setItem("t2_session", "active");
+    setSafeLocal("t2_user_email", cleanEmail);
+    setSafeLocal("t2_user_company", companyName || targetClientId.toUpperCase());
+    setSafeLocal("t2_client_id", targetClientId);
+    setSafeLocal("t2_session", "active");
 
-    window.dispatchEvent(new Event("storage"));
-    window.dispatchEvent(new Event("t2_storage_update"));
+    if (typeof window !== "undefined") {
+      window.dispatchEvent(new Event("storage"));
+      window.dispatchEvent(new Event("t2_storage_update"));
+    }
 
     setLoading(false);
     navigate({ to: "/dashboard" });
@@ -269,10 +317,10 @@ function LoginPage() {
   const handleVerifyOtp = async (e?: React.FormEvent) => {
     if (e) e.preventDefault();
     const enteredCode = otpDigits.join("");
-    const activeOtp = sessionStorage.getItem("t2_active_otp") || generatedOtp;
+    const activeOtp = getSafeSession("t2_active_otp") || generatedOtp;
 
     const targetId = email.trim().split("@")[0].toLowerCase();
-    const isLocalBypass = localStorage.getItem(`t2_otp_bypass_${targetId}`) === "true";
+    const isLocalBypass = getSafeLocal(`t2_otp_bypass_${targetId}`) === "true";
 
     if (enteredCode !== activeOtp && enteredCode !== "123456" && !isLocalBypass) {
       if (enteredCode.length < 6) {
@@ -331,18 +379,20 @@ function LoginPage() {
       }
 
       const cleanId = targetClientId;
-      sessionStorage.setItem("t2_client_id", cleanId);
-      sessionStorage.setItem("t2_client_name", companyName);
-      sessionStorage.setItem("t2_user_email", cleanEmail);
-      sessionStorage.setItem("t2_user_role", "client_admin");
+      setSafeSession("t2_client_id", cleanId);
+      setSafeSession("t2_client_name", companyName);
+      setSafeSession("t2_user_email", cleanEmail);
+      setSafeSession("t2_user_role", "client_admin");
 
-      localStorage.setItem("t2_user_email", cleanEmail);
-      localStorage.setItem("t2_user_company", companyName);
-      localStorage.setItem("t2_client_id", cleanId);
-      localStorage.setItem("t2_session", "active");
+      setSafeLocal("t2_user_email", cleanEmail);
+      setSafeLocal("t2_user_company", companyName);
+      setSafeLocal("t2_client_id", cleanId);
+      setSafeLocal("t2_session", "active");
 
-      window.dispatchEvent(new Event("storage"));
-      window.dispatchEvent(new Event("t2_storage_update"));
+      if (typeof window !== "undefined") {
+        window.dispatchEvent(new Event("storage"));
+        window.dispatchEvent(new Event("t2_storage_update"));
+      }
 
       setLoading(false);
       navigate({ to: "/dashboard" });
