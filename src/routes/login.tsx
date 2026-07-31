@@ -99,7 +99,8 @@ function LoginPage() {
       setEmailSentStatus("✓ 6-Digit Passcode dispatched directly to your inbox via Resend.");
     } else {
       console.warn("Resend email dispatch notice:", resendResult.error);
-      setEmailSentStatus("✓ 6-Digit Passcode dispatched to your inbox.");
+      setError(`Notice: Email dispatch via Resend encountered an issue: ${resendResult.error || "Please check Resend API domain status"}`);
+      setEmailSentStatus("Passcode generated. Please enter code.");
     }
 
     setOtpDigits(["", "", "", "", "", ""]);

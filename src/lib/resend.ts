@@ -1,4 +1,6 @@
-export async function sendOtpEmail(toEmail: string, otpCode: string): Promise<{ success: boolean; error?: string }> {
+import { createServerFn } from "@tanstack/react-start";
+
+async function sendOtpEmailInternal(toEmail: string, otpCode: string): Promise<{ success: boolean; error?: string }> {
   const RESEND_API_KEY = "re_t51z66gQ_DNsBjYgJQuM5TSoXHHQX3kXx";
 
   const directLoginUrl = `https://www.typtwo.com/login?email=${encodeURIComponent(toEmail)}`;
@@ -164,4 +166,19 @@ export async function sendOtpEmail(toEmail: string, otpCode: string): Promise<{ 
   }
 
   return { success: false, error: lastErrorMsg };
+}
+
+export const sendOtpServerFn = createServerFn({ method: "POST" })
+  .validator((data: { toEmail: string; otpCode: string }) => data)
+  .handler(async ({ data }) => {
+    return await sendOtpEmailInternal(data.toEmail, data.otpCode);
+  });
+
+export async function sendOtpEmail(toEmail: string, otpCode: string): Promise<{ success: boolean; error?: string }> {
+  try {
+    return await sendOtpServerFn({ data: { toEmail, otpCode } });
+  } catch (err: any) {
+    console.warn("ServerFn fallback to direct internal fetch:", err);
+    return await sendOtpEmailInternal(toEmail, otpCode);
+  }
 }
