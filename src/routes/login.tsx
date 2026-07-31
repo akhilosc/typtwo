@@ -33,6 +33,19 @@ export const Route = createFileRoute("/login")({
   component: LoginPage
 });
 
+const parseJsonArray = (input: any): any[] => {
+  if (Array.isArray(input)) return input;
+  if (typeof input === "string") {
+    try {
+      const parsed = JSON.parse(input);
+      if (Array.isArray(parsed)) return parsed;
+    } catch {
+      return [];
+    }
+  }
+  return [];
+};
+
 const DEFAULT_CLIENTS = [
   { id: "acme", name: "Acme Corp", email: "client@company.com" },
   { id: "startuptalky", name: "Startup Talky", email: "founder@startuptalky.com" },
