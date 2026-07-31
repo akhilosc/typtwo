@@ -321,9 +321,59 @@ function AdminPage() {
   const [onboardName, setOnboardName] = useState("");
   const [onboardDomain, setOnboardDomain] = useState("");
   const [onboardEmail, setOnboardEmail] = useState("");
+  const [onboardPassword, setOnboardPassword] = useState("");
   const [onboardAutoApprove, setOnboardAutoApprove] = useState(true);
   const [onboardOtpBypass, setOnboardOtpBypass] = useState(true);
   const [reqs, setReqs] = useState<Requirement[]>([]);
+
+  // Set Account Password for a company
+  const handleSetCompanyPassword = async (targetClientId: string) => {
+    const pwd = prompt(`Set Account Password for company workspace (${targetClientId}):`);
+    if (pwd === null) return;
+
+    if (isSupabaseConfigured()) {
+      try {
+        const { data } = await supabase
+          .from("clients")
+          .select("reqs")
+          .eq("id", targetClientId)
+          .single();
+
+        const currentReqs = parseArray(data?.reqs);
+        const existingApproval = currentReqs.find((r: any) => r && r.id === "sys-approval") || {};
+        const updatedReqs = currentReqs.filter((r: any) => r && r.id !== "sys-approval");
+
+        updatedReqs.push({
+          ...existingApproval,
+          id: "sys-approval",
+          approved: existingApproval.approved ?? true,
+          disabled: existingApproval.disabled ?? false,
+          password: pwd.trim() || undefined,
+          otp_bypass: true
+        });
+
+        const { error } = await supabase
+          .from("clients")
+          .update({ reqs: updatedReqs })
+          .eq("id", targetClientId);
+
+        if (!error) {
+          setAllDbClients((prev) => prev.map((c) => c.id === targetClientId ? { ...c, reqs: updatedReqs } : c));
+          setNotifyMsg("PASSWORD UPDATED & BYPASS ENABLED");
+          setTimeout(() => setNotifyMsg(""), 2000);
+          return;
+        }
+      } catch (err) {
+        console.error(err);
+      }
+    }
+
+    setSafeLocalStorage(`t2_password_${targetClientId}`, pwd.trim());
+    setNotifyMsg("PASSWORD UPDATED");
+    setTimeout(() => setNotifyMsg(""), 2000);
+    window.dispatchEvent(new Event("storage"));
+    window.dispatchEvent(new Event("t2_storage_update"));
+  };
 
   // Toggle OTP Bypass for a company
   const handleToggleOtpBypass = async (targetClientId: string, currentBypass: boolean) => {
@@ -512,6 +562,7 @@ function AdminPage() {
     const cleanId = onboardId.trim().toLowerCase().replace(/\s+/g, "");
     const cleanDomain = onboardDomain.trim().toLowerCase().replace(/\s+/g, "");
     const cleanEmail = onboardEmail.trim().toLowerCase();
+    const cleanPassword = onboardPassword.trim();
 
     const newClientObj = {
       id: cleanId,
@@ -523,6 +574,7 @@ function AdminPage() {
           approved: onboardAutoApprove,
           disabled: false,
           registered_email: cleanEmail || undefined,
+          password: cleanPassword || undefined,
           otp_bypass: onboardOtpBypass
         }
       ],
@@ -547,6 +599,7 @@ function AdminPage() {
           setOnboardName("");
           setOnboardDomain("");
           setOnboardEmail("");
+          setOnboardPassword("");
           return;
         }
         alert(`Failed to create client in Supabase: ${error.message}`);
@@ -1574,23 +1627,31 @@ function AdminPage() {
   };
 
   const getCompanyApprovalStatus = (c: any) => {
-    if (!c) return { approved: false, disabled: false };
+    if (!c) return { approved: false, disabled: false, otpBypass: false, registeredEmail: "", password: "" };
     const reqs = parseArray(c.reqs);
     const sysApproval = reqs.find((r: any) => r && r.id === "sys-approval");
     if (sysApproval) {
       return {
         approved: sysApproval.approved === true,
-        disabled: sysApproval.disabled === true
+        disabled: sysApproval.disabled === true,
+        otpBypass: sysApproval.otp_bypass === true,
+        registeredEmail: sysApproval.registered_email || "",
+        password: sysApproval.password || ""
       };
     }
     const auditLogs = parseArray(c.audit_logs);
     const isMasterApproved = auditLogs.some((a: any) => a && typeof a.message === "string" && a.message.includes("Master Approved"));
     const localApproved = getSafeLocalStorage(`t2_approved_${c.id}`) === "true";
     const localDisabled = getSafeLocalStorage(`t2_disabled_${c.id}`) === "true";
+    const localBypass = getSafeLocalStorage(`t2_otp_bypass_${c.id}`) === "true";
+    const localPassword = getSafeLocalStorage(`t2_password_${c.id}`) || "";
 
     return {
       approved: isMasterApproved || localApproved,
-      disabled: localDisabled
+      disabled: localDisabled,
+      otpBypass: localBypass,
+      registeredEmail: "",
+      password: localPassword
     };
   };
 
@@ -1830,6 +1891,15 @@ function AdminPage() {
                   className="w-full bg-neutral-950 border border-neutral-850 rounded-sm px-2.5 py-1.5 text-[10px] text-white focus:outline-none focus:border-volt"
                 />
               </div>
+              <div>
+                <input
+                  type="text"
+                  placeholder="Set Password: e.g. Pass123! (Optional)"
+                  value={onboardPassword}
+                  onChange={(e) => setOnboardPassword(e.target.value)}
+                  className="w-full bg-neutral-950 border border-neutral-850 rounded-sm px-2.5 py-1.5 text-[10px] text-white focus:outline-none focus:border-volt"
+                />
+              </div>
 
               <div className="pt-1 space-y-1 text-left">
                 <label className="flex items-center gap-2 text-[9px] text-neutral-300 font-bold uppercase cursor-pointer">
@@ -2024,7 +2094,7 @@ function AdminPage() {
                 {(allDbClients.length > 0 ? allDbClients : clients)
                   .filter((c: any) => c && c.id !== "sys-otp-tracker" && !c.id.startsWith("sys-"))
                   .map((c: any) => {
-                  const { approved: isAppr, disabled: isDis, otpBypass: isBypass, registeredEmail: regEmail } = getCompanyApprovalStatus(c);
+                  const { approved: isAppr, disabled: isDis, otpBypass: isBypass, registeredEmail: regEmail, password: compPwd } = getCompanyApprovalStatus(c);
 
                   return (
                     <div key={c.id} className="bg-neutral-950 border border-neutral-850 p-4 rounded-sm flex flex-col lg:flex-row lg:items-center justify-between gap-4">
@@ -2053,6 +2123,7 @@ function AdminPage() {
                         <div className="text-[9px] text-neutral-500 uppercase tracking-wider">
                           Workspace ID: <span className="text-neutral-350">{c.id}</span> | Domain: <span className="text-neutral-350">{c.email_domain || c.email || "N/A"}</span>
                           {regEmail && <span className="text-neutral-400 ml-2">| Account Email: <span className="text-volt font-bold">{regEmail}</span></span>}
+                          {compPwd && <span className="text-emerald-400 ml-2 font-bold">| Password: {compPwd}</span>}
                         </div>
                       </div>
 
@@ -2066,6 +2137,13 @@ function AdminPage() {
                           className="bg-volt text-black hover:bg-white text-[10px] py-1.5 px-3 uppercase font-extrabold rounded-sm transition cursor-pointer"
                         >
                           ⚡ Manage Workspace →
+                        </button>
+
+                        <button
+                          onClick={() => handleSetCompanyPassword(c.id)}
+                          className="bg-neutral-900 border border-neutral-800 text-neutral-300 hover:border-volt hover:text-white text-[9px] py-1.5 px-2.5 uppercase font-bold rounded-sm transition cursor-pointer"
+                        >
+                          🔑 {compPwd ? "Change Password" : "+ Set Password"}
                         </button>
 
                         <button

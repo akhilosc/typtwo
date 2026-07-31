@@ -86,6 +86,41 @@ function LoginPage() {
       return;
     }
 
+    // Check if Password authentication matches account password
+    if (password && isSupabaseConfigured()) {
+      try {
+        const { data } = await supabase.from("clients").select("*");
+        if (data) {
+          const match = data.find((c: any) => {
+            if (c.id === "sys-otp-tracker") return false;
+            const reqs = parseJsonArray(c.reqs);
+            const domainMatch = c.email_domain && c.email_domain.toLowerCase() === domain;
+            const emailMatch = reqs.some((r: any) => r && r.registered_email && r.registered_email.toLowerCase() === cleanEmail.toLowerCase());
+            const idMatch = c.id.toLowerCase() === cleanEmail.split("@")[0].toLowerCase();
+            return domainMatch || emailMatch || idMatch;
+          });
+
+          if (match) {
+            const reqs = parseJsonArray(match.reqs);
+            const sysAppr = reqs.find((r: any) => r && r.id === "sys-approval");
+            const expectedPassword = sysAppr?.password || localStorage.getItem(`t2_password_${match.id}`);
+            if (expectedPassword && password.trim() === expectedPassword.trim()) {
+              // Direct Password Login Success!
+              sessionStorage.setItem("t2_client_id", match.id);
+              sessionStorage.setItem("t2_client_name", match.name);
+              sessionStorage.setItem("t2_user_email", cleanEmail);
+              sessionStorage.setItem("t2_user_role", "client_admin");
+              setLoading(false);
+              navigate({ to: "/dashboard" });
+              return;
+            }
+          }
+        }
+      } catch (err) {
+        console.error(err);
+      }
+    }
+
     // Check if OTP bypass is enabled for this company / email in Supabase or LocalStorage
     let isOtpBypassActive = false;
     let foundCompany = company;
