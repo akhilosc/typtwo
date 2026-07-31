@@ -338,38 +338,56 @@ function AdminPage() {
   // Load clients list dynamically
   useEffect(() => {
     const fetchClients = async () => {
+      let combinedClients: Client[] = [];
+      let dbDataList: any[] = [];
+
       if (isSupabaseConfigured()) {
         try {
           const { data, error } = await supabase
             .from("clients")
             .select("*");
           if (data && !error) {
+            dbDataList = data;
             setAllDbClients(data);
             
-            // Map all companies to selection list
-            const mapped: Client[] = data.map((d: any) => ({
+            combinedClients = data.map((d: any) => ({
               id: d.id,
               name: d.name,
               email: `@${d.email_domain || d.email || d.id}`
             }));
-            setClients(mapped);
-            return;
           }
         } catch (err) {
           console.error("Failed to load clients list from Supabase", err);
         }
       }
 
-      // Local storage fallback list
+      // Merge Local storage registered companies
       const storedList = getSafeLocalStorage("t2_local_clients_list");
       if (storedList !== null) {
         const parsed = parseArray(storedList);
-        setClients(parsed);
-      } else {
-        setClients([]);
+        parsed.forEach((localClient: any) => {
+          if (!combinedClients.some((c) => c.id === localClient.id)) {
+            combinedClients.push({
+              id: localClient.id,
+              name: localClient.name,
+              email: localClient.email || `@${localClient.id}`
+            });
+          }
+        });
       }
+
+      setClients(combinedClients);
     };
     fetchClients();
+
+    const handleStorageUpdate = () => fetchClients();
+    window.addEventListener("t2_storage_update", handleStorageUpdate);
+    window.addEventListener("storage", handleStorageUpdate);
+
+    return () => {
+      window.removeEventListener("t2_storage_update", handleStorageUpdate);
+      window.removeEventListener("storage", handleStorageUpdate);
+    };
   }, [notifyMsg, selectedClientId]);
 
   // Onboard new client workspace submit handler

@@ -247,20 +247,31 @@ function LoginPage() {
 
         if (isSupabaseConfigured()) {
           try {
-            await supabase.from("clients").insert(newClientObj);
+            const { error } = await supabase.from("clients").upsert(newClientObj, { onConflict: "id" });
+            if (error) {
+              console.warn("Supabase upsert warning on signup:", error.message);
+            }
           } catch (err) {
             console.error("Supabase insert error on signup", err);
           }
-        } else {
-          const localClientsKey = "t2_local_clients_list";
-          const currentClients = JSON.parse(localStorage.getItem(localClientsKey) || JSON.stringify(DEFAULT_CLIENTS));
+        }
+
+        // Always sync to LocalStorage as a fail-safe backup
+        const localClientsKey = "t2_local_clients_list";
+        const currentClients = JSON.parse(localStorage.getItem(localClientsKey) || JSON.stringify(DEFAULT_CLIENTS));
+        if (!currentClients.some((c: any) => c.id === cleanId)) {
           const nextClients = [...currentClients, { id: cleanId, name: companyName, email: `@${domain}`, approved: false }];
           localStorage.setItem(localClientsKey, JSON.stringify(nextClients));
-          localStorage.setItem(`t2_reqs_${cleanId}`, JSON.stringify([]));
-          localStorage.setItem(`t2_milestones_${cleanId}`, JSON.stringify(newClientObj.milestones));
-          localStorage.setItem(`t2_milestones_audit_${cleanId}`, JSON.stringify(newClientObj.audit_logs));
-          localStorage.setItem(`t2_approved_${cleanId}`, "false");
         }
+        if (!localStorage.getItem(`t2_milestones_${cleanId}`)) {
+          localStorage.setItem(`t2_milestones_${cleanId}`, JSON.stringify(newClientObj.milestones));
+        }
+        if (!localStorage.getItem(`t2_milestones_audit_${cleanId}`)) {
+          localStorage.setItem(`t2_milestones_audit_${cleanId}`, JSON.stringify(newClientObj.audit_logs));
+        }
+        localStorage.setItem(`t2_approved_${cleanId}`, "false");
+        window.dispatchEvent(new Event("t2_storage_update"));
+        window.dispatchEvent(new Event("storage"));
       }
 
       // Save active session keys
