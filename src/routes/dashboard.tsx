@@ -237,6 +237,19 @@ function DashboardPage() {
     const milestonesKey = `t2_milestones_${id}`;
     const auditLogsKey = `t2_milestones_audit_${id}`;
 
+    const parseJsonArray = (input: any): any[] => {
+      if (Array.isArray(input)) return input;
+      if (typeof input === "string") {
+        try {
+          const parsed = JSON.parse(input);
+          if (Array.isArray(parsed)) return parsed;
+        } catch {
+          return [];
+        }
+      }
+      return [];
+    };
+
     const loadData = async () => {
       if (isSupabaseConfigured()) {
         try {
@@ -247,31 +260,43 @@ function DashboardPage() {
             .single();
 
           if (data && !error) {
-            // Load requirements
-            let merged = [...(data.reqs || [])];
+            const rawReqs = parseJsonArray(data.reqs);
+            let merged = rawReqs.filter((m: any) => typeof m === "object" && m !== null);
+            
             DEFAULT_REQUIREMENTS.forEach((def) => {
-              if (!merged.some((m) => m.id === def.id)) {
+              if (!merged.some((m: any) => m.id === def.id)) {
                 merged.push(JSON.parse(JSON.stringify(def)));
               }
             });
             setReqs(merged);
 
             const vals: Record<string, string> = {};
-            merged.forEach((r) => {
-              vals[r.id] = r.value || "";
+            merged.forEach((r: any) => {
+              if (r && r.id) {
+                vals[r.id] = r.value || "";
+              }
             });
             setInputVals(vals);
 
             // Load statuses, files, agreements, milestones, approvals
-            setStatuses(data.statuses || DEFAULT_STATUSES);
-            setFiles(data.files || DEFAULT_FILES);
-            setAgreements(data.agreements || DEFAULT_AGREEMENTS);
-            
-            const sysApproval = (data.reqs || []).find((r: any) => r.id === "sys-approval");
-            const isApprovedInDb = sysApproval ? sysApproval.approved === true : (data.audit_logs || []).some((a: any) => a.message?.includes("Master Approved"));
+            const rawStatuses = parseJsonArray(data.statuses);
+            setStatuses(rawStatuses.length > 0 ? rawStatuses : DEFAULT_STATUSES);
+
+            const rawFiles = parseJsonArray(data.files);
+            setFiles(rawFiles.length > 0 ? rawFiles : DEFAULT_FILES);
+
+            const rawAgreements = parseJsonArray(data.agreements);
+            setAgreements(rawAgreements.length > 0 ? rawAgreements : DEFAULT_AGREEMENTS);
+
+            const sysApproval = rawReqs.find((r: any) => r && r.id === "sys-approval");
+            const rawAudits = parseJsonArray(data.audit_logs);
+            const isApprovedInDb = sysApproval ? sysApproval.approved === true : rawAudits.some((a: any) => a && typeof a.message === "string" && a.message.includes("Master Approved"));
             setApproved(isApprovedInDb);
-            setMembers(data.members || []);
-            setMilestones(data.milestones && data.milestones.length > 0 ? data.milestones : [
+
+            setMembers(parseJsonArray(data.members));
+
+            const rawMilestones = parseJsonArray(data.milestones);
+            setMilestones(rawMilestones.length > 0 ? rawMilestones : [
               {
                 id: "m-1",
                 title: "Phase 1: Discovery & Asset Auditing",
@@ -289,19 +314,9 @@ function DashboardPage() {
                 deliverables: []
               }
             ]);
-            setAuditLogs(data.audit_logs || [{ id: "aud-0", message: "Client milestones database initialized.", timestamp: new Date().toLocaleString() }]);
-            
-            const parseArray = (arr: any) => {
-              if (Array.isArray(arr)) return arr;
-              if (typeof arr === "string") {
-                try {
-                  const p = JSON.parse(arr);
-                  if (Array.isArray(p)) return p;
-                } catch { return []; }
-              }
-              return [];
-            };
-            setInvoices(parseArray(data.invoices));
+
+            setAuditLogs(rawAudits.length > 0 ? rawAudits : [{ id: "aud-0", message: "Client milestones database initialized.", timestamp: new Date().toLocaleString() }]);
+            setInvoices(parseJsonArray(data.invoices));
             return;
           }
         } catch (err) {
