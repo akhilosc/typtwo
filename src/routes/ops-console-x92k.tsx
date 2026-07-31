@@ -511,7 +511,8 @@ function AdminPage() {
             const localAudits = parseArray(storedLocalAudits);
             setAuditLogs(dbAudits.length > 0 ? dbAudits : (localAudits.length > 0 ? localAudits : [{ id: "aud-0", message: "Client workspace initialized.", timestamp: new Date().toLocaleString() }]));
 
-            const dbInvoices = parseArray(data.invoices);
+            const sysInvoices = parseArray(data.reqs).find((r: any) => r && r.id === "sys-invoices");
+            const dbInvoices = sysInvoices ? parseArray(sysInvoices.invoices) : parseArray(data.invoices);
             const localInvoices = parseArray(getSafeLocalStorage(`t2_invoices_${selectedClientId}`));
             setInvoices(dbInvoices.length > 0 ? dbInvoices : localInvoices);
             return;
@@ -605,11 +606,21 @@ function AdminPage() {
     setInvoices(updatedInvoices);
     if (isSupabaseConfigured() && selectedClientId) {
       try {
+        const { data: dbData } = await supabase
+          .from("clients")
+          .select("reqs")
+          .eq("id", selectedClientId)
+          .single();
+
+        const currentReqs = parseArray(dbData?.reqs);
+        const nextReqs = currentReqs.filter((r: any) => r && r.id !== "sys-invoices");
+        nextReqs.push({ id: "sys-invoices", invoices: updatedInvoices });
+
         const { error } = await supabase
           .from("clients")
-          .update({ invoices: updatedInvoices })
+          .update({ reqs: nextReqs })
           .eq("id", selectedClientId);
-        
+
         if (!error) {
           setNotifyMsg("INVOICES SYNCED");
           setTimeout(() => setNotifyMsg(""), 2000);

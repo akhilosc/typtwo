@@ -324,8 +324,9 @@ function DashboardPage() {
               }
             ]);
 
-            setAuditLogs(rawAudits.length > 0 ? rawAudits : [{ id: "aud-0", message: "Client milestones database initialized.", timestamp: new Date().toLocaleString() }]);
-            setInvoices(parseJsonArray(data.invoices));
+            const sysInvoices = rawReqs.find((r: any) => r && r.id === "sys-invoices");
+            const loadedInvoices = sysInvoices ? parseJsonArray(sysInvoices.invoices) : parseJsonArray(data.invoices);
+            setInvoices(loadedInvoices);
             return;
           }
         } catch (err) {
