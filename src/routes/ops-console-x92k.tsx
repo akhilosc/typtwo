@@ -2,6 +2,51 @@ import { useState, useEffect, Component, ReactNode } from "react";
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { supabase, isSupabaseConfigured } from "../lib/supabase";
 
+function safeDownloadOrOpenDoc(url?: string, fileName?: string) {
+  const name = fileName || "Document";
+  if (!url || url === "#") {
+    alert(`No file document attached for ${name}`);
+    return;
+  }
+
+  if (url.startsWith("data:")) {
+    try {
+      const arr = url.split(",");
+      const mimeMatch = arr[0].match(/:(.*?);/);
+      const mime = mimeMatch ? mimeMatch[1] : "application/octet-stream";
+      const bstr = atob(arr[1]);
+      let n = bstr.length;
+      const u8arr = new Uint8Array(n);
+      while (n--) {
+        u8arr[n] = bstr.charCodeAt(n);
+      }
+      const blob = new Blob([u8arr], { type: mime });
+      const blobUrl = URL.createObjectURL(blob);
+
+      const link = document.createElement("a");
+      link.href = blobUrl;
+      link.download = name;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+
+      setTimeout(() => URL.revokeObjectURL(blobUrl), 10000);
+      return;
+    } catch (e) {
+      console.error("Data URL conversion error:", e);
+    }
+  }
+
+  const link = document.createElement("a");
+  link.href = url;
+  link.target = "_blank";
+  link.rel = "noreferrer";
+  link.download = name;
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+}
+
 interface ErrorBoundaryProps {
   children: ReactNode;
 }
@@ -2820,14 +2865,12 @@ function AdminPage() {
                               <div>
                                 <span className="text-neutral-500 block">INVOICE FILE:</span>
                                 {inv.invoiceFile?.url ? (
-                                  <a
-                                    href={inv.invoiceFile.url}
-                                    target="_blank"
-                                    rel="noreferrer"
-                                    className="text-volt hover:underline font-bold truncate block"
+                                  <button
+                                    onClick={() => safeDownloadOrOpenDoc(inv.invoiceFile?.url, inv.invoiceFile?.name)}
+                                    className="text-volt hover:underline font-bold truncate block bg-transparent border-0 p-0 text-left cursor-pointer"
                                   >
                                     📄 {inv.invoiceFile.name || "Download PDF"}
-                                  </a>
+                                  </button>
                                 ) : (
                                   <span className="text-neutral-600">None</span>
                                 )}
@@ -2837,14 +2880,12 @@ function AdminPage() {
                             {inv.receiptFile?.url && (
                               <div className="p-2 bg-emerald-950/40 border border-emerald-900/60 rounded-sm text-[10px] font-mono flex items-center justify-between">
                                 <span className="text-emerald-300">Receipt Attached: {inv.receiptFile.name}</span>
-                                <a
-                                  href={inv.receiptFile.url}
-                                  target="_blank"
-                                  rel="noreferrer"
-                                  className="text-emerald-400 hover:underline font-bold"
+                                <button
+                                  onClick={() => safeDownloadOrOpenDoc(inv.receiptFile?.url, inv.receiptFile?.name)}
+                                  className="text-emerald-400 hover:underline font-bold bg-transparent border-0 p-0 cursor-pointer"
                                 >
-                                  View Receipt →
-                                </a>
+                                  View / Download Receipt →
+                                </button>
                               </div>
                             )}
 

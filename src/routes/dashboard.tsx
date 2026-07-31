@@ -2,6 +2,51 @@ import { Component, ReactNode, useState, useEffect } from "react";
 import { createFileRoute, useNavigate, Link } from "@tanstack/react-router";
 import { supabase, isSupabaseConfigured } from "../lib/supabase";
 
+function safeDownloadOrOpenDoc(url?: string, fileName?: string) {
+  const name = fileName || "Document";
+  if (!url || url === "#") {
+    alert(`No file document attached for ${name}`);
+    return;
+  }
+
+  if (url.startsWith("data:")) {
+    try {
+      const arr = url.split(",");
+      const mimeMatch = arr[0].match(/:(.*?);/);
+      const mime = mimeMatch ? mimeMatch[1] : "application/octet-stream";
+      const bstr = atob(arr[1]);
+      let n = bstr.length;
+      const u8arr = new Uint8Array(n);
+      while (n--) {
+        u8arr[n] = bstr.charCodeAt(n);
+      }
+      const blob = new Blob([u8arr], { type: mime });
+      const blobUrl = URL.createObjectURL(blob);
+
+      const link = document.createElement("a");
+      link.href = blobUrl;
+      link.download = name;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+
+      setTimeout(() => URL.revokeObjectURL(blobUrl), 10000);
+      return;
+    } catch (e) {
+      console.error("Data URL conversion error:", e);
+    }
+  }
+
+  const link = document.createElement("a");
+  link.href = url;
+  link.target = "_blank";
+  link.rel = "noreferrer";
+  link.download = name;
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+}
+
 interface ErrorBoundaryProps {
   children: ReactNode;
 }
@@ -928,23 +973,12 @@ function DashboardPage() {
                         <div className="text-xs font-bold text-white truncate uppercase tracking-wide">{f.name}</div>
                         <div className="text-[10px] text-neutral-500 mt-0.5">{f.size}</div>
                       </div>
-                      {f.url && f.url !== "#" ? (
-                        <a
-                          href={f.url}
-                          target="_blank"
-                          rel="noreferrer"
-                          className="bg-volt text-black hover:bg-white text-[10px] px-3.5 py-1.5 rounded-sm uppercase tracking-widest font-bold transition cursor-pointer text-center decoration-transparent"
-                        >
-                          Get ↗
-                        </a>
-                      ) : (
-                        <button
-                          onClick={() => alert(`Downloading deliverable: ${f.name}`)}
-                          className="bg-neutral-900 border border-neutral-800 hover:border-volt text-neutral-300 hover:text-white text-[10px] px-3 py-1.5 rounded-sm uppercase tracking-widest font-bold transition cursor-pointer"
-                        >
-                          Get
-                        </button>
-                      )}
+                      <button
+                        onClick={() => safeDownloadOrOpenDoc(f.url, f.name)}
+                        className="bg-volt text-black hover:bg-white text-[10px] px-3.5 py-1.5 rounded-sm uppercase tracking-widest font-bold transition cursor-pointer text-center"
+                      >
+                        {f.url?.startsWith("data:") ? "📥 Download" : "Get ↗"}
+                      </button>
                     </div>
                   ))}
 
@@ -984,23 +1018,12 @@ function DashboardPage() {
                         <div className="text-xs font-bold text-white truncate uppercase tracking-wide">{doc.name}</div>
                         <div className="text-[10px] text-neutral-500 mt-0.5">Shared: {doc.date}</div>
                       </div>
-                      {doc.url && doc.url !== "#" ? (
-                        <a
-                          href={doc.url}
-                          target="_blank"
-                          rel="noreferrer"
-                          className="bg-volt text-black hover:bg-white text-[10px] px-3.5 py-1.5 rounded-sm uppercase tracking-widest font-bold transition cursor-pointer text-center decoration-transparent"
-                        >
-                          Review ↗
-                        </a>
-                      ) : (
-                        <button
-                          onClick={() => alert(`Reviewing signed contract: ${doc.name}`)}
-                          className="bg-neutral-900 border border-neutral-800 hover:border-volt text-neutral-300 hover:text-white text-[10px] px-3 py-1.5 rounded-sm uppercase tracking-widest font-bold transition cursor-pointer"
-                        >
-                          Review
-                        </button>
-                      )}
+                      <button
+                        onClick={() => safeDownloadOrOpenDoc(doc.url, doc.name)}
+                        className="bg-volt text-black hover:bg-white text-[10px] px-3.5 py-1.5 rounded-sm uppercase tracking-widest font-bold transition cursor-pointer text-center"
+                      >
+                        {doc.url?.startsWith("data:") ? "📥 Download" : "Review ↗"}
+                      </button>
                     </div>
                   ))}
                 </div>
@@ -1234,14 +1257,12 @@ function DashboardPage() {
                           <div>
                             <span className="text-[9px] text-neutral-500 uppercase block font-bold">Official Invoice File:</span>
                             {inv.invoiceFile?.url ? (
-                              <a
-                                href={inv.invoiceFile.url}
-                                target="_blank"
-                                rel="noreferrer"
-                                className="inline-flex items-center gap-1.5 bg-neutral-900 border border-neutral-800 hover:border-volt text-volt hover:text-white px-2.5 py-1 rounded-sm text-[10px] uppercase font-bold transition mt-1"
+                              <button
+                                onClick={() => safeDownloadOrOpenDoc(inv.invoiceFile.url, inv.invoiceFile.name)}
+                                className="inline-flex items-center gap-1.5 bg-neutral-900 border border-neutral-800 hover:border-volt text-volt hover:text-white px-2.5 py-1 rounded-sm text-[10px] uppercase font-bold transition mt-1 cursor-pointer"
                               >
                                 📄 Download Invoice ({inv.invoiceFile.name || "PDF"})
-                              </a>
+                              </button>
                             ) : (
                               <span className="text-neutral-600 italic">No Document Attached</span>
                             )}
@@ -1252,14 +1273,12 @@ function DashboardPage() {
                         {inv.receiptFile?.url && (
                           <div className="p-3 bg-emerald-950/30 border border-emerald-900/60 rounded-sm text-xs font-mono flex items-center justify-between">
                             <span className="text-emerald-300">✓ Official Payment Receipt: {inv.receiptFile.name}</span>
-                            <a
-                              href={inv.receiptFile.url}
-                              target="_blank"
-                              rel="noreferrer"
-                              className="text-emerald-400 hover:underline font-bold"
+                            <button
+                              onClick={() => safeDownloadOrOpenDoc(inv.receiptFile.url, inv.receiptFile.name)}
+                              className="text-emerald-400 hover:underline font-bold cursor-pointer bg-transparent border-0 p-0"
                             >
                               View / Download Receipt →
-                            </a>
+                            </button>
                           </div>
                         )}
                       </div>
