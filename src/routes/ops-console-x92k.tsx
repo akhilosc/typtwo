@@ -121,10 +121,23 @@ interface Milestone {
   deliverables: MilestoneDeliverable[];
 }
 
-interface MilestoneAuditLog {
+export interface Invoice {
   id: string;
-  message: string;
-  timestamp: string;
+  title: string;
+  amount: string;
+  issueDate: string;
+  dueDate: string;
+  status: "Paid" | "Pending" | "Processing";
+  paidDate?: string;
+  invoiceFile?: {
+    name: string;
+    url: string;
+  };
+  receiptFile?: {
+    name: string;
+    url: string;
+  };
+  notes?: string;
 }
 
 const DEFAULT_CLIENTS: Client[] = [];
@@ -268,7 +281,23 @@ function AdminPage() {
   const [viewMode, setViewMode] = useState<"master" | "company">("master");
 
   // Tab selector for company management desk
-  const [activeFormTab, setActiveFormTab] = useState<"requirements" | "progress" | "agreements" | "members">("requirements");
+  const [activeFormTab, setActiveFormTab] = useState<"requirements" | "progress" | "agreements" | "members" | "invoices">("requirements");
+
+  // Invoices & Billing states
+  const [invoices, setInvoices] = useState<Invoice[]>([]);
+  const [invId, setInvId] = useState("");
+  const [invTitle, setInvTitle] = useState("");
+  const [invAmount, setInvAmount] = useState("");
+  const [invIssueDate, setInvIssueDate] = useState(new Date().toISOString().split("T")[0]);
+  const [invDueDate, setInvDueDate] = useState("");
+  const [invStatus, setInvStatus] = useState<"Pending" | "Paid">("Pending");
+  const [invFileName, setInvFileName] = useState("");
+  const [invFileUrl, setInvFileUrl] = useState("");
+  const [invNotes, setInvNotes] = useState("");
+
+  const [receiptInvId, setReceiptInvId] = useState<string | null>(null);
+  const [receiptName, setReceiptName] = useState("");
+  const [receiptUrl, setReceiptUrl] = useState("");
 
   // Custom requirement form state
   const [customLabel, setCustomLabel] = useState("");
@@ -463,6 +492,10 @@ function AdminPage() {
             const dbAudits = parseArray(data.audit_logs);
             const localAudits = parseArray(storedLocalAudits);
             setAuditLogs(dbAudits.length > 0 ? dbAudits : (localAudits.length > 0 ? localAudits : [{ id: "aud-0", message: "Client workspace initialized.", timestamp: new Date().toLocaleString() }]));
+
+            const dbInvoices = parseArray(data.invoices);
+            const localInvoices = parseArray(getSafeLocalStorage(`t2_invoices_${selectedClientId}`));
+            setInvoices(dbInvoices.length > 0 ? dbInvoices : localInvoices);
             return;
           }
         } catch (err) {
@@ -493,6 +526,10 @@ function AdminPage() {
       // 3. Audit Logs Local Fallback
       const localAudits = parseArray(storedLocalAudits);
       setAuditLogs(localAudits.length > 0 ? localAudits : [{ id: "aud-0", message: "Client workspace initialized.", timestamp: new Date().toLocaleString() }]);
+
+      // 4. Invoices Local Fallback
+      const localInvoices = parseArray(getSafeLocalStorage(`t2_invoices_${selectedClientId}`));
+      setInvoices(localInvoices);
     };
 
     loadData();
@@ -543,6 +580,105 @@ function AdminPage() {
     window.dispatchEvent(new Event("t2_storage_update"));
     setNotifyMsg("SAVED");
     setTimeout(() => setNotifyMsg(""), 2000);
+  };
+
+  // Save invoices to Supabase database & local storage
+  const saveInvoices = async (updatedInvoices: Invoice[]) => {
+    setInvoices(updatedInvoices);
+    if (isSupabaseConfigured() && selectedClientId) {
+      try {
+        const { error } = await supabase
+          .from("clients")
+          .update({ invoices: updatedInvoices })
+          .eq("id", selectedClientId);
+        
+        if (!error) {
+          setNotifyMsg("INVOICES SYNCED");
+          setTimeout(() => setNotifyMsg(""), 2000);
+          return;
+        }
+        console.error("Supabase invoices update error", error);
+      } catch (err) {
+        console.error(err);
+      }
+    }
+
+    setSafeLocalStorage(`t2_invoices_${selectedClientId}`, JSON.stringify(updatedInvoices));
+    window.dispatchEvent(new Event("storage"));
+    window.dispatchEvent(new Event("t2_storage_update"));
+    setNotifyMsg("SAVED");
+    setTimeout(() => setNotifyMsg(""), 2000);
+  };
+
+  const handleCreateInvoice = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!invTitle.trim() || !invAmount.trim() || !invDueDate) {
+      alert("Please fill out Invoice Title, Amount, and Payment Due Date.");
+      return;
+    }
+
+    const generatedId = invId.trim() || `INV-${new Date().getFullYear()}-${Math.floor(100 + Math.random() * 900)}`;
+
+    const newInv: Invoice = {
+      id: generatedId,
+      title: invTitle.trim(),
+      amount: invAmount.trim(),
+      issueDate: invIssueDate || new Date().toISOString().split("T")[0],
+      dueDate: invDueDate,
+      status: invStatus,
+      paidDate: invStatus === "Paid" ? new Date().toISOString().split("T")[0] : undefined,
+      invoiceFile: invFileUrl ? { name: invFileName || "Invoice Document", url: invFileUrl } : undefined,
+      notes: invNotes.trim() || undefined
+    };
+
+    const next = [newInv, ...invoices];
+    saveInvoices(next);
+
+    // Reset form
+    setInvId("");
+    setInvTitle("");
+    setInvAmount("");
+    setInvDueDate("");
+    setInvFileName("");
+    setInvFileUrl("");
+    setInvNotes("");
+  };
+
+  const handleMarkInvoicePaid = (id: string) => {
+    const updated = invoices.map(inv => {
+      if (inv.id === id) {
+        return { ...inv, status: "Paid" as const, paidDate: new Date().toISOString().split("T")[0] };
+      }
+      return inv;
+    });
+    saveInvoices(updated);
+  };
+
+  const handleDeleteInvoice = (id: string) => {
+    if (window.confirm(`Delete Invoice ${id}?`)) {
+      const updated = invoices.filter(inv => inv.id !== id);
+      saveInvoices(updated);
+    }
+  };
+
+  const handleAttachReceipt = (invTargetId: string) => {
+    if (!receiptUrl) {
+      alert("Please provide a receipt URL or upload a local file.");
+      return;
+    }
+    const updated = invoices.map(inv => {
+      if (inv.id === invTargetId) {
+        return {
+          ...inv,
+          receiptFile: { name: receiptName || "Payment Receipt", url: receiptUrl }
+        };
+      }
+      return inv;
+    });
+    saveInvoices(updated);
+    setReceiptInvId(null);
+    setReceiptName("");
+    setReceiptUrl("");
   };
 
   // Read local file from device and convert it to Base64 data URL
@@ -1849,6 +1985,15 @@ function AdminPage() {
               >
                 04 / Team Member Access ({getAllMembersList().filter(m => m && String(m.clientId || "").toLowerCase() === String(selectedClientId || "").toLowerCase()).length})
               </button>
+
+              <button
+                onClick={() => setActiveFormTab("invoices")}
+                className={`flex-1 text-center py-2.5 text-xs uppercase font-bold tracking-wider rounded-sm transition cursor-pointer ${
+                  activeFormTab === "invoices" ? "bg-volt text-black font-extrabold" : "text-neutral-400 hover:text-white"
+                }`}
+              >
+                05 / Billing & Invoices ({invoices.length})
+              </button>
             </div>
 
             {/* SUB-TAB 1: CHECKLIST & ASSET REQUIREMENTS */}
@@ -2320,6 +2465,307 @@ function AdminPage() {
               </div>
             )}
 
+            {/* SUB-TAB 5: BILLING & INVOICES */}
+            {activeFormTab === "invoices" && (
+              <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 w-full">
+                {/* Left Column: Create / Publish New Invoice Form */}
+                <div className="lg:col-span-5 space-y-6">
+                  <div className="bg-[#0c0c0c] border border-neutral-800 p-6 rounded-sm space-y-4 text-left">
+                    <div className="border-b border-neutral-800 pb-3">
+                      <h3 className="text-xs font-bold text-volt uppercase tracking-wider">
+                        // Publish New Invoice for {selectedClient.name}
+                      </h3>
+                      <p className="text-[10px] text-neutral-400 mt-1">
+                        Set invoice details, payment due date, and attach document files.
+                      </p>
+                    </div>
+
+                    <form onSubmit={handleCreateInvoice} className="space-y-4">
+                      <div>
+                        <label className="block text-[10px] font-bold text-neutral-400 uppercase mb-1">
+                          Invoice ID / Reference #
+                        </label>
+                        <input
+                          type="text"
+                          placeholder="e.g. INV-2026-001 (Leave empty for auto-id)"
+                          value={invId}
+                          onChange={(e) => setInvId(e.target.value)}
+                          className="w-full bg-neutral-950 border border-neutral-800 rounded-sm px-3 py-2 text-xs text-white focus:outline-none focus:border-volt"
+                        />
+                      </div>
+
+                      <div>
+                        <label className="block text-[10px] font-bold text-neutral-400 uppercase mb-1">
+                          Invoice Title / Description *
+                        </label>
+                        <input
+                          type="text"
+                          placeholder="e.g. Phase 1 Retainer & Strategy Setup"
+                          value={invTitle}
+                          onChange={(e) => setInvTitle(e.target.value)}
+                          className="w-full bg-neutral-950 border border-neutral-800 rounded-sm px-3 py-2 text-xs text-white focus:outline-none focus:border-volt"
+                          required
+                        />
+                      </div>
+
+                      <div className="grid grid-cols-2 gap-3">
+                        <div>
+                          <label className="block text-[10px] font-bold text-neutral-400 uppercase mb-1">
+                            Amount ($ / ₹) *
+                          </label>
+                          <input
+                            type="text"
+                            placeholder="e.g. $5,000"
+                            value={invAmount}
+                            onChange={(e) => setInvAmount(e.target.value)}
+                            className="w-full bg-neutral-950 border border-neutral-800 rounded-sm px-3 py-2 text-xs text-white focus:outline-none focus:border-volt"
+                            required
+                          />
+                        </div>
+
+                        <div>
+                          <label className="block text-[10px] font-bold text-neutral-400 uppercase mb-1">
+                            Status *
+                          </label>
+                          <select
+                            value={invStatus}
+                            onChange={(e) => setInvStatus(e.target.value as "Pending" | "Paid")}
+                            className="w-full bg-neutral-950 border border-neutral-800 text-xs text-white px-3 py-2 rounded-sm focus:outline-none focus:border-volt uppercase font-bold cursor-pointer"
+                          >
+                            <option value="Pending">Pending</option>
+                            <option value="Paid">Paid</option>
+                          </select>
+                        </div>
+                      </div>
+
+                      <div className="grid grid-cols-2 gap-3">
+                        <div>
+                          <label className="block text-[10px] font-bold text-neutral-400 uppercase mb-1">
+                            Issue Date *
+                          </label>
+                          <input
+                            type="date"
+                            value={invIssueDate}
+                            onChange={(e) => setInvIssueDate(e.target.value)}
+                            className="w-full bg-neutral-950 border border-neutral-800 text-xs text-white px-3 py-2 rounded-sm focus:outline-none focus:border-volt"
+                            required
+                          />
+                        </div>
+
+                        <div>
+                          <label className="block text-[10px] font-bold text-neutral-400 uppercase mb-1 text-volt">
+                            Payment Due Date *
+                          </label>
+                          <input
+                            type="date"
+                            value={invDueDate}
+                            onChange={(e) => setInvDueDate(e.target.value)}
+                            className="w-full bg-neutral-950 border border-volt/80 text-xs text-white px-3 py-2 rounded-sm focus:outline-none focus:border-volt font-bold"
+                            required
+                          />
+                        </div>
+                      </div>
+
+                      {/* Invoice File Attachment */}
+                      <div className="space-y-2 pt-2 border-t border-neutral-900">
+                        <label className="block text-[10px] font-bold text-neutral-400 uppercase">
+                          Invoice PDF / File Document
+                        </label>
+                        <input
+                          type="text"
+                          placeholder="Option 1: Paste PDF / Drive Link"
+                          value={invFileUrl}
+                          onChange={(e) => setInvFileUrl(e.target.value)}
+                          className="w-full bg-neutral-950 border border-neutral-800 rounded-sm px-3 py-1.5 text-[11px] text-white focus:outline-none focus:border-volt"
+                        />
+
+                        <div className="flex items-center gap-2 pt-1">
+                          <label className="bg-neutral-900 border border-neutral-800 hover:border-volt text-neutral-300 hover:text-white text-[10px] py-1.5 px-3 uppercase font-bold rounded-sm cursor-pointer transition">
+                            Option 2: Pick Local File From Device
+                            <input
+                              type="file"
+                              onChange={(e) => handleLocalFileUpload(e, setInvFileName, setInvFileUrl)}
+                              className="hidden"
+                            />
+                          </label>
+                          {invFileName && (
+                            <span className="text-[10px] text-volt truncate font-mono">
+                              {invFileName}
+                            </span>
+                          )}
+                        </div>
+                      </div>
+
+                      <div>
+                        <label className="block text-[10px] font-bold text-neutral-400 uppercase mb-1">
+                          Internal Notes / Reminders (Optional)
+                        </label>
+                        <input
+                          type="text"
+                          placeholder="e.g. Wired via SWIFT bank transfer"
+                          value={invNotes}
+                          onChange={(e) => setInvNotes(e.target.value)}
+                          className="w-full bg-neutral-950 border border-neutral-800 rounded-sm px-3 py-1.5 text-xs text-white focus:outline-none focus:border-volt"
+                        />
+                      </div>
+
+                      <button
+                        type="submit"
+                        className="w-full bg-volt text-black hover:bg-white text-xs py-2.5 uppercase font-bold rounded-sm transition cursor-pointer"
+                      >
+                        Publish Invoice to Client Desk →
+                      </button>
+                    </form>
+                  </div>
+                </div>
+
+                {/* Right Column: Published Invoices Directory */}
+                <div className="lg:col-span-7 space-y-6">
+                  <div className="bg-[#0c0c0c] border border-neutral-800 p-6 rounded-sm space-y-4 text-left">
+                    <div className="flex items-center justify-between border-b border-neutral-800 pb-3">
+                      <h3 className="text-xs font-bold text-volt uppercase tracking-wider">
+                        // Published Invoices for {selectedClient.name} ({invoices.length})
+                      </h3>
+                      <span className="text-[9px] text-neutral-500 font-bold uppercase">
+                        Auto-calculates OVERDUE if current date exceeds due date
+                      </span>
+                    </div>
+
+                    <div className="space-y-4">
+                      {invoices.map((inv) => {
+                        const todayStr = new Date().toISOString().split("T")[0];
+                        const isOverdue = inv.status !== "Paid" && inv.dueDate && todayStr > inv.dueDate;
+
+                        return (
+                          <div
+                            key={inv.id}
+                            className={`bg-neutral-950 border p-4 rounded-sm space-y-3 ${
+                              isOverdue
+                                ? "border-red-900/80 bg-red-950/10"
+                                : inv.status === "Paid"
+                                ? "border-emerald-900/60"
+                                : "border-neutral-800"
+                            }`}
+                          >
+                            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-neutral-900 pb-2">
+                              <div>
+                                <span className="text-[10px] text-neutral-500 font-mono block font-bold">{inv.id}</span>
+                                <h4 className="text-xs font-bold text-white uppercase">{inv.title}</h4>
+                              </div>
+                              <div className="flex items-center gap-2">
+                                <span className="text-sm font-bold text-volt font-mono">{inv.amount}</span>
+                                {inv.status === "Paid" ? (
+                                  <span className="bg-emerald-950 text-emerald-300 border border-emerald-800 text-[9px] px-2.5 py-0.5 font-bold uppercase rounded-sm">
+                                    ✓ PAID {inv.paidDate ? `(${inv.paidDate})` : ""}
+                                  </span>
+                                ) : isOverdue ? (
+                                  <span className="bg-red-950 text-red-400 border border-red-900 text-[9px] px-2.5 py-0.5 font-bold uppercase rounded-sm animate-pulse">
+                                    ⚠️ OVERDUE
+                                  </span>
+                                ) : (
+                                  <span className="bg-amber-950 text-amber-300 border border-amber-800 text-[9px] px-2.5 py-0.5 font-bold uppercase rounded-sm">
+                                    ⏱ PENDING
+                                  </span>
+                                )}
+                              </div>
+                            </div>
+
+                            <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 text-[10px] font-mono text-neutral-400">
+                              <div>
+                                <span className="text-neutral-500 block">ISSUE DATE:</span>
+                                <span className="text-white">{inv.issueDate}</span>
+                              </div>
+                              <div>
+                                <span className="text-neutral-500 block">PAYMENT DUE DATE:</span>
+                                <span className={isOverdue ? "text-red-400 font-bold" : "text-volt font-bold"}>
+                                  {inv.dueDate}
+                                </span>
+                              </div>
+                              <div>
+                                <span className="text-neutral-500 block">INVOICE FILE:</span>
+                                {inv.invoiceFile?.url ? (
+                                  <a
+                                    href={inv.invoiceFile.url}
+                                    target="_blank"
+                                    rel="noreferrer"
+                                    className="text-volt hover:underline font-bold truncate block"
+                                  >
+                                    📄 {inv.invoiceFile.name || "Download PDF"}
+                                  </a>
+                                ) : (
+                                  <span className="text-neutral-600">None</span>
+                                )}
+                              </div>
+                            </div>
+
+                            {inv.receiptFile?.url && (
+                              <div className="p-2 bg-emerald-950/40 border border-emerald-900/60 rounded-sm text-[10px] font-mono flex items-center justify-between">
+                                <span className="text-emerald-300">Receipt Attached: {inv.receiptFile.name}</span>
+                                <a
+                                  href={inv.receiptFile.url}
+                                  target="_blank"
+                                  rel="noreferrer"
+                                  className="text-emerald-400 hover:underline font-bold"
+                                >
+                                  View Receipt →
+                                </a>
+                              </div>
+                            )}
+
+                            {/* Actions Bar */}
+                            <div className="flex flex-wrap items-center justify-between gap-2 pt-2 border-t border-neutral-900">
+                              <div className="flex items-center gap-2">
+                                {inv.status !== "Paid" && (
+                                  <button
+                                    onClick={() => handleMarkInvoicePaid(inv.id)}
+                                    className="bg-emerald-900/80 border border-emerald-700 hover:bg-emerald-700 text-emerald-200 text-[9px] py-1 px-3 uppercase font-bold rounded-sm transition cursor-pointer"
+                                  >
+                                    ✓ Mark Paid
+                                  </button>
+                                )}
+
+                                <label className="bg-neutral-900 border border-neutral-800 hover:border-volt text-neutral-300 text-[9px] py-1 px-2.5 uppercase font-bold rounded-sm cursor-pointer transition">
+                                  + Attach Receipt File
+                                  <input
+                                    type="file"
+                                    onChange={(e) => {
+                                      const file = e.target.files?.[0];
+                                      if (!file) return;
+                                      const reader = new FileReader();
+                                      reader.onload = (ev) => {
+                                        if (ev.target?.result) {
+                                          const updated = invoices.map(i => i.id === inv.id ? { ...i, receiptFile: { name: file.name, url: ev.target!.result as string } } : i);
+                                          saveInvoices(updated);
+                                        }
+                                      };
+                                      reader.readAsDataURL(file);
+                                    }}
+                                    className="hidden"
+                                  />
+                                </label>
+                              </div>
+
+                              <button
+                                onClick={() => handleDeleteInvoice(inv.id)}
+                                className="bg-neutral-900 border border-neutral-800 hover:border-red-500 hover:text-red-400 text-neutral-400 text-[9px] py-1 px-2.5 uppercase font-bold rounded-sm transition cursor-pointer"
+                              >
+                                Delete Invoice
+                              </button>
+                            </div>
+                          </div>
+                        );
+                      })}
+
+                      {invoices.length === 0 && (
+                        <div className="text-xs text-neutral-500 italic py-8 text-center border border-dashed border-neutral-850 rounded-sm">
+                          No invoices published for {selectedClient.name} yet. Use the form on the left to publish an invoice with a payment due date.
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
           </div>
         )}
       </main>

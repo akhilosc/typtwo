@@ -36,6 +36,25 @@ interface AgreementDoc {
   date: string;
 }
 
+interface Invoice {
+  id: string;
+  title: string;
+  amount: string;
+  issueDate: string;
+  dueDate: string;
+  status: "Paid" | "Pending" | "Processing";
+  paidDate?: string;
+  invoiceFile?: {
+    name: string;
+    url: string;
+  };
+  receiptFile?: {
+    name: string;
+    url: string;
+  };
+  notes?: string;
+}
+
 interface ProjectProgress {
   percentage: number;
   phase: string;
@@ -102,13 +121,14 @@ function DashboardPage() {
   const [email, setEmail] = useState("");
   const [company, setCompany] = useState("");
   const [clientId, setClientId] = useState("");
-  const [activeTab, setActiveTab] = useState<"requirements" | "vault" | "agreements" | "feed">("requirements");
+  const [activeTab, setActiveTab] = useState<"requirements" | "vault" | "agreements" | "feed" | "billing">("requirements");
   
   // Dynamic client states loaded from localStorage
   const [reqs, setReqs] = useState<Requirement[]>([]);
   const [statuses, setStatuses] = useState<StatusUpdate[]>([]);
   const [files, setFiles] = useState<VaultFile[]>([]);
   const [agreements, setAgreements] = useState<AgreementDoc[]>([]);
+  const [invoices, setInvoices] = useState<Invoice[]>([]);
   const [milestones, setMilestones] = useState<Milestone[]>([]);
   const [auditLogs, setAuditLogs] = useState<MilestoneAuditLog[]>([]);
   const [approved, setApproved] = useState<boolean>(true);
@@ -198,6 +218,18 @@ function DashboardPage() {
               }
             ]);
             setAuditLogs(data.audit_logs || [{ id: "aud-0", message: "Client milestones database initialized.", timestamp: new Date().toLocaleString() }]);
+            
+            const parseArray = (arr: any) => {
+              if (Array.isArray(arr)) return arr;
+              if (typeof arr === "string") {
+                try {
+                  const p = JSON.parse(arr);
+                  if (Array.isArray(p)) return p;
+                } catch { return []; }
+              }
+              return [];
+            };
+            setInvoices(parseArray(data.invoices));
             return;
           }
         } catch (err) {
@@ -304,6 +336,14 @@ function DashboardPage() {
       } else {
         setMembers([]);
         localStorage.setItem(`t2_members_${id}`, JSON.stringify([]));
+      }
+
+      // 7. Load local invoices
+      const storedInvoices = localStorage.getItem(`t2_invoices_${id}`);
+      if (storedInvoices) {
+        setInvoices(JSON.parse(storedInvoices));
+      } else {
+        setInvoices([]);
       }
     };
 
@@ -496,6 +536,18 @@ function DashboardPage() {
                 <span className="text-[9px] opacity-75">● Live</span>
               </button>
             )}
+
+            <button
+              onClick={() => setActiveTab("billing")}
+              className={`w-full flex items-center justify-between px-3 py-2 text-xs uppercase tracking-wider rounded-sm transition cursor-pointer font-bold ${
+                activeTab === "billing" 
+                  ? "bg-volt text-black" 
+                  : "text-neutral-400 hover:bg-neutral-950 hover:text-white"
+              }`}
+            >
+              <span>05 / Billing & Invoices</span>
+              <span className="text-[9px] opacity-75">[{invoices.length}]</span>
+            </button>
           </nav>
         </div>
 
@@ -888,6 +940,217 @@ function DashboardPage() {
                   {auditLogs.length === 0 && (
                     <div className="text-center text-xs text-neutral-500 py-6">
                       No milestone activities logged.
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Billing & Invoices Tab */}
+          {activeTab === "billing" && (
+            <div className="space-y-6 text-left">
+              {/* Executive Summary Cards */}
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                {/* Active Outstanding */}
+                <div className="bg-[#0b0b0b] border border-neutral-800 p-5 rounded-sm space-y-1 text-left">
+                  <span className="text-[9px] text-neutral-500 font-bold uppercase tracking-widest block font-mono">
+                    // TOTAL OUTSTANDING DUES
+                  </span>
+                  <div className="text-xl font-bold text-volt font-mono">
+                    {(() => {
+                      const pendingInvoices = invoices.filter(i => i.status !== "Paid");
+                      if (pendingInvoices.length === 0) return "$0.00";
+                      return pendingInvoices.map(i => i.amount).join(" + ");
+                    })()}
+                  </div>
+                  <span className="text-[10px] text-neutral-400 block font-mono">
+                    {invoices.filter(i => i.status !== "Paid").length} Unpaid / Pending Invoice(s)
+                  </span>
+                </div>
+
+                {/* Next Due Date Banner */}
+                <div className="bg-[#0b0b0b] border border-neutral-800 p-5 rounded-sm space-y-1 text-left">
+                  <span className="text-[9px] text-neutral-500 font-bold uppercase tracking-widest block font-mono">
+                    // NEXT PAYMENT DUE DATE
+                  </span>
+                  {(() => {
+                    const todayStr = new Date().toISOString().split("T")[0];
+                    const unpaidInvoices = invoices.filter(i => i.status !== "Paid");
+                    const overdueCount = unpaidInvoices.filter(i => i.dueDate && todayStr > i.dueDate).length;
+
+                    if (overdueCount > 0) {
+                      return (
+                        <>
+                          <div className="text-xl font-bold text-flame font-mono animate-pulse">
+                            ⚠️ PAYMENT OVERDUE
+                          </div>
+                          <span className="text-[10px] text-red-400 font-bold block font-mono uppercase">
+                            {overdueCount} Invoice(s) past payment deadline
+                          </span>
+                        </>
+                      );
+                    }
+
+                    const nextDue = unpaidInvoices[0]?.dueDate || "No Active Dues";
+                    return (
+                      <>
+                        <div className="text-xl font-bold text-white font-mono">
+                          {nextDue}
+                        </div>
+                        <span className="text-[10px] text-emerald-400 font-bold block font-mono uppercase">
+                          {unpaidInvoices.length === 0 ? "All Invoices Settled" : "Scheduled Payment"}
+                        </span>
+                      </>
+                    );
+                  })()}
+                </div>
+
+                {/* Total Paid to Date */}
+                <div className="bg-[#0b0b0b] border border-neutral-800 p-5 rounded-sm space-y-1 text-left">
+                  <span className="text-[9px] text-neutral-500 font-bold uppercase tracking-widest block font-mono">
+                    // TOTAL INVESTED TO DATE
+                  </span>
+                  <div className="text-xl font-bold text-emerald-400 font-mono">
+                    {(() => {
+                      const paidInvoices = invoices.filter(i => i.status === "Paid");
+                      if (paidInvoices.length === 0) return "$0.00";
+                      return paidInvoices.map(i => i.amount).join(" + ");
+                    })()}
+                  </div>
+                  <span className="text-[10px] text-neutral-400 block font-mono">
+                    {invoices.filter(i => i.status === "Paid").length} Settled Invoice(s)
+                  </span>
+                </div>
+              </div>
+
+              {/* Overdue Warning Alert Banner */}
+              {(() => {
+                const todayStr = new Date().toISOString().split("T")[0];
+                const overdueList = invoices.filter(i => i.status !== "Paid" && i.dueDate && todayStr > i.dueDate);
+
+                if (overdueList.length > 0) {
+                  return (
+                    <div className="bg-flame/10 border-2 border-flame/80 p-5 rounded-sm text-left space-y-2">
+                      <div className="flex items-center gap-2 text-flame text-xs font-bold uppercase tracking-widest font-mono">
+                        <span className="h-2.5 w-2.5 bg-flame rounded-full animate-ping" />
+                        ⚠️ CRITICAL PAYMENT NOTICE: ACCOUNT OVERDUE
+                      </div>
+                      <p className="text-xs text-neutral-300 leading-relaxed font-mono">
+                        You have {overdueList.length} invoice(s) that have crossed their payment due date ({overdueList.map(i => `${i.id}: ${i.amount} (Due ${i.dueDate})`).join(", ")}). Please review the invoice details below and settle payment or attach receipt proof to prevent campaign pause.
+                      </p>
+                    </div>
+                  );
+                }
+                return null;
+              })()}
+
+              {/* Invoices List Table */}
+              <div className="bg-[#0b0b0b] border border-neutral-800 p-6 rounded-sm space-y-4 text-left">
+                <div className="flex items-center justify-between border-b border-neutral-800 pb-3">
+                  <h3 className="text-xs font-bold text-white uppercase tracking-wider">
+                    // Official Invoices & Billing Records ({invoices.length})
+                  </h3>
+                  <span className="text-[9px] text-neutral-500 font-bold uppercase font-mono">
+                    SSL ENCRYPTED BILLING DESK
+                  </span>
+                </div>
+
+                <div className="space-y-4">
+                  {invoices.map((inv) => {
+                    const todayStr = new Date().toISOString().split("T")[0];
+                    const isOverdue = inv.status !== "Paid" && inv.dueDate && todayStr > inv.dueDate;
+
+                    return (
+                      <div
+                        key={inv.id}
+                        className={`p-5 bg-[#0c0c0c] border rounded-sm space-y-4 transition ${
+                          isOverdue
+                            ? "border-flame/80 bg-flame/5"
+                            : inv.status === "Paid"
+                            ? "border-emerald-900/60"
+                            : "border-neutral-800"
+                        }`}
+                      >
+                        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-neutral-900 pb-3">
+                          <div className="space-y-1">
+                            <div className="flex items-center gap-2">
+                              <span className="text-[10px] text-neutral-500 font-mono font-bold">{inv.id}</span>
+                              {inv.status === "Paid" ? (
+                                <span className="bg-emerald-950 text-emerald-300 border border-emerald-800 text-[9px] px-2.5 py-0.5 font-bold uppercase rounded-sm">
+                                  ✓ PAID {inv.paidDate ? `on ${inv.paidDate}` : ""}
+                                </span>
+                              ) : isOverdue ? (
+                                <span className="bg-flame/20 text-flame border border-flame text-[9px] px-2.5 py-0.5 font-bold uppercase rounded-sm animate-pulse">
+                                  ⚠️ OVERDUE (DUE {inv.dueDate})
+                                </span>
+                              ) : (
+                                <span className="bg-amber-950 text-amber-300 border border-amber-800 text-[9px] px-2.5 py-0.5 font-bold uppercase rounded-sm">
+                                  ⏱ PENDING PAYMENT
+                                </span>
+                              )}
+                            </div>
+                            <h4 className="text-sm font-bold text-white uppercase">{inv.title}</h4>
+                          </div>
+
+                          <div className="text-right">
+                            <span className="text-xs text-neutral-500 font-mono block uppercase">Invoice Amount</span>
+                            <span className="text-lg font-bold text-volt font-mono">{inv.amount}</span>
+                          </div>
+                        </div>
+
+                        {/* Dates & File Links Grid */}
+                        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 text-xs font-mono">
+                          <div>
+                            <span className="text-[9px] text-neutral-500 uppercase block font-bold">Issue Date:</span>
+                            <span className="text-neutral-300">{inv.issueDate}</span>
+                          </div>
+
+                          <div>
+                            <span className="text-[9px] text-neutral-500 uppercase block font-bold">Payment Due Date:</span>
+                            <span className={isOverdue ? "text-flame font-bold" : "text-volt font-bold"}>
+                              {inv.dueDate}
+                            </span>
+                          </div>
+
+                          <div>
+                            <span className="text-[9px] text-neutral-500 uppercase block font-bold">Official Invoice File:</span>
+                            {inv.invoiceFile?.url ? (
+                              <a
+                                href={inv.invoiceFile.url}
+                                target="_blank"
+                                rel="noreferrer"
+                                className="inline-flex items-center gap-1.5 bg-neutral-900 border border-neutral-800 hover:border-volt text-volt hover:text-white px-2.5 py-1 rounded-sm text-[10px] uppercase font-bold transition mt-1"
+                              >
+                                📄 Download Invoice ({inv.invoiceFile.name || "PDF"})
+                              </a>
+                            ) : (
+                              <span className="text-neutral-600 italic">No Document Attached</span>
+                            )}
+                          </div>
+                        </div>
+
+                        {/* Attached Receipt File if Paid */}
+                        {inv.receiptFile?.url && (
+                          <div className="p-3 bg-emerald-950/30 border border-emerald-900/60 rounded-sm text-xs font-mono flex items-center justify-between">
+                            <span className="text-emerald-300">✓ Official Payment Receipt: {inv.receiptFile.name}</span>
+                            <a
+                              href={inv.receiptFile.url}
+                              target="_blank"
+                              rel="noreferrer"
+                              className="text-emerald-400 hover:underline font-bold"
+                            >
+                              View / Download Receipt →
+                            </a>
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })}
+
+                  {invoices.length === 0 && (
+                    <div className="text-xs text-neutral-500 italic py-10 text-center border border-dashed border-neutral-850 rounded-sm font-mono">
+                      No invoices published for your workspace desk yet.
                     </div>
                   )}
                 </div>
