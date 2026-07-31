@@ -184,10 +184,7 @@ interface ProjectProgress {
   statusText: string;
 }
 
-const DEFAULT_AGREEMENTS: AgreementDoc[] = [
-  { name: "Master Services Agreement (MSA) - Signed.pdf", date: "Initial Onboarding" },
-  { name: "Non-Disclosure Agreement (NDA) - Executed.pdf", date: "Initial Onboarding" }
-];
+const DEFAULT_AGREEMENTS: AgreementDoc[] = [];
 
 const DEFAULT_PROGRESS: ProjectProgress = {
   percentage: 65,
@@ -223,21 +220,9 @@ const DEFAULT_REQUIREMENTS = [
   { id: "req-status-feed", type: "boolean", label: "Enable Real-Time Status Feed", active: true, submitted: false, value: "" }
 ];
 
-const DEFAULT_STATUSES: StatusUpdate[] = [
-  {
-    text: "Private local LLM configuration is active on GCP sandbox environment and undergoing load-testing.",
-    timestamp: "10:30 AM - Today"
-  },
-  {
-    text: "Initial brand positioning and short-form video draft schedules sent to Division leads.",
-    timestamp: "Yesterday"
-  }
-];
+const DEFAULT_STATUSES: StatusUpdate[] = [];
 
-const DEFAULT_FILES: VaultFile[] = [
-  { name: "typtwo_ops_blueprint_v2.pdf", size: "4.8 MB" },
-  { name: "cloud_deployment_schema.json", size: "320 KB" }
-];
+const DEFAULT_FILES: VaultFile[] = [];
 
 function DashboardPage() {
   const [isMounted, setIsMounted] = useState(false);
