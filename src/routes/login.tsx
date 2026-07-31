@@ -26,7 +26,13 @@ export const Route = createFileRoute("/login")({
   }),
   component: LoginPage
 });import { firebaseAuth } from "../lib/firebase";
-import { signInWithEmailAndPassword, createUserWithEmailAndPassword } from "firebase/auth";
+import { 
+  signInWithEmailAndPassword, 
+  createUserWithEmailAndPassword,
+  sendSignInLinkToEmail,
+  isSignInWithEmailLink,
+  signInWithEmailLink
+} from "firebase/auth";
 
 const DEFAULT_CLIENTS = [
   { id: "acme", name: "Acme Corp", email: "client@company.com" },
@@ -39,17 +45,97 @@ function LoginPage() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [company, setCompany] = useState("");
-  const [otpCode, setOtpCode] = useState("");
-  const [step, setStep] = useState<"credentials" | "otp_verify">("credentials");
+  const [useMagicLink, setUseMagicLink] = useState(false);
+  const [magicLinkSent, setMagicLinkSent] = useState(false);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
 
   useEffect(() => {
+    if (typeof window === "undefined") return;
+
     if (localStorage.getItem("t2_session")) {
       navigate({ to: "/dashboard" });
+      return;
+    }
+
+    // Auto-detect and complete 1-click Email Link verification
+    if (isSignInWithEmailLink(firebaseAuth, window.location.href)) {
+      let emailForSignIn = window.localStorage.getItem("t2_email_for_signIn");
+      if (!emailForSignIn) {
+        emailForSignIn = window.prompt("Please confirm your corporate email address for workspace access:");
+      }
+      if (emailForSignIn) {
+        setLoading(true);
+        signInWithEmailLink(firebaseAuth, emailForSignIn, window.location.href)
+          .then(async (result) => {
+            window.localStorage.removeItem("t2_email_for_signIn");
+            const verifiedEmail = result.user.email || emailForSignIn!;
+            const domain = verifiedEmail.split("@")[1]?.toLowerCase();
+            
+            let companyName = "Corporate Partner";
+            let targetClientId = domain ? domain.split(".")[0] : "acme";
+
+            if (isSupabaseConfigured() && domain) {
+              const { data } = await supabase
+                .from("clients")
+                .select("*")
+                .eq("email_domain", domain)
+                .single();
+
+              if (data) {
+                if (data.disabled === true) {
+                  setError("This corporate workspace login has been disabled by the administrator.");
+                  setLoading(false);
+                  return;
+                }
+                companyName = data.name;
+                targetClientId = data.id;
+              }
+            }
+
+            localStorage.setItem("t2_user_email", verifiedEmail);
+            localStorage.setItem("t2_user_company", companyName);
+            localStorage.setItem("t2_client_id", targetClientId);
+            localStorage.setItem("t2_session", "active");
+
+            window.dispatchEvent(new Event("storage"));
+            window.dispatchEvent(new Event("t2_storage_update"));
+            setLoading(false);
+            navigate({ to: "/dashboard" });
+          })
+          .catch((err) => {
+            setLoading(false);
+            setError("Email link verification error: " + err.message);
+          });
+      }
     }
   }, [navigate]);
+
+  const handleSendMagicLink = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!email.trim()) {
+      setError("Please enter your corporate email address.");
+      return;
+    }
+    setLoading(true);
+    setError("");
+
+    const actionCodeSettings = {
+      url: typeof window !== "undefined" ? window.location.href : "https://www.typtwo.com/login",
+      handleCodeInApp: true
+    };
+
+    try {
+      await sendSignInLinkToEmail(firebaseAuth, email.trim(), actionCodeSettings);
+      window.localStorage.setItem("t2_email_for_signIn", email.trim());
+      setMagicLinkSent(true);
+      setLoading(false);
+    } catch (err: any) {
+      setLoading(false);
+      setError(err.message || "Failed to send magic verification link.");
+    }
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
