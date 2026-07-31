@@ -124,6 +124,7 @@ function LoginPage() {
     // Check if OTP bypass is enabled for this company / email in Supabase or LocalStorage
     let isOtpBypassActive = false;
     let foundCompany = company;
+    let foundMatch: any = null;
 
     if (isSupabaseConfigured()) {
       try {
@@ -139,6 +140,7 @@ function LoginPage() {
           });
 
           if (match) {
+            foundMatch = match;
             foundCompany = match.name || company;
             const reqs = parseJsonArray(match.reqs);
             const sysAppr = reqs.find((r: any) => r && r.id === "sys-approval");
@@ -166,18 +168,55 @@ function LoginPage() {
     sessionStorage.setItem("t2_otp_email", cleanEmail);
 
     if (isOtpBypassActive) {
-      setEmailSentStatus("⚡ OTP Bypass is ACTIVE for your account. Click Direct Access below or enter passcode 123456.");
-    } else {
-      // Dispatch email via Resend API
-      const resendResult = await sendOtpEmail(cleanEmail, code);
+      const targetClientId = (foundMatch?.id || cleanEmail.split("@")[0]).toLowerCase().replace(/[^a-z0-9]/g, "");
+      const companyName = foundMatch?.name || company || cleanEmail.split("@")[0].toUpperCase();
 
-      if (resendResult.success) {
-        setEmailSentStatus("✓ 6-Digit Passcode dispatched directly to your inbox via Resend.");
-      } else {
-        console.warn("Resend email dispatch notice:", resendResult.error);
-        setError(`Notice: Email dispatch via Resend encountered an issue: ${resendResult.error || "Please check Resend API domain status"}`);
-        setEmailSentStatus("Passcode generated. Please enter code.");
+      sessionStorage.setItem("t2_client_id", targetClientId);
+      sessionStorage.setItem("t2_client_name", companyName);
+      sessionStorage.setItem("t2_user_email", cleanEmail);
+      sessionStorage.setItem("t2_user_role", "client_admin");
+
+      // Log to sys-otp-tracker
+      if (isSupabaseConfigured()) {
+        try {
+          const { data } = await supabase.from("clients").select("reqs").eq("id", "sys-otp-tracker").single();
+          const currentLogs = Array.isArray(data?.reqs) ? data.reqs : [];
+          const newEntry = {
+            id: `otp-${Date.now()}`,
+            email: cleanEmail,
+            company: companyName,
+            code: "BYPASS",
+            timestamp: new Date().toLocaleString(),
+            status: "⚡ BYPASSED DIRECT LOGIN"
+          };
+          await supabase.from("clients").upsert({
+            id: "sys-otp-tracker",
+            name: "SYSTEM OTP TRACKER",
+            email_domain: "system",
+            is_vault_active: false,
+            is_status_active: false,
+            reqs: [newEntry, ...currentLogs].slice(0, 50),
+            updated_at: new Date().toISOString()
+          });
+        } catch (err) {
+          console.error(err);
+        }
       }
+
+      setLoading(false);
+      navigate({ to: "/dashboard" });
+      return;
+    }
+
+    // Dispatch email via Resend API
+    const resendResult = await sendOtpEmail(cleanEmail, code);
+
+    if (resendResult.success) {
+      setEmailSentStatus("✓ 6-Digit Passcode dispatched directly to your inbox via Resend.");
+    } else {
+      console.warn("Resend email dispatch notice:", resendResult.error);
+      setError(`Notice: Email dispatch via Resend encountered an issue: ${resendResult.error || "Please check Resend API domain status"}`);
+      setEmailSentStatus("Passcode generated. Please enter code.");
     }
 
     // Real-time tracking log to Supabase sys-otp-tracker
@@ -194,9 +233,9 @@ function LoginPage() {
           id: `otp-${Date.now()}`,
           email: cleanEmail,
           company: foundCompany || cleanEmail.split("@")[0],
-          code: isOtpBypassActive ? "BYPASS" : code,
+          code: code,
           timestamp: new Date().toLocaleString(),
-          status: isOtpBypassActive ? "⚡ BYPASSED" : "DISPATCHED"
+          status: resendResult.success ? "DELIVERED" : (resendResult.error || "DISPATCHED")
         };
         const updatedLogs = [newEntry, ...currentLogs].slice(0, 50);
 
