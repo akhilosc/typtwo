@@ -163,118 +163,94 @@ function LoginPage() {
 
       // Check Supabase Database for Client & Workspace details
       if (isSupabaseConfigured()) {
-        const { data, error: fetchErr } = await supabase
-          .from("clients")
-          .select("*")
-          .eq("email_domain", domain)
-          .single();
+        try {
+          const { data: dbClients } = await supabase.from("clients").select("*");
+          const allClients = Array.isArray(dbClients) ? dbClients : [];
 
-        if (data && !fetchErr) {
-          if (data.disabled === true) {
-            setError("This corporate workspace login has been disabled by the administrator.");
-            setLoading(false);
-            return;
+          const existingMatch = allClients.find((c: any) => {
+            const reqs = Array.isArray(c.reqs) ? c.reqs : [];
+            const logs = Array.isArray(c.audit_logs) ? c.audit_logs : [];
+            const matchId = (company || cleanEmail.split("@")[0]).toLowerCase().replace(/[^a-z0-9]/g, "");
+            return (
+              c.id === matchId ||
+              (company && c.name?.toLowerCase() === company.toLowerCase()) ||
+              reqs.some((r: any) => r && r.registered_email === cleanEmail) ||
+              logs.some((l: any) => l && typeof l.message === "string" && l.message.includes(cleanEmail))
+            );
+          });
+
+          if (existingMatch) {
+            companyName = existingMatch.name;
+            targetClientId = existingMatch.id;
+          } else {
+            targetClientId = (company || cleanEmail.split("@")[0]).toLowerCase().replace(/[^a-z0-9]/g, "");
+            companyName = company || cleanEmail.split("@")[0].toUpperCase();
           }
-
-          const memberObj = (data.members || []).find((m: any) => m.email === cleanEmail);
-          if (memberObj && memberObj.disabled === true) {
-            setError("Your member email access has been disabled by the administrator.");
-            setLoading(false);
-            return;
-          }
-
-          companyName = data.name;
-          targetClientId = data.id;
-        } else {
-          companyName = company || domain.split(".")[0].toUpperCase();
+        } catch (err) {
+          console.error("Supabase lookup error during login:", err);
           targetClientId = (company || cleanEmail.split("@")[0]).toLowerCase().replace(/[^a-z0-9]/g, "");
+          companyName = company || cleanEmail.split("@")[0].toUpperCase();
         }
       } else {
-        const storedList = localStorage.getItem("t2_local_clients_list");
-        if (storedList) {
-          const parsedList = JSON.parse(storedList);
-          const match = parsedList.find((c: any) => c.email.includes(domain) || c.email === cleanEmail);
-          if (match) {
-            companyName = match.name;
-            targetClientId = match.id;
-          }
-        }
-        if (!companyName) {
-          if (cleanEmail === "founder@startuptalky.com") {
-            companyName = "Startup Talky";
-            targetClientId = "startuptalky";
-          } else if (cleanEmail === "team@bitbns.com") {
-            companyName = "BitBNS";
-            targetClientId = "bitbns";
-          } else if (cleanEmail === "client@company.com") {
-            companyName = "Acme Corp";
-            targetClientId = "acme";
-          } else {
-            companyName = company || cleanEmail.split("@")[0].toUpperCase();
-            targetClientId = (company || cleanEmail.split("@")[0]).toLowerCase().replace(/[^a-z0-9]/g, "");
-          }
-        }
+        targetClientId = (company || cleanEmail.split("@")[0]).toLowerCase().replace(/[^a-z0-9]/g, "");
+        companyName = company || cleanEmail.split("@")[0].toUpperCase();
       }
 
       if (!targetClientId) {
         targetClientId = (company || cleanEmail.split("@")[0]).toLowerCase().replace(/[^a-z0-9]/g, "");
       }
 
-      if (isSignUp) {
-        const cleanId = targetClientId;
-        const newClientObj = {
-          id: cleanId,
-          name: companyName,
-          email_domain: domain || "",
-          is_vault_active: true,
-          is_status_active: true,
-          reqs: [
-            { id: "sys-approval", approved: false, disabled: false, registered_email: cleanEmail }
-          ],
-          files: [],
-          agreements: [],
-          milestones: [
-            {
-              id: "m-1",
-              title: "Phase 1: Onboarding & Discovery",
-              percentage: 0,
-              statusText: "Onboarding requested. Awaiting administrator approval.",
-              updatedAt: new Date().toLocaleString(),
-              deliverables: []
-            }
-          ],
-          audit_logs: [{ id: "aud-0", message: `Workspace registered by ${cleanEmail}. Awaiting administrator review.`, timestamp: new Date().toLocaleString() }],
-          statuses: []
-        };
-
-        if (isSupabaseConfigured()) {
-          try {
-            const { error } = await supabase.from("clients").upsert(newClientObj, { onConflict: "id" });
-            if (error) {
-              console.warn("Supabase upsert warning on signup:", error.message);
-            }
-          } catch (err) {
-            console.error("Supabase insert error on signup", err);
+      const cleanId = targetClientId;
+      const newClientObj = {
+        id: cleanId,
+        name: companyName,
+        email_domain: domain || "",
+        is_vault_active: true,
+        is_status_active: true,
+        reqs: [
+          { id: "sys-approval", approved: isSignUp ? false : true, disabled: false, registered_email: cleanEmail }
+        ],
+        files: [],
+        agreements: [],
+        milestones: [
+          {
+            id: "m-1",
+            title: "Phase 1: Onboarding & Discovery",
+            percentage: 0,
+            statusText: "Onboarding requested. Workspace created.",
+            updatedAt: new Date().toLocaleString(),
+            deliverables: []
           }
-        }
+        ],
+        audit_logs: [{ id: "aud-0", message: `Workspace accessed by ${cleanEmail}.`, timestamp: new Date().toLocaleString() }],
+        statuses: []
+      };
 
-        // Always sync to LocalStorage as a fail-safe backup
-        const localClientsKey = "t2_local_clients_list";
-        const currentClients = JSON.parse(localStorage.getItem(localClientsKey) || JSON.stringify(DEFAULT_CLIENTS));
-        if (!currentClients.some((c: any) => c.id === cleanId)) {
-          const nextClients = [...currentClients, { id: cleanId, name: companyName, email: `@${domain}`, approved: false }];
-          localStorage.setItem(localClientsKey, JSON.stringify(nextClients));
+      if (isSupabaseConfigured()) {
+        try {
+          const { error } = await supabase.from("clients").upsert(newClientObj, { onConflict: "id" });
+          if (error) {
+            console.warn("Supabase upsert warning on login/signup:", error.message);
+          }
+        } catch (err) {
+          console.error("Supabase insert error on login/signup", err);
         }
-        if (!localStorage.getItem(`t2_milestones_${cleanId}`)) {
-          localStorage.setItem(`t2_milestones_${cleanId}`, JSON.stringify(newClientObj.milestones));
-        }
-        if (!localStorage.getItem(`t2_milestones_audit_${cleanId}`)) {
-          localStorage.setItem(`t2_milestones_audit_${cleanId}`, JSON.stringify(newClientObj.audit_logs));
-        }
-        localStorage.setItem(`t2_approved_${cleanId}`, "false");
-        window.dispatchEvent(new Event("t2_storage_update"));
-        window.dispatchEvent(new Event("storage"));
       }
+
+      // Always sync to LocalStorage as a fail-safe backup
+      const localClientsKey = "t2_local_clients_list";
+      const currentClients = JSON.parse(localStorage.getItem(localClientsKey) || JSON.stringify(DEFAULT_CLIENTS));
+      if (!currentClients.some((c: any) => c.id === cleanId)) {
+        const nextClients = [...currentClients, { id: cleanId, name: companyName, email: `@${domain}`, approved: false }];
+        localStorage.setItem(localClientsKey, JSON.stringify(nextClients));
+      }
+      if (!localStorage.getItem(`t2_milestones_${cleanId}`)) {
+        localStorage.setItem(`t2_milestones_${cleanId}`, JSON.stringify(newClientObj.milestones));
+      }
+      if (!localStorage.getItem(`t2_milestones_audit_${cleanId}`)) {
+        localStorage.setItem(`t2_milestones_audit_${cleanId}`, JSON.stringify(newClientObj.audit_logs));
+      }
+      localStorage.setItem(`t2_approved_${cleanId}`, "false");
 
       // Save active session keys
       localStorage.setItem("t2_user_email", cleanEmail);
