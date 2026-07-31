@@ -724,17 +724,54 @@ function DashboardPage() {
     e.preventDefault();
     if (!inviteEmail.trim()) return;
 
+    if (members.length >= 5) {
+      setNotifyMsg("⚠️ SEAT LIMIT REACHED (MAX 5 MEMBERS)");
+      alert("Workspace Seat Limit Reached (5/5). Remove an existing member before inviting a new colleague.");
+      return;
+    }
+
+    const cleanEmail = inviteEmail.trim().toLowerCase();
+    if (members.some((m: any) => m && m.email?.toLowerCase() === cleanEmail)) {
+      alert("This email is already an active or pending member of this workspace.");
+      return;
+    }
+
     const newMember = {
-      email: inviteEmail.trim(),
-      role: "Member",
+      email: cleanEmail,
+      role: "Team Member",
       invitedAt: new Date().toLocaleDateString(),
-      status: "Pending Verification"
+      approved: true,
+      status: "Approved"
     };
 
     const updatedMembers = [...members, newMember];
     setMembers(updatedMembers);
     setInviteEmail("");
-    setNotifyMsg("INVITATION SENT FOR REVIEW");
+    setNotifyMsg("TEAMMATE INVITED (SEATS: " + updatedMembers.length + "/5)");
+    setTimeout(() => setNotifyMsg(""), 3000);
+
+    if (isSupabaseConfigured()) {
+      try {
+        await supabase
+          .from("clients")
+          .update({ members: updatedMembers })
+          .eq("id", clientId);
+      } catch (err) {
+        console.error(err);
+      }
+    }
+
+    localStorage.setItem(`t2_members_${clientId}`, JSON.stringify(updatedMembers));
+    window.dispatchEvent(new Event("storage"));
+    window.dispatchEvent(new Event("t2_storage_update"));
+  };
+
+  const handleRemoveMember = async (emailToRemove: string) => {
+    if (!confirm(`Are you sure you want to remove ${emailToRemove} from this workspace?`)) return;
+
+    const updatedMembers = members.filter((m: any) => m && m.email !== emailToRemove);
+    setMembers(updatedMembers);
+    setNotifyMsg("MEMBER REMOVED");
     setTimeout(() => setNotifyMsg(""), 3000);
 
     if (isSupabaseConfigured()) {
@@ -1488,55 +1525,93 @@ function DashboardPage() {
 
           {/* Team Members Invite Widget (Visible when approved) */}
           {approved && (
-            <div className="bg-[#0b0b0b] border border-neutral-800 p-5 rounded-sm grid grid-cols-1 md:grid-cols-2 gap-8 text-left mt-8">
+            <div className="bg-[#0b0b0b] border border-neutral-800 p-5 rounded-sm grid grid-cols-1 md:grid-cols-2 gap-8 text-left mt-8 font-mono">
               {/* Left Column: Invite Teammate */}
-              <div className="space-y-4 font-mono">
+              <div className="space-y-4">
                 <div className="space-y-1.5">
-                  <h3 className="text-xs font-bold text-white uppercase tracking-wider flex items-center gap-2">
-                    <span>// Team Vault Access</span>
-                    {notifyMsg && (
-                      <span className="text-[9px] text-volt uppercase font-bold animate-pulse">● {notifyMsg}</span>
-                    )}
-                  </h3>
-                  <p className="text-[10px] text-neutral-450 font-bold uppercase">
-                    Invite colleagues from your corporate domain to view this campaign board. All invitations require manual verification by Typtwo Operations.
+                  <div className="flex items-center justify-between">
+                    <h3 className="text-xs font-bold text-white uppercase tracking-wider flex items-center gap-2">
+                      <span>// Corporate Team Access</span>
+                      {notifyMsg && (
+                        <span className="text-[9px] text-volt uppercase font-bold animate-pulse">● {notifyMsg}</span>
+                      )}
+                    </h3>
+                    <span className="text-[10px] font-bold text-volt uppercase bg-neutral-900 border border-neutral-800 px-2 py-0.5 rounded-sm">
+                      Seats: {members.length} / 5
+                    </span>
+                  </div>
+
+                  {/* Seat allocation visual bar */}
+                  <div className="w-full bg-neutral-950 h-2 border border-neutral-850 rounded-xs overflow-hidden">
+                    <div
+                      className={`h-full transition-all duration-500 ${members.length >= 5 ? "bg-flame" : "bg-volt"}`}
+                      style={{ width: `${Math.min(100, (members.length / 5) * 100)}%` }}
+                    />
+                  </div>
+
+                  <p className="text-[10px] text-neutral-450 font-bold uppercase pt-1">
+                    Each company workspace allows up to 5 corporate team members. Teammates can log in to view project progress, shared deliverables, and status feeds.
                   </p>
                 </div>
 
-                <form onSubmit={handleInviteMember} className="flex gap-2">
-                  <input
-                    type="email"
-                    placeholder="coworker@company.com"
-                    value={inviteEmail}
-                    onChange={(e) => setInviteEmail(e.target.value)}
-                    className="flex-grow bg-neutral-950 border border-neutral-800 rounded-sm px-3 py-1.5 text-xs text-white focus:outline-none focus:border-volt"
-                    required
-                  />
-                  <button
-                    type="submit"
-                    className="bg-volt text-black hover:bg-white text-xs px-4 py-1.5 font-bold uppercase rounded-sm cursor-pointer transition"
-                  >
-                    Invite
-                  </button>
-                </form>
+                {members.length < 5 ? (
+                  <form onSubmit={handleInviteMember} className="flex gap-2">
+                    <input
+                      type="email"
+                      placeholder="teammate@company.com"
+                      value={inviteEmail}
+                      onChange={(e) => setInviteEmail(e.target.value)}
+                      className="flex-grow bg-neutral-950 border border-neutral-800 rounded-sm px-3 py-1.5 text-xs text-white focus:outline-none focus:border-volt"
+                      required
+                    />
+                    <button
+                      type="submit"
+                      className="bg-volt text-black hover:bg-white text-xs px-4 py-1.5 font-bold uppercase rounded-sm cursor-pointer transition"
+                    >
+                      Invite
+                    </button>
+                  </form>
+                ) : (
+                  <div className="p-3 bg-red-950/40 border border-red-900 text-red-300 text-[10px] uppercase font-bold text-center rounded-sm">
+                    ⚠️ Maximum seat capacity reached (5 / 5 Members). Remove an existing member to invite a new colleague.
+                  </div>
+                )}
               </div>
 
               {/* Right Column: Teammates list */}
-              <div className="space-y-3 font-mono">
-                <h4 className="text-[9px] text-neutral-500 uppercase tracking-widest font-bold">// Active Team Access</h4>
-                <div className="space-y-2 max-h-[120px] overflow-y-auto pr-1">
+              <div className="space-y-3">
+                <div className="flex items-center justify-between">
+                  <h4 className="text-[9px] text-neutral-500 uppercase tracking-widest font-bold">// Active Team Members ({members.length}/5)</h4>
+                </div>
+                <div className="space-y-2 max-h-[160px] overflow-y-auto pr-1">
                   {members.map((m: any, idx: number) => (
                     <div key={idx} className="bg-neutral-950 border border-neutral-900 px-3 py-2 rounded-sm flex items-center justify-between text-[11px]">
-                      <span className="text-white truncate pr-2">{m.email}</span>
-                      <span className={`text-[9px] font-bold uppercase ${m.approved ? "text-volt" : "text-flame animate-pulse"}`}>
-                        {m.approved ? "Approved ●" : "Awaiting Verification ○"}
-                      </span>
+                      <div className="truncate pr-2 space-y-0.5">
+                        <div className="text-white font-bold truncate">{m.email}</div>
+                        <div className="text-[9px] text-neutral-500 uppercase font-semibold">
+                          Role: {m.role || "Team Member"}
+                        </div>
+                      </div>
+
+                      <div className="flex items-center gap-2 flex-shrink-0">
+                        <span className="text-[9px] font-bold uppercase text-volt">
+                          Active ●
+                        </span>
+                        <button
+                          type="button"
+                          onClick={() => handleRemoveMember(m.email)}
+                          className="text-[9px] text-neutral-500 hover:text-flame font-bold uppercase hover:underline cursor-pointer ml-1"
+                          title="Remove member from workspace"
+                        >
+                          [Remove]
+                        </button>
+                      </div>
                     </div>
                   ))}
 
                   {members.length === 0 && (
-                    <div className="text-[10px] text-neutral-500 italic py-2">
-                      No other team members have requested access to this workspace.
+                    <div className="text-[10px] text-neutral-500 italic py-3 text-center border border-dashed border-neutral-850 rounded-sm">
+                      No other team members have been added to this workspace yet. (0/5 Seats Used)
                     </div>
                   )}
                 </div>

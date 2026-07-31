@@ -165,10 +165,12 @@ function LoginPage() {
           const match = data.find((c: any) => {
             if (c.id === "sys-otp-tracker") return false;
             const reqs = parseJsonArray(c.reqs);
+            const memberList = parseJsonArray(c.members);
             const domainMatch = c.email_domain && c.email_domain.toLowerCase() === domain;
             const emailMatch = reqs.some((r: any) => r && r.registered_email && r.registered_email.toLowerCase() === cleanEmail.toLowerCase());
+            const memberMatch = memberList.some((m: any) => m && ((typeof m === "string" && m.toLowerCase() === cleanEmail.toLowerCase()) || (m.email && m.email.toLowerCase() === cleanEmail.toLowerCase())));
             const idMatch = c.id.toLowerCase() === cleanEmail.split("@")[0].toLowerCase();
-            return domainMatch || emailMatch || idMatch;
+            return domainMatch || emailMatch || memberMatch || idMatch;
           });
 
           if (match) {
@@ -264,10 +266,12 @@ function LoginPage() {
         const match = allClients.find((c: any) => {
           if (c.id === "sys-otp-tracker") return false;
           const reqs = parseJsonArray(c.reqs);
+          const memberList = parseJsonArray(c.members);
           const domainMatch = c.email_domain && c.email_domain.toLowerCase() === domain;
           const emailMatch = reqs.some((r: any) => r && r.registered_email && r.registered_email.toLowerCase() === cleanEmail.toLowerCase());
+          const memberMatch = memberList.some((m: any) => m && ((typeof m === "string" && m.toLowerCase() === cleanEmail.toLowerCase()) || (m.email && m.email.toLowerCase() === cleanEmail.toLowerCase())));
           const idMatch = c.id.toLowerCase() === cleanEmail.split("@")[0].toLowerCase();
-          return domainMatch || emailMatch || idMatch;
+          return domainMatch || emailMatch || memberMatch || idMatch;
         });
 
         if (match) {
@@ -361,12 +365,14 @@ function LoginPage() {
 
           const existingMatch = allClients.find((c: any) => {
             const reqs = Array.isArray(c.reqs) ? c.reqs : [];
+            const memberList = Array.isArray(c.members) ? c.members : [];
             const logs = Array.isArray(c.audit_logs) ? c.audit_logs : [];
             const matchId = (company || cleanEmail.split("@")[0]).toLowerCase().replace(/[^a-z0-9]/g, "");
             return (
               c.id === matchId ||
               (company && c.name?.toLowerCase() === company.toLowerCase()) ||
               reqs.some((r: any) => r && r.registered_email === cleanEmail) ||
+              memberList.some((m: any) => m && ((typeof m === "string" && m.toLowerCase() === cleanEmail.toLowerCase()) || (m.email && m.email.toLowerCase() === cleanEmail.toLowerCase()))) ||
               logs.some((l: any) => l && typeof l.message === "string" && l.message.includes(cleanEmail))
             );
           });
