@@ -64,8 +64,8 @@ function LoginPage() {
     }
   }, [navigate]);
 
-  // Request 6-digit OTP passcode via Resend API
-  const handleRequestOtp = async (e: React.FormEvent) => {
+  // STEP 1: Enter email and check if OTP or Bypass/Password mode
+  const handleStep1Continue = async (e: React.FormEvent) => {
     e.preventDefault();
     setError("");
     setEmailSentStatus("");
@@ -86,45 +86,8 @@ function LoginPage() {
       return;
     }
 
-    // Check if Password authentication matches account password
-    if (password && isSupabaseConfigured()) {
-      try {
-        const { data } = await supabase.from("clients").select("*");
-        if (data) {
-          const match = data.find((c: any) => {
-            if (c.id === "sys-otp-tracker") return false;
-            const reqs = parseJsonArray(c.reqs);
-            const domainMatch = c.email_domain && c.email_domain.toLowerCase() === domain;
-            const emailMatch = reqs.some((r: any) => r && r.registered_email && r.registered_email.toLowerCase() === cleanEmail.toLowerCase());
-            const idMatch = c.id.toLowerCase() === cleanEmail.split("@")[0].toLowerCase();
-            return domainMatch || emailMatch || idMatch;
-          });
-
-          if (match) {
-            const reqs = parseJsonArray(match.reqs);
-            const sysAppr = reqs.find((r: any) => r && r.id === "sys-approval");
-            const expectedPassword = sysAppr?.password || localStorage.getItem(`t2_password_${match.id}`);
-            if (expectedPassword && password.trim() === expectedPassword.trim()) {
-              // Direct Password Login Success!
-              sessionStorage.setItem("t2_client_id", match.id);
-              sessionStorage.setItem("t2_client_name", match.name);
-              sessionStorage.setItem("t2_user_email", cleanEmail);
-              sessionStorage.setItem("t2_user_role", "client_admin");
-              setLoading(false);
-              navigate({ to: "/dashboard" });
-              return;
-            }
-          }
-        }
-      } catch (err) {
-        console.error(err);
-      }
-    }
-
-    // Check if OTP bypass is enabled for this company / email in Supabase or LocalStorage
-    let isOtpBypassActive = false;
-    let foundCompany = company;
-    let foundMatch: any = null;
+    let isBypass = false;
+    let foundComp = company;
 
     if (isSupabaseConfigured()) {
       try {
@@ -140,12 +103,11 @@ function LoginPage() {
           });
 
           if (match) {
-            foundMatch = match;
-            foundCompany = match.name || company;
+            foundComp = match.name || company;
             const reqs = parseJsonArray(match.reqs);
             const sysAppr = reqs.find((r: any) => r && r.id === "sys-approval");
-            if (sysAppr?.otp_bypass === true) {
-              isOtpBypassActive = true;
+            if (sysAppr?.otp_bypass === true || sysAppr?.password) {
+              isBypass = true;
             }
           }
         }
@@ -154,102 +116,59 @@ function LoginPage() {
       }
     }
 
-    if (!isOtpBypassActive) {
+    if (!isBypass) {
       const targetId = cleanEmail.split("@")[0].toLowerCase();
-      if (localStorage.getItem(`t2_otp_bypass_${targetId}`) === "true") {
-        isOtpBypassActive = true;
+      if (localStorage.getItem(`t2_otp_bypass_${targetId}`) === "true" || localStorage.getItem(`t2_password_${targetId}`)) {
+        isBypass = true;
       }
     }
 
-    // Generate random 6-digit OTP passcode
+    setIsBypassMode(isBypass);
+
+    if (isBypass) {
+      setEmailSentStatus("⚡ Account configured for Password / Bypass authentication. Enter password below.");
+      setOtpSent(true);
+      setLoading(false);
+      return;
+    }
+
     const code = Math.floor(100000 + Math.random() * 900000).toString();
     setGeneratedOtp(code);
     sessionStorage.setItem("t2_active_otp", code);
     sessionStorage.setItem("t2_otp_email", cleanEmail);
 
-    if (isOtpBypassActive) {
-      const targetClientId = (foundMatch?.id || cleanEmail.split("@")[0]).toLowerCase().replace(/[^a-z0-9]/g, "");
-      const companyName = foundMatch?.name || company || cleanEmail.split("@")[0].toUpperCase();
-
-      sessionStorage.setItem("t2_client_id", targetClientId);
-      sessionStorage.setItem("t2_client_name", companyName);
-      sessionStorage.setItem("t2_user_email", cleanEmail);
-      sessionStorage.setItem("t2_user_role", "client_admin");
-
-      // Log to sys-otp-tracker
-      if (isSupabaseConfigured()) {
-        try {
-          const { data } = await supabase.from("clients").select("reqs").eq("id", "sys-otp-tracker").single();
-          const currentLogs = Array.isArray(data?.reqs) ? data.reqs : [];
-          const newEntry = {
-            id: `otp-${Date.now()}`,
-            email: cleanEmail,
-            company: companyName,
-            code: "BYPASS",
-            timestamp: new Date().toLocaleString(),
-            status: "⚡ BYPASSED DIRECT LOGIN"
-          };
-          await supabase.from("clients").upsert({
-            id: "sys-otp-tracker",
-            name: "SYSTEM OTP TRACKER",
-            email_domain: "system",
-            is_vault_active: false,
-            is_status_active: false,
-            reqs: [newEntry, ...currentLogs].slice(0, 50),
-            updated_at: new Date().toISOString()
-          });
-        } catch (err) {
-          console.error(err);
-        }
-      }
-
-      setLoading(false);
-      navigate({ to: "/dashboard" });
-      return;
-    }
-
-    // Dispatch email via Resend API
     const resendResult = await sendOtpEmail(cleanEmail, code);
-
     if (resendResult.success) {
       setEmailSentStatus("✓ 6-Digit Passcode dispatched directly to your inbox via Resend.");
     } else {
       console.warn("Resend email dispatch notice:", resendResult.error);
       setError(`Notice: Email dispatch via Resend encountered an issue: ${resendResult.error || "Please check Resend API domain status"}`);
-      setEmailSentStatus("Passcode generated. Please enter code.");
+      setEmailSentStatus("Passcode generated. Please enter code below.");
     }
 
-    // Real-time tracking log to Supabase sys-otp-tracker
     if (isSupabaseConfigured()) {
       try {
-        const { data } = await supabase
-          .from("clients")
-          .select("reqs")
-          .eq("id", "sys-otp-tracker")
-          .single();
-
+        const { data } = await supabase.from("clients").select("reqs").eq("id", "sys-otp-tracker").single();
         const currentLogs = Array.isArray(data?.reqs) ? data.reqs : [];
         const newEntry = {
           id: `otp-${Date.now()}`,
           email: cleanEmail,
-          company: foundCompany || cleanEmail.split("@")[0],
+          company: foundComp || cleanEmail.split("@")[0],
           code: code,
           timestamp: new Date().toLocaleString(),
           status: resendResult.success ? "DELIVERED" : (resendResult.error || "DISPATCHED")
         };
-        const updatedLogs = [newEntry, ...currentLogs].slice(0, 50);
-
         await supabase.from("clients").upsert({
           id: "sys-otp-tracker",
           name: "SYSTEM OTP TRACKER",
           email_domain: "system",
           is_vault_active: false,
           is_status_active: false,
-          reqs: updatedLogs,
+          reqs: [newEntry, ...currentLogs].slice(0, 50),
           updated_at: new Date().toISOString()
         });
       } catch (err) {
-        console.error("Failed to persist OTP log to Supabase:", err);
+        console.error(err);
       }
     }
 
@@ -258,14 +177,71 @@ function LoginPage() {
     setLoading(false);
   };
 
-  // Handle typing inside 6-digit OTP boxes
+  const handlePasswordLogin = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setLoading(true);
+    setError("");
+
+    const cleanEmail = email.trim();
+    const domain = cleanEmail.split("@")[1]?.toLowerCase();
+    let companyName = company;
+    let targetClientId = cleanEmail.split("@")[0].toLowerCase();
+
+    if (isSupabaseConfigured()) {
+      try {
+        const { data: dbClients } = await supabase.from("clients").select("*");
+        const allClients = Array.isArray(dbClients) ? dbClients : [];
+
+        const match = allClients.find((c: any) => {
+          if (c.id === "sys-otp-tracker") return false;
+          const reqs = parseJsonArray(c.reqs);
+          const domainMatch = c.email_domain && c.email_domain.toLowerCase() === domain;
+          const emailMatch = reqs.some((r: any) => r && r.registered_email && r.registered_email.toLowerCase() === cleanEmail.toLowerCase());
+          const idMatch = c.id.toLowerCase() === cleanEmail.split("@")[0].toLowerCase();
+          return domainMatch || emailMatch || idMatch;
+        });
+
+        if (match) {
+          companyName = match.name;
+          targetClientId = match.id;
+          const reqs = parseJsonArray(match.reqs);
+          const sysAppr = reqs.find((r: any) => r && r.id === "sys-approval");
+          const expectedPassword = sysAppr?.password || localStorage.getItem(`t2_password_${match.id}`);
+
+          if (expectedPassword && password.trim() !== expectedPassword.trim()) {
+            setError("Incorrect password. Please verify your password and try again.");
+            setLoading(false);
+            return;
+          }
+        }
+      } catch (err) {
+        console.error(err);
+      }
+    }
+
+    sessionStorage.setItem("t2_client_id", targetClientId);
+    sessionStorage.setItem("t2_client_name", companyName || targetClientId.toUpperCase());
+    sessionStorage.setItem("t2_user_email", cleanEmail);
+    sessionStorage.setItem("t2_user_role", "client_admin");
+
+    localStorage.setItem("t2_user_email", cleanEmail);
+    localStorage.setItem("t2_user_company", companyName || targetClientId.toUpperCase());
+    localStorage.setItem("t2_client_id", targetClientId);
+    localStorage.setItem("t2_session", "active");
+
+    window.dispatchEvent(new Event("storage"));
+    window.dispatchEvent(new Event("t2_storage_update"));
+
+    setLoading(false);
+    navigate({ to: "/dashboard" });
+  };
+
   const handleOtpChange = (index: number, value: string) => {
     if (!/^\d*$/.test(value)) return;
     const newDigits = [...otpDigits];
     newDigits[index] = value.slice(-1);
     setOtpDigits(newDigits);
 
-    // Auto-focus next box
     if (value && index < 5) {
       inputRefs.current[index + 1]?.focus();
     }
@@ -277,7 +253,6 @@ function LoginPage() {
     }
   };
 
-  // Verify entered 6-digit OTP code
   const handleVerifyOtp = async (e?: React.FormEvent) => {
     if (e) e.preventDefault();
     const enteredCode = otpDigits.join("");
@@ -288,7 +263,7 @@ function LoginPage() {
 
     if (enteredCode !== activeOtp && enteredCode !== "123456" && !isLocalBypass) {
       if (enteredCode.length < 6) {
-        setError("Please enter the full 6-digit OTP code or click Direct Login.");
+        setError("Please enter the full 6-digit OTP code.");
         return;
       }
       setError("Invalid OTP passcode. Please check your email inbox and try again.");
@@ -304,16 +279,6 @@ function LoginPage() {
     let targetClientId = "";
 
     try {
-      // Firebase Auth attempt if password provided
-      if (password) {
-        if (isSignUp) {
-          await createUserWithEmailAndPassword(firebaseAuth, cleanEmail, password).catch(() => {});
-        } else {
-          await signInWithEmailAndPassword(firebaseAuth, cleanEmail, password).catch(() => {});
-        }
-      }
-
-      // Check Supabase Database for Client & Workspace details
       if (isSupabaseConfigured()) {
         try {
           const { data: dbClients } = await supabase.from("clients").select("*");
@@ -353,61 +318,14 @@ function LoginPage() {
       }
 
       const cleanId = targetClientId;
-      const newClientObj = {
-        id: cleanId,
-        name: companyName,
-        email_domain: domain || "",
-        is_vault_active: true,
-        is_status_active: true,
-        reqs: [
-          { id: "sys-approval", approved: false, disabled: false, registered_email: cleanEmail }
-        ],
-        files: [],
-        agreements: [],
-        milestones: [
-          {
-            id: "m-1",
-            title: "Phase 1: Onboarding & Discovery",
-            percentage: 0,
-            statusText: "Onboarding requested. Workspace created.",
-            updatedAt: new Date().toLocaleString(),
-            deliverables: []
-          }
-        ],
-        audit_logs: [{ id: "aud-0", message: `Workspace accessed by ${cleanEmail}.`, timestamp: new Date().toLocaleString() }],
-        statuses: []
-      };
+      sessionStorage.setItem("t2_client_id", cleanId);
+      sessionStorage.setItem("t2_client_name", companyName);
+      sessionStorage.setItem("t2_user_email", cleanEmail);
+      sessionStorage.setItem("t2_user_role", "client_admin");
 
-      if (isSupabaseConfigured()) {
-        try {
-          const { error } = await supabase.from("clients").upsert(newClientObj, { onConflict: "id" });
-          if (error) {
-            console.warn("Supabase upsert warning on login/signup:", error.message);
-          }
-        } catch (err) {
-          console.error("Supabase insert error on login/signup", err);
-        }
-      }
-
-      // Always sync to LocalStorage as a fail-safe backup
-      const localClientsKey = "t2_local_clients_list";
-      const currentClients = JSON.parse(localStorage.getItem(localClientsKey) || JSON.stringify(DEFAULT_CLIENTS));
-      if (!currentClients.some((c: any) => c.id === cleanId)) {
-        const nextClients = [...currentClients, { id: cleanId, name: companyName, email: `@${domain}`, approved: false }];
-        localStorage.setItem(localClientsKey, JSON.stringify(nextClients));
-      }
-      if (!localStorage.getItem(`t2_milestones_${cleanId}`)) {
-        localStorage.setItem(`t2_milestones_${cleanId}`, JSON.stringify(newClientObj.milestones));
-      }
-      if (!localStorage.getItem(`t2_milestones_audit_${cleanId}`)) {
-        localStorage.setItem(`t2_milestones_audit_${cleanId}`, JSON.stringify(newClientObj.audit_logs));
-      }
-      localStorage.setItem(`t2_approved_${cleanId}`, "false");
-
-      // Save active session keys
       localStorage.setItem("t2_user_email", cleanEmail);
       localStorage.setItem("t2_user_company", companyName);
-      localStorage.setItem("t2_client_id", targetClientId);
+      localStorage.setItem("t2_client_id", cleanId);
       localStorage.setItem("t2_session", "active");
 
       window.dispatchEvent(new Event("storage"));
@@ -458,8 +376,8 @@ function LoginPage() {
         accent="volt"
         meta={[
           { label: "Portal", value: "Client Workspace" },
-          { label: "Provider", value: "Resend API" },
-          { label: "Verification", value: "6-Digit Email OTP" }
+          { label: "Provider", value: "Resend API / Passcode" },
+          { label: "Verification", value: isBypassMode ? "Account Password" : "6-Digit Email OTP" }
         ]}
       />
 
@@ -492,8 +410,96 @@ function LoginPage() {
             </div>
           )}
 
-          {otpSent ? (
-            /* STEP 2: 6-DIGIT OTP VERIFICATION SCREEN */
+          {!otpSent ? (
+            /* STEP 1: ENTER EMAIL ADDRESS & CONTINUE */
+            <form onSubmit={handleStep1Continue} className="space-y-6">
+              <div>
+                <label className="block mono text-[11px] uppercase tracking-wider font-bold mb-2">
+                  Corporate Email Address *
+                </label>
+                <input
+                  type="email"
+                  placeholder="name@company.com"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  className="w-full p-4 border-2 border-ink mono text-sm bg-paper focus:outline-none focus:bg-volt focus:text-black font-bold"
+                  required
+                />
+              </div>
+
+              {isSignUp && (
+                <div>
+                  <label className="block mono text-[11px] uppercase tracking-wider font-bold mb-2">
+                    Company Name *
+                  </label>
+                  <input
+                    type="text"
+                    placeholder="e.g. Acme Corp"
+                    value={company}
+                    onChange={(e) => setCompany(e.target.value)}
+                    className="w-full p-4 border-2 border-ink mono text-sm bg-paper focus:outline-none focus:bg-volt focus:text-black font-bold"
+                    required
+                  />
+                </div>
+              )}
+
+              <button
+                type="submit"
+                disabled={loading}
+                className="w-full brute bg-ink text-paper hover:bg-volt hover:text-ink py-4 mono text-xs uppercase tracking-widest font-bold transition-colors cursor-pointer disabled:opacity-50"
+              >
+                {loading ? "Checking Account Credentials..." : "Continue →"}
+              </button>
+            </form>
+          ) : isBypassMode ? (
+            /* STEP 2A: PASSWORD LOGIN SCREEN */
+            <form onSubmit={handlePasswordLogin} className="space-y-6">
+              <div className="p-4 bg-emerald-950 text-emerald-300 border-2 border-emerald-800 mono text-xs uppercase font-bold tracking-wider text-left space-y-2">
+                <div className="flex items-center gap-2 text-volt text-xs font-bold">
+                  ⚡ ACCOUNT PASSWORD / BYPASS AUTHENTICATION
+                </div>
+                <p className="text-neutral-300 text-[11px] font-normal normal-case">
+                  Your account is configured for direct password authentication.
+                </p>
+                <div className="text-white text-sm select-all font-mono font-bold border-t border-emerald-900 pt-2">
+                  {email}
+                </div>
+              </div>
+
+              <div>
+                <label className="block mono text-[11px] uppercase tracking-wider font-bold mb-2 text-left">
+                  Account Password
+                </label>
+                <input
+                  type="password"
+                  placeholder="Enter account password..."
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  className="w-full p-4 border-2 border-ink mono text-sm bg-paper focus:outline-none focus:bg-volt focus:text-black font-bold"
+                  autoFocus
+                />
+              </div>
+
+              <div className="space-y-3">
+                <button
+                  type="submit"
+                  disabled={loading}
+                  className="w-full brute bg-volt text-black hover:bg-black hover:text-white py-4 mono text-xs uppercase tracking-widest font-black transition-colors cursor-pointer border-2 border-black"
+                >
+                  {loading ? "Authenticating..." : "Sign In to Workspace →"}
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => setOtpSent(false)}
+                  className="w-full bg-paper border border-ink text-ink hover:bg-neutral-200 py-3 mono text-xs uppercase tracking-wider font-bold transition-colors cursor-pointer"
+                >
+                  ← Change Email Address
+                </button>
+              </div>
+            </form>
+          ) : (
+            /* STEP 2B: 6-DIGIT OTP VERIFICATION SCREEN */
             <form onSubmit={handleVerifyOtp} className="space-y-6 text-center">
               <div className="p-4 bg-emerald-950 text-emerald-300 border-2 border-emerald-800 mono text-xs uppercase font-bold tracking-wider leading-relaxed text-left space-y-2">
                 <div className="flex items-center gap-2 text-volt text-xs">
@@ -508,11 +514,6 @@ function LoginPage() {
                 </div>
               </div>
 
-              <p className="mono text-xs text-muted-foreground leading-relaxed">
-                Please check your inbox for subject <strong className="text-ink">"⚡ Your 6-Digit Security Passcode"</strong> and enter the 6 digits below.
-              </p>
-
-              {/* 6-DIGIT OTP INPUT BOXES */}
               <div className="flex justify-center gap-2 font-mono">
                 {otpDigits.map((digit, index) => (
                   <input
@@ -540,77 +541,21 @@ function LoginPage() {
 
                 <button
                   type="button"
-                  onClick={() => handleVerifyOtp()}
-                  className="w-full bg-volt text-black hover:bg-white py-3.5 mono text-xs uppercase tracking-widest font-black transition-colors cursor-pointer border-2 border-black"
-                >
-                  ⚡ Direct Workspace Login (OTP Bypass) →
-                </button>
-
-                <button
-                  type="button"
                   onClick={handleResendOtp}
                   disabled={loading}
                   className="w-full bg-paper border border-ink text-ink hover:bg-neutral-200 py-3 mono text-xs uppercase tracking-wider font-bold transition-colors cursor-pointer disabled:opacity-50"
                 >
-                  {loading ? "Re-dispatching Passcode..." : "↻ Resend Verification Code"}
+                  Resend 6-Digit Code ↻
                 </button>
 
                 <button
                   type="button"
                   onClick={() => setOtpSent(false)}
-                  className="mono text-[10px] text-neutral-500 hover:text-ink uppercase tracking-wider font-bold underline transition-colors cursor-pointer block mx-auto pt-1"
+                  className="w-full text-xs text-neutral-600 hover:text-black uppercase font-bold text-center mt-2 cursor-pointer"
                 >
                   ← Change Email Address
                 </button>
               </div>
-            </form>
-          ) : (
-            /* STEP 1: EMAIL & CREDENTIALS FORM */
-            <form onSubmit={handleRequestOtp} className="space-y-6">
-              {isSignUp && (
-                <div>
-                  <label className="block mono text-[10px] uppercase tracking-widest text-muted-foreground mb-2">Company Name *</label>
-                  <input
-                    type="text"
-                    value={company}
-                    onChange={(e) => setCompany(e.target.value)}
-                    placeholder="e.g. Acme Corp"
-                    className="w-full bg-paper border-2 border-ink px-4 py-3 focus:outline-none focus:bg-volt/10 mono text-sm"
-                    required
-                  />
-                </div>
-              )}
-
-              <div>
-                <label className="block mono text-[10px] uppercase tracking-widest text-muted-foreground mb-2">Corporate Email Address *</label>
-                <input
-                  type="email"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  placeholder="client@company.com"
-                  className="w-full bg-paper border-2 border-ink px-4 py-3 focus:outline-none focus:bg-volt/10 mono text-sm"
-                  required
-                />
-              </div>
-
-              <div>
-                <label className="block mono text-[10px] uppercase tracking-widest text-muted-foreground mb-2">Password (Optional)</label>
-                <input
-                  type="password"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  placeholder="••••••••"
-                  className="w-full bg-paper border-2 border-ink px-4 py-3 focus:outline-none focus:bg-volt/10 mono text-sm"
-                />
-              </div>
-
-              <button
-                type="submit"
-                disabled={loading}
-                className="w-full brute bg-ink text-paper hover:bg-volt hover:text-ink py-4 mono text-xs uppercase tracking-widest font-bold transition-colors cursor-pointer disabled:opacity-50"
-              >
-                {loading ? "Dispatching 6-Digit Passcode via Resend..." : (isSignUp ? "Send Registration 6-Digit OTP →" : "Send 6-Digit Login OTP to Email →")}
-              </button>
             </form>
           )}
         </div>
