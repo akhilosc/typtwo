@@ -320,7 +320,56 @@ function AdminPage() {
   const [onboardId, setOnboardId] = useState("");
   const [onboardName, setOnboardName] = useState("");
   const [onboardDomain, setOnboardDomain] = useState("");
+  const [onboardEmail, setOnboardEmail] = useState("");
+  const [onboardAutoApprove, setOnboardAutoApprove] = useState(true);
+  const [onboardOtpBypass, setOnboardOtpBypass] = useState(true);
   const [reqs, setReqs] = useState<Requirement[]>([]);
+
+  // Toggle OTP Bypass for a company
+  const handleToggleOtpBypass = async (targetClientId: string, currentBypass: boolean) => {
+    const newBypass = !currentBypass;
+    if (isSupabaseConfigured()) {
+      try {
+        const { data } = await supabase
+          .from("clients")
+          .select("reqs")
+          .eq("id", targetClientId)
+          .single();
+
+        const currentReqs = parseArray(data?.reqs);
+        const existingApproval = currentReqs.find((r: any) => r && r.id === "sys-approval") || {};
+        const updatedReqs = currentReqs.filter((r: any) => r && r.id !== "sys-approval");
+
+        updatedReqs.push({
+          ...existingApproval,
+          id: "sys-approval",
+          approved: existingApproval.approved ?? true,
+          disabled: existingApproval.disabled ?? false,
+          otp_bypass: newBypass
+        });
+
+        const { error } = await supabase
+          .from("clients")
+          .update({ reqs: updatedReqs })
+          .eq("id", targetClientId);
+
+        if (!error) {
+          setAllDbClients((prev) => prev.map((c) => c.id === targetClientId ? { ...c, reqs: updatedReqs } : c));
+          setNotifyMsg(newBypass ? "OTP BYPASS ENABLED" : "OTP BYPASS DISABLED");
+          setTimeout(() => setNotifyMsg(""), 2000);
+          return;
+        }
+      } catch (err) {
+        console.error(err);
+      }
+    }
+
+    setSafeLocalStorage(`t2_otp_bypass_${targetClientId}`, newBypass ? "true" : "false");
+    setNotifyMsg(newBypass ? "OTP BYPASS ENABLED" : "OTP BYPASS DISABLED");
+    setTimeout(() => setNotifyMsg(""), 2000);
+    window.dispatchEvent(new Event("storage"));
+    window.dispatchEvent(new Event("t2_storage_update"));
+  };
   
   // Master Overview vs Selected Company Workspace Mode
   const [viewMode, setViewMode] = useState<"master" | "company">("master");
@@ -462,16 +511,25 @@ function AdminPage() {
 
     const cleanId = onboardId.trim().toLowerCase().replace(/\s+/g, "");
     const cleanDomain = onboardDomain.trim().toLowerCase().replace(/\s+/g, "");
+    const cleanEmail = onboardEmail.trim().toLowerCase();
 
     const newClientObj = {
       id: cleanId,
       name: onboardName.trim(),
       email_domain: cleanDomain,
-      reqs: [],
+      reqs: [
+        {
+          id: "sys-approval",
+          approved: onboardAutoApprove,
+          disabled: false,
+          registered_email: cleanEmail || undefined,
+          otp_bypass: onboardOtpBypass
+        }
+      ],
       files: [],
       agreements: [],
       milestones: DEFAULT_MILESTONES,
-      audit_logs: [{ id: "aud-0", message: "Client milestones database initialized.", timestamp: new Date().toLocaleString() }],
+      audit_logs: [{ id: "aud-0", message: `Workspace created by administrator${cleanEmail ? ` for ${cleanEmail}` : ""}.`, timestamp: new Date().toLocaleString() }],
       statuses: []
     };
 
@@ -482,12 +540,13 @@ function AdminPage() {
           .insert(newClientObj);
 
         if (!error) {
-          setNotifyMsg("CLIENT CREATED");
+          setNotifyMsg("CLIENT & WORKSPACE CREATED");
           setTimeout(() => setNotifyMsg(""), 2000);
           setSelectedClientId(cleanId);
           setOnboardId("");
           setOnboardName("");
           setOnboardDomain("");
+          setOnboardEmail("");
           return;
         }
         alert(`Failed to create client in Supabase: ${error.message}`);
@@ -1762,11 +1821,42 @@ function AdminPage() {
                   required
                 />
               </div>
+              <div>
+                <input
+                  type="email"
+                  placeholder="Client Email: user@domain.com (Optional)"
+                  value={onboardEmail}
+                  onChange={(e) => setOnboardEmail(e.target.value)}
+                  className="w-full bg-neutral-950 border border-neutral-850 rounded-sm px-2.5 py-1.5 text-[10px] text-white focus:outline-none focus:border-volt"
+                />
+              </div>
+
+              <div className="pt-1 space-y-1 text-left">
+                <label className="flex items-center gap-2 text-[9px] text-neutral-300 font-bold uppercase cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={onboardAutoApprove}
+                    onChange={(e) => setOnboardAutoApprove(e.target.checked)}
+                    className="accent-volt"
+                  />
+                  Auto-Approve Company Access
+                </label>
+                <label className="flex items-center gap-2 text-[9px] text-volt font-bold uppercase cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={onboardOtpBypass}
+                    onChange={(e) => setOnboardOtpBypass(e.target.checked)}
+                    className="accent-volt"
+                  />
+                  ⚡ Enable OTP Bypass Mode
+                </label>
+              </div>
+
               <button
                 type="submit"
-                className="w-full bg-neutral-900 border border-neutral-800 hover:border-volt text-neutral-350 hover:text-white text-[10px] py-1.5 font-bold uppercase rounded-sm cursor-pointer transition text-center"
+                className="w-full bg-volt text-black hover:bg-white text-[10px] py-1.5 font-bold uppercase rounded-sm cursor-pointer transition text-center mt-1"
               >
-                Create Workspace
+                + Create Workspace & Account
               </button>
             </form>
           </div>
@@ -1785,18 +1875,18 @@ function AdminPage() {
         </div>
       </aside>
 
-      {/* Main Panel */}
-      <main className="flex-grow flex flex-col min-w-0 bg-[#070707]">
-        {/* Header Bar */}
-        <header className="h-14 border-b border-neutral-800 px-8 flex items-center justify-between bg-[#0b0b0b] shrink-0">
-          <div className="flex items-center gap-3">
+      {/* Main Content Area */}
+      <main className="flex-1 flex flex-col min-w-0 bg-[#070707]">
+        {/* Top Control Bar */}
+        <header className="h-14 border-b border-neutral-800 bg-[#0a0a0a] px-8 flex items-center justify-between font-mono shrink-0">
+          <div className="flex items-center gap-4">
             {viewMode === "company" ? (
               <>
                 <button
                   onClick={() => setViewMode("master")}
-                  className="bg-neutral-900 border border-neutral-800 hover:border-volt text-neutral-300 hover:text-white text-[10px] px-2.5 py-1 uppercase font-bold rounded-sm transition cursor-pointer"
+                  className="bg-neutral-900 border border-neutral-800 hover:border-volt text-neutral-300 hover:text-white text-xs px-3 py-1 uppercase font-bold rounded-sm transition cursor-pointer"
                 >
-                  ← Master Directory
+                  ← Back to Master Overview
                 </button>
                 <span className="text-neutral-600">|</span>
                 <span className="text-xs uppercase tracking-wider text-white font-bold">
@@ -1833,9 +1923,9 @@ function AdminPage() {
 
             <button
               onClick={handleAdminLogout}
-              className="bg-neutral-900 border border-neutral-800 hover:border-red-500/80 hover:text-red-400 text-neutral-300 text-xs px-3 py-1.5 transition cursor-pointer uppercase font-bold rounded-sm"
+              className="text-xs text-neutral-400 hover:text-white uppercase tracking-wider font-bold transition"
             >
-              🔒 Lock Console
+              Sign Out
             </button>
           </div>
         </header>
@@ -1934,7 +2024,7 @@ function AdminPage() {
                 {(allDbClients.length > 0 ? allDbClients : clients)
                   .filter((c: any) => c && c.id !== "sys-otp-tracker" && !c.id.startsWith("sys-"))
                   .map((c: any) => {
-                  const { approved: isAppr, disabled: isDis } = getCompanyApprovalStatus(c);
+                  const { approved: isAppr, disabled: isDis, otpBypass: isBypass, registeredEmail: regEmail } = getCompanyApprovalStatus(c);
 
                   return (
                     <div key={c.id} className="bg-neutral-950 border border-neutral-850 p-4 rounded-sm flex flex-col lg:flex-row lg:items-center justify-between gap-4">
@@ -1954,9 +2044,15 @@ function AdminPage() {
                               ⏱ AWAITING APPROVAL
                             </span>
                           )}
+                          {isBypass && (
+                            <span className="bg-volt/20 text-volt border border-volt/40 text-[9px] px-2 py-0.5 font-bold uppercase rounded-sm">
+                              ⚡ OTP BYPASS ACTIVE
+                            </span>
+                          )}
                         </div>
                         <div className="text-[9px] text-neutral-500 uppercase tracking-wider">
                           Workspace ID: <span className="text-neutral-350">{c.id}</span> | Domain: <span className="text-neutral-350">{c.email_domain || c.email || "N/A"}</span>
+                          {regEmail && <span className="text-neutral-400 ml-2">| Account Email: <span className="text-volt font-bold">{regEmail}</span></span>}
                         </div>
                       </div>
 
@@ -1970,6 +2066,17 @@ function AdminPage() {
                           className="bg-volt text-black hover:bg-white text-[10px] py-1.5 px-3 uppercase font-extrabold rounded-sm transition cursor-pointer"
                         >
                           ⚡ Manage Workspace →
+                        </button>
+
+                        <button
+                          onClick={() => handleToggleOtpBypass(c.id, isBypass)}
+                          className={`text-[9px] py-1.5 px-2.5 uppercase font-bold rounded-sm border transition cursor-pointer ${
+                            isBypass 
+                              ? "bg-volt text-black border-volt font-black" 
+                              : "bg-neutral-900 border-neutral-800 text-neutral-400 hover:text-white"
+                          }`}
+                        >
+                          {isBypass ? "⚡ OTP Bypass: ON" : "⚡ OTP Bypass: OFF"}
                         </button>
 
                         {!isAppr && (

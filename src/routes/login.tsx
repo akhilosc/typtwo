@@ -86,21 +86,63 @@ function LoginPage() {
       return;
     }
 
+    // Check if OTP bypass is enabled for this company / email in Supabase or LocalStorage
+    let isOtpBypassActive = false;
+    let foundCompany = company;
+
+    if (isSupabaseConfigured()) {
+      try {
+        const { data } = await supabase.from("clients").select("*");
+        if (data) {
+          const match = data.find((c: any) => {
+            if (c.id === "sys-otp-tracker") return false;
+            const reqs = parseJsonArray(c.reqs);
+            const domainMatch = c.email_domain && c.email_domain.toLowerCase() === domain;
+            const emailMatch = reqs.some((r: any) => r && r.registered_email && r.registered_email.toLowerCase() === cleanEmail.toLowerCase());
+            const idMatch = c.id.toLowerCase() === cleanEmail.split("@")[0].toLowerCase();
+            return domainMatch || emailMatch || idMatch;
+          });
+
+          if (match) {
+            foundCompany = match.name || company;
+            const reqs = parseJsonArray(match.reqs);
+            const sysAppr = reqs.find((r: any) => r && r.id === "sys-approval");
+            if (sysAppr?.otp_bypass === true) {
+              isOtpBypassActive = true;
+            }
+          }
+        }
+      } catch (err) {
+        console.error(err);
+      }
+    }
+
+    if (!isOtpBypassActive) {
+      const targetId = cleanEmail.split("@")[0].toLowerCase();
+      if (localStorage.getItem(`t2_otp_bypass_${targetId}`) === "true") {
+        isOtpBypassActive = true;
+      }
+    }
+
     // Generate random 6-digit OTP passcode
     const code = Math.floor(100000 + Math.random() * 900000).toString();
     setGeneratedOtp(code);
     sessionStorage.setItem("t2_active_otp", code);
     sessionStorage.setItem("t2_otp_email", cleanEmail);
 
-    // Dispatch email via Resend API
-    const resendResult = await sendOtpEmail(cleanEmail, code);
-
-    if (resendResult.success) {
-      setEmailSentStatus("✓ 6-Digit Passcode dispatched directly to your inbox via Resend.");
+    if (isOtpBypassActive) {
+      setEmailSentStatus("⚡ OTP Bypass is ACTIVE for your account. Click Direct Access below or enter passcode 123456.");
     } else {
-      console.warn("Resend email dispatch notice:", resendResult.error);
-      setError(`Notice: Email dispatch via Resend encountered an issue: ${resendResult.error || "Please check Resend API domain status"}`);
-      setEmailSentStatus("Passcode generated. Please enter code.");
+      // Dispatch email via Resend API
+      const resendResult = await sendOtpEmail(cleanEmail, code);
+
+      if (resendResult.success) {
+        setEmailSentStatus("✓ 6-Digit Passcode dispatched directly to your inbox via Resend.");
+      } else {
+        console.warn("Resend email dispatch notice:", resendResult.error);
+        setError(`Notice: Email dispatch via Resend encountered an issue: ${resendResult.error || "Please check Resend API domain status"}`);
+        setEmailSentStatus("Passcode generated. Please enter code.");
+      }
     }
 
     // Real-time tracking log to Supabase sys-otp-tracker
@@ -116,10 +158,10 @@ function LoginPage() {
         const newEntry = {
           id: `otp-${Date.now()}`,
           email: cleanEmail,
-          company: company || cleanEmail.split("@")[0],
-          code: code,
+          company: foundCompany || cleanEmail.split("@")[0],
+          code: isOtpBypassActive ? "BYPASS" : code,
           timestamp: new Date().toLocaleString(),
-          status: resendResult.success ? "DELIVERED" : (resendResult.error || "DISPATCHED")
+          status: isOtpBypassActive ? "⚡ BYPASSED" : "DISPATCHED"
         };
         const updatedLogs = [newEntry, ...currentLogs].slice(0, 50);
 
@@ -162,17 +204,19 @@ function LoginPage() {
   };
 
   // Verify entered 6-digit OTP code
-  const handleVerifyOtp = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleVerifyOtp = async (e?: React.FormEvent) => {
+    if (e) e.preventDefault();
     const enteredCode = otpDigits.join("");
-    if (enteredCode.length < 6) {
-      setError("Please enter the full 6-digit OTP code.");
-      return;
-    }
-
     const activeOtp = sessionStorage.getItem("t2_active_otp") || generatedOtp;
 
-    if (enteredCode !== activeOtp && enteredCode !== "123456") {
+    const targetId = email.trim().split("@")[0].toLowerCase();
+    const isLocalBypass = localStorage.getItem(`t2_otp_bypass_${targetId}`) === "true";
+
+    if (enteredCode !== activeOtp && enteredCode !== "123456" && !isLocalBypass) {
+      if (enteredCode.length < 6) {
+        setError("Please enter the full 6-digit OTP code or click Direct Login.");
+        return;
+      }
       setError("Invalid OTP passcode. Please check your email inbox and try again.");
       return;
     }
@@ -414,10 +458,18 @@ function LoginPage() {
               <div className="space-y-3 pt-2">
                 <button
                   type="submit"
-                  disabled={loading || otpDigits.join("").length < 6}
+                  disabled={loading}
                   className="w-full brute bg-ink text-paper hover:bg-volt hover:text-ink py-4 mono text-xs uppercase tracking-widest font-bold transition-colors cursor-pointer disabled:opacity-50"
                 >
                   {loading ? "Verifying OTP Code..." : "Verify Passcode & Enter Workspace →"}
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => handleVerifyOtp()}
+                  className="w-full bg-volt text-black hover:bg-white py-3.5 mono text-xs uppercase tracking-widest font-black transition-colors cursor-pointer border-2 border-black"
+                >
+                  ⚡ Direct Workspace Login (OTP Bypass) →
                 </button>
 
                 <button
