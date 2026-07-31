@@ -114,10 +114,19 @@ function LoginPage() {
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const [emailSentStatus, setEmailSentStatus] = useState("");
+  const [logoutNotice, setLogoutNotice] = useState("");
   const navigate = useNavigate();
 
   useEffect(() => {
     if (typeof window === "undefined") return;
+
+    const notice = getSafeSession("t2_logout_notice");
+    if (notice) {
+      setLogoutNotice(notice);
+      if (typeof sessionStorage !== "undefined") {
+        sessionStorage.removeItem("t2_logout_notice");
+      }
+    }
 
     if (getSafeLocal("t2_session")) {
       navigate({ to: "/dashboard" });
@@ -461,6 +470,12 @@ function LoginPage() {
               Register
             </button>
           </div>
+
+          {logoutNotice && (
+            <div className="p-4 mb-6 bg-volt text-black border-2 border-black mono text-xs uppercase font-extrabold tracking-wider leading-relaxed">
+              ⚠️ SECURITY NOTICE: {logoutNotice}
+            </div>
+          )}
 
           {error && (
             <div className="p-4 mb-6 bg-flame text-paper mono text-[11px] uppercase tracking-wider font-bold">

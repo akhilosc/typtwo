@@ -289,6 +289,32 @@ function AdminPage() {
     } catch {}
   };
 
+  // 5-MINUTE INACTIVITY AUTO-LOGOUT FOR ADMIN CONSOLE
+  useEffect(() => {
+    if (typeof window === "undefined" || !isAuthorized) return;
+
+    let inactivityTimer: NodeJS.Timeout;
+
+    const resetInactivityTimer = () => {
+      clearTimeout(inactivityTimer);
+      inactivityTimer = setTimeout(() => {
+        sessionStorage.removeItem("t2_admin_authorized");
+        setIsAuthorized(false);
+        alert("Admin session automatically logged out due to 5 minutes of inactivity.");
+      }, 5 * 60 * 1000); // 5 MINUTES (300,000 ms)
+    };
+
+    const userEvents = ["mousemove", "mousedown", "keydown", "scroll", "touchstart", "click"];
+    userEvents.forEach((evt) => window.addEventListener(evt, resetInactivityTimer, { passive: true }));
+
+    resetInactivityTimer();
+
+    return () => {
+      clearTimeout(inactivityTimer);
+      userEvents.forEach((evt) => window.removeEventListener(evt, resetInactivityTimer));
+    };
+  }, [isAuthorized]);
+
   // Check sessionStorage on mount
   useEffect(() => {
     setIsMounted(true);
@@ -1471,6 +1497,10 @@ function AdminPage() {
       }
     }
 
+    // Set force logout signals for any active client sessions
+    localStorage.setItem(`t2_force_logout_${clientIdToDelete}`, "true");
+    localStorage.setItem(`t2_deleted_${clientIdToDelete}`, "true");
+
     // Always clean up LocalStorage fallback
     const localClientsKey = "t2_local_clients_list";
     const currentList = JSON.parse(localStorage.getItem(localClientsKey) || "[]");
@@ -1481,7 +1511,7 @@ function AdminPage() {
     setClients((prev) => prev.filter((c) => c.id !== clientIdToDelete));
     setAllDbClients((prev) => prev.filter((c) => c.id !== clientIdToDelete));
 
-    setNotifyMsg("COMPANY DELETED");
+    setNotifyMsg("COMPANY DELETED & FORCE LOGOUT BROADCASTED");
     setTimeout(() => setNotifyMsg(""), 2000);
     window.dispatchEvent(new Event("storage"));
     window.dispatchEvent(new Event("t2_storage_update"));

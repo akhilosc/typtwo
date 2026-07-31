@@ -264,6 +264,99 @@ function DashboardPage() {
   
   const navigate = useNavigate();
 
+  // 1. 5-MINUTE INACTIVITY AUTO-LOGOUT SYSTEM
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+
+    let inactivityTimer: NodeJS.Timeout;
+
+    const resetInactivityTimer = () => {
+      clearTimeout(inactivityTimer);
+      inactivityTimer = setTimeout(() => {
+        localStorage.removeItem("t2_session");
+        sessionStorage.setItem("t2_logout_notice", "Your session was automatically logged out due to 5 minutes of inactivity.");
+        window.location.href = "/login";
+      }, 5 * 60 * 1000); // 5 MINUTES (300,000 ms)
+    };
+
+    const userEvents = ["mousemove", "mousedown", "keydown", "scroll", "touchstart", "click"];
+    userEvents.forEach((evt) => window.addEventListener(evt, resetInactivityTimer, { passive: true }));
+
+    resetInactivityTimer();
+
+    return () => {
+      clearTimeout(inactivityTimer);
+      userEvents.forEach((evt) => window.removeEventListener(evt, resetInactivityTimer));
+    };
+  }, []);
+
+  // 2. PERIODIC SECURITY MONITOR & FORCE LOGOUT FOR DELETED / DISABLED COMPANIES
+  useEffect(() => {
+    if (typeof window === "undefined" || !clientId) return;
+
+    const parseJsonArray = (input: any): any[] => {
+      if (Array.isArray(input)) return input;
+      if (typeof input === "string") {
+        try {
+          const parsed = JSON.parse(input);
+          if (Array.isArray(parsed)) return parsed;
+        } catch {
+          return [];
+        }
+      }
+      return [];
+    };
+
+    const checkCompanyStatus = async () => {
+      if (
+        localStorage.getItem(`t2_force_logout_${clientId}`) === "true" ||
+        localStorage.getItem(`t2_deleted_${clientId}`) === "true" ||
+        localStorage.getItem(`t2_disabled_${clientId}`) === "true"
+      ) {
+        localStorage.removeItem("t2_session");
+        localStorage.removeItem("t2_client_id");
+        sessionStorage.setItem("t2_logout_notice", "Your company workspace access has been removed or disabled by the administrator.");
+        window.location.href = "/login";
+        return;
+      }
+
+      if (isSupabaseConfigured()) {
+        try {
+          const { data, error } = await supabase
+            .from("clients")
+            .select("reqs")
+            .eq("id", clientId)
+            .maybeSingle();
+
+          if (!data || error) {
+            localStorage.removeItem("t2_session");
+            localStorage.removeItem("t2_client_id");
+            sessionStorage.setItem("t2_logout_notice", "Your company workspace has been removed by the administrator.");
+            window.location.href = "/login";
+            return;
+          }
+
+          const reqsArr = parseJsonArray(data.reqs);
+          const sysAppr = reqsArr.find((r: any) => r && r.id === "sys-approval");
+          if (sysAppr && sysAppr.disabled === true) {
+            localStorage.removeItem("t2_session");
+            localStorage.removeItem("t2_client_id");
+            sessionStorage.setItem("t2_logout_notice", "Your account access has been disabled by the administrator.");
+            window.location.href = "/login";
+            return;
+          }
+        } catch (err) {
+          console.error("Force logout check error:", err);
+        }
+      }
+    };
+
+    checkCompanyStatus();
+    const interval = setInterval(checkCompanyStatus, 5000);
+
+    return () => clearInterval(interval);
+  }, [clientId]);
+
   useEffect(() => {
     setIsMounted(true);
     if (typeof window === "undefined") return;
