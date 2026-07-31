@@ -1845,35 +1845,45 @@ function AdminPage() {
           /* MASTER OVERVIEW VIEW MODE */
           <div className="flex-grow p-8 space-y-8 w-full font-mono text-left overflow-y-auto">
             {/* Master Stats Summary Banner */}
-            <div className="bg-[#0b0b0b] border border-neutral-800 p-6 rounded-sm flex flex-col md:flex-row md:items-center justify-between gap-6 shadow-lg">
-              <div className="space-y-1">
-                <div className="flex items-center gap-2 text-volt text-[10px] font-bold uppercase tracking-widest">
-                  <span className="h-2 w-2 bg-volt rounded-full animate-ping" />
-                  // MASTER OPERATIONS CONTROL
-                </div>
-                <h2 className="text-base font-bold text-white uppercase tracking-wider">
-                  Enterprise Workspaces & Access Control Desk
-                </h2>
-                <p className="text-xs text-neutral-400">
-                  Approve or reject client registrations, manage login access, or click "Manage Workspace" to configure company-specific checklists & instructions.
-                </p>
-              </div>
+            {(() => {
+              const realCompanies = (allDbClients.length > 0 ? allDbClients : clients).filter((c: any) => c && c.id !== "sys-otp-tracker" && !c.id.startsWith("sys-"));
+              const pendingWorkspacesList = realCompanies.filter((c: any) => {
+                const { approved } = getCompanyApprovalStatus(c);
+                return !approved;
+              });
 
-              <div className="flex items-center gap-4 border-t md:border-t-0 md:border-l border-neutral-800 pt-4 md:pt-0 pl-0 md:pl-6 shrink-0">
-                <div className="text-center">
-                  <div className="text-xl font-bold text-volt">{allDbClients.length || clients.length}</div>
-                  <div className="text-[9px] text-neutral-500 font-bold uppercase">Companies</div>
+              return (
+                <div className="bg-[#0b0b0b] border border-neutral-800 p-6 rounded-sm flex flex-col md:flex-row md:items-center justify-between gap-6 shadow-lg">
+                  <div className="space-y-1">
+                    <div className="flex items-center gap-2 text-volt text-[10px] font-bold uppercase tracking-widest">
+                      <span className="h-2 w-2 bg-volt rounded-full animate-ping" />
+                      // MASTER OPERATIONS CONTROL
+                    </div>
+                    <h2 className="text-base font-bold text-white uppercase tracking-wider">
+                      Enterprise Workspaces & Access Control Desk
+                    </h2>
+                    <p className="text-xs text-neutral-400">
+                      Approve or reject client registrations, manage login access, or click "Manage Workspace" to configure company-specific checklists & instructions.
+                    </p>
+                  </div>
+
+                  <div className="flex items-center gap-4 border-t md:border-t-0 md:border-l border-neutral-800 pt-4 md:pt-0 pl-0 md:pl-6 shrink-0">
+                    <div className="text-center">
+                      <div className="text-xl font-bold text-volt">{realCompanies.length}</div>
+                      <div className="text-[9px] text-neutral-500 font-bold uppercase">Companies</div>
+                    </div>
+                    <div className="text-center border-l border-neutral-800 pl-4">
+                      <div className="text-xl font-bold text-flame">{pendingWorkspacesList.length}</div>
+                      <div className="text-[9px] text-neutral-500 font-bold uppercase">Pending</div>
+                    </div>
+                    <div className="text-center border-l border-neutral-800 pl-4">
+                      <div className="text-xl font-bold text-white">{getAllMembersList().length}</div>
+                      <div className="text-[9px] text-neutral-500 font-bold uppercase">Members</div>
+                    </div>
+                  </div>
                 </div>
-                <div className="text-center border-l border-neutral-800 pl-4">
-                  <div className="text-xl font-bold text-flame">{pendingWorkspacesList.length}</div>
-                  <div className="text-[9px] text-neutral-500 font-bold uppercase">Pending</div>
-                </div>
-                <div className="text-center border-l border-neutral-800 pl-4">
-                  <div className="text-xl font-bold text-white">{getAllMembersList().length}</div>
-                  <div className="text-[9px] text-neutral-500 font-bold uppercase">Members</div>
-                </div>
-              </div>
-            </div>
+              );
+            })()}
 
             {/* Live OTP Dispatch Monitor Section */}
             <div className="bg-[#0c0c0c] border border-neutral-800 p-6 rounded-sm space-y-4">
@@ -1921,7 +1931,9 @@ function AdminPage() {
               </div>
 
               <div className="space-y-3">
-                {(allDbClients.length > 0 ? allDbClients : clients).map((c: any) => {
+                {(allDbClients.length > 0 ? allDbClients : clients)
+                  .filter((c: any) => c && c.id !== "sys-otp-tracker" && !c.id.startsWith("sys-"))
+                  .map((c: any) => {
                   const { approved: isAppr, disabled: isDis } = getCompanyApprovalStatus(c);
 
                   return (
