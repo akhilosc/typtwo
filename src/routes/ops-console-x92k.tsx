@@ -375,6 +375,7 @@ function AdminPage() {
           approved: existingApproval.approved ?? true,
           disabled: existingApproval.disabled ?? false,
           password: pwd.trim() || undefined,
+          must_change_password: true,
           otp_bypass: true
         });
 
@@ -601,6 +602,7 @@ function AdminPage() {
           disabled: false,
           registered_email: cleanEmail || undefined,
           password: cleanPassword || undefined,
+          must_change_password: !!cleanPassword,
           otp_bypass: onboardOtpBypass
         }
       ],

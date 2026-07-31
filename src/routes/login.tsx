@@ -282,6 +282,10 @@ function LoginPage() {
             setLoading(false);
             return;
           }
+
+          if (sysAppr?.must_change_password === true || getSafeLocal(`t2_must_change_pwd_${match.id}`) === "true") {
+            setSafeSession("t2_require_password_change", "true");
+          }
         }
       } catch (err) {
         console.error(err);

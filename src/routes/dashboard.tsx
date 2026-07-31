@@ -244,6 +244,14 @@ function DashboardPage() {
   const [inviteEmail, setInviteEmail] = useState("");
   const [notifyMsg, setNotifyMsg] = useState("");
 
+  // First Login Password Change Modal states
+  const [showPasswordChangeModal, setShowPasswordChangeModal] = useState(false);
+  const [currPwd, setCurrPwd] = useState("");
+  const [newPwd, setNewPwd] = useState("");
+  const [confirmPwd, setConfirmPwd] = useState("");
+  const [pwdError, setPwdError] = useState("");
+  const [pwdLoading, setPwdLoading] = useState(false);
+
   // Input states for each requirement
   const [inputVals, setInputVals] = useState<Record<string, string>>({});
   
@@ -447,6 +455,10 @@ function DashboardPage() {
             const isApprovedInDb = sysApproval ? sysApproval.approved === true : rawAudits.some((a: any) => a && typeof a.message === "string" && a.message.includes("Master Approved"));
             setApproved(isApprovedInDb);
 
+            if (sysApproval?.must_change_password === true || sessionStorage.getItem("t2_require_password_change") === "true" || localStorage.getItem(`t2_must_change_pwd_${id}`) === "true") {
+              setShowPasswordChangeModal(true);
+            }
+
             setMembers(parseJsonArray(data.members));
 
             const rawMilestones = parseJsonArray(data.milestones);
@@ -590,6 +602,7 @@ function DashboardPage() {
       }
 
       // 7. Load local invoices
+      // 7. Load local invoices
       const storedInvoices = localStorage.getItem(`t2_invoices_${id}`);
       if (storedInvoices) {
         setInvoices(JSON.parse(storedInvoices));
@@ -624,6 +637,73 @@ function DashboardPage() {
       window.removeEventListener("t2_storage_update", handleStorageChange);
     };
   }, [navigate, clientId]);
+
+  const handleUpdateFirstLoginPassword = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setPwdError("");
+
+    if (!currPwd.trim()) {
+      setPwdError("Please enter your current temporary password.");
+      return;
+    }
+
+    if (!newPwd || newPwd.length < 4) {
+      setPwdError("New password must be at least 4 characters long.");
+      return;
+    }
+
+    if (newPwd !== confirmPwd) {
+      setPwdError("New password and re-entered password do not match.");
+      return;
+    }
+
+    setPwdLoading(true);
+
+    if (isSupabaseConfigured()) {
+      try {
+        const { data } = await supabase
+          .from("clients")
+          .select("reqs")
+          .eq("id", clientId)
+          .single();
+
+        const currentReqs = parseJsonArray(data?.reqs);
+        const sysAppr = currentReqs.find((r: any) => r && r.id === "sys-approval") || {};
+        const filtered = currentReqs.filter((r: any) => r && r.id !== "sys-approval");
+
+        const expectedPwd = sysAppr.password || localStorage.getItem(`t2_password_${clientId}`);
+        if (expectedPwd && currPwd.trim() !== expectedPwd.trim()) {
+          setPwdError("Current temporary password is incorrect. Please try again.");
+          setPwdLoading(false);
+          return;
+        }
+
+        filtered.push({
+          ...sysAppr,
+          id: "sys-approval",
+          password: newPwd.trim(),
+          must_change_password: false,
+          otp_bypass: true
+        });
+
+        await supabase
+          .from("clients")
+          .update({ reqs: filtered })
+          .eq("id", clientId);
+      } catch (err) {
+        console.error(err);
+      }
+    }
+
+    localStorage.setItem(`t2_password_${clientId}`, newPwd.trim());
+    localStorage.removeItem(`t2_must_change_pwd_${clientId}`);
+    sessionStorage.removeItem("t2_require_password_change");
+
+    setNotifyMsg("PASSWORD UPDATED SUCCESSFULLY");
+    setTimeout(() => setNotifyMsg(""), 3000);
+    setShowPasswordChangeModal(false);
+    setPwdLoading(false);
+  };
 
   const handleLogout = () => {
     localStorage.removeItem("t2_session");
@@ -1465,6 +1545,83 @@ function DashboardPage() {
           )}
         </div>
       </main>
+
+      {/* MANDATORY FIRST LOGIN PASSWORD CHANGE MODAL */}
+      {showPasswordChangeModal && (
+        <div className="fixed inset-0 z-50 bg-black/90 backdrop-blur-md flex items-center justify-center p-4">
+          <div className="bg-[#0c0c0c] border-2 border-volt p-8 rounded-sm max-w-md w-full space-y-6 text-left font-mono shadow-2xl">
+            <div className="flex items-center gap-2 text-volt font-bold text-xs uppercase">
+              <span className="h-2.5 w-2.5 bg-volt rounded-full animate-ping" />
+              ⚡ FIRST LOGIN: MANDATORY PASSWORD UPDATE
+            </div>
+
+            <div className="border-b border-neutral-800 pb-3 space-y-1">
+              <h3 className="text-sm font-bold text-white uppercase tracking-wider">Update Account Password</h3>
+              <p className="text-[11px] text-neutral-400 normal-case leading-relaxed">
+                The password set by your administrator is a temporary password. Please set your permanent account password to continue into your workspace.
+              </p>
+            </div>
+
+            {pwdError && (
+              <div className="p-3 bg-red-950 text-red-300 border border-red-800 text-[10px] uppercase font-bold tracking-wider">
+                !! NOTICE: {pwdError}
+              </div>
+            )}
+
+            <form onSubmit={handleUpdateFirstLoginPassword} className="space-y-4">
+              <div>
+                <label className="text-[10px] text-neutral-400 uppercase font-bold block mb-1">
+                  Current Temporary Password *
+                </label>
+                <input
+                  type="password"
+                  value={currPwd}
+                  onChange={(e) => setCurrPwd(e.target.value)}
+                  placeholder="Enter current temporary password"
+                  className="w-full bg-neutral-950 border border-neutral-800 px-3.5 py-2.5 text-xs text-white focus:outline-none focus:border-volt font-bold"
+                  required
+                />
+              </div>
+
+              <div>
+                <label className="text-[10px] text-neutral-400 uppercase font-bold block mb-1">
+                  New Permanent Password *
+                </label>
+                <input
+                  type="password"
+                  value={newPwd}
+                  onChange={(e) => setNewPwd(e.target.value)}
+                  placeholder="Enter new permanent password"
+                  className="w-full bg-neutral-950 border border-neutral-800 px-3.5 py-2.5 text-xs text-white focus:outline-none focus:border-volt font-bold"
+                  required
+                />
+              </div>
+
+              <div>
+                <label className="text-[10px] text-neutral-400 uppercase font-bold block mb-1">
+                  Re-enter New Permanent Password *
+                </label>
+                <input
+                  type="password"
+                  value={confirmPwd}
+                  onChange={(e) => setConfirmPwd(e.target.value)}
+                  placeholder="Re-enter new permanent password"
+                  className="w-full bg-neutral-950 border border-neutral-800 px-3.5 py-2.5 text-xs text-white focus:outline-none focus:border-volt font-bold"
+                  required
+                />
+              </div>
+
+              <button
+                type="submit"
+                disabled={pwdLoading}
+                className="w-full bg-volt text-black hover:bg-white text-xs py-3.5 uppercase font-extrabold rounded-sm transition cursor-pointer mt-2"
+              >
+                {pwdLoading ? "Updating Password..." : "Update Password & Continue to Workspace →"}
+              </button>
+            </form>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
