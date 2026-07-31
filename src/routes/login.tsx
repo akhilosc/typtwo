@@ -285,17 +285,22 @@ function LoginPage() {
         }
       }
 
-      // Save active session keys
-      localStorage.setItem("t2_user_email", cleanEmail);
-      localStorage.setItem("t2_user_company", companyName);
-      localStorage.setItem("t2_client_id", targetClientId);
-      localStorage.setItem("t2_session", "active");
+      // Dispatch Firebase Email Link / OTP to user's inbox
+      const actionCodeSettings = {
+        url: typeof window !== "undefined" ? window.location.href : "https://www.typtwo.com/login",
+        handleCodeInApp: true
+      };
 
-      window.dispatchEvent(new Event("storage"));
-      window.dispatchEvent(new Event("t2_storage_update"));
+      await sendSignInLinkToEmail(firebaseAuth, cleanEmail, actionCodeSettings);
+      window.localStorage.getItem("t2_email_for_signIn");
+      window.localStorage.setItem("t2_email_for_signIn", cleanEmail);
+      window.localStorage.setItem("t2_pending_company", companyName);
+      window.localStorage.setItem("t2_pending_client_id", targetClientId);
       
+      setMagicLinkSent(true);
       setLoading(false);
-      navigate({ to: "/dashboard" });
+      // DO NOT REDIRECT YET - MANDATE USER TO OPEN EMAIL & VERIFY LINK!
+      return;
     } catch (err: any) {
       setLoading(false);
       setError(err.message || "Authentication error occurred.");
@@ -326,71 +331,93 @@ function LoginPage() {
         <div className="brute border-2 border-ink p-8 bg-paper">
           <div className="flex border-b-2 border-ink -mx-8 -mt-8 mb-8 bg-ink text-paper">
             <button
-              onClick={() => { setIsSignUp(false); setError(""); }}
+              onClick={() => { setIsSignUp(false); setError(""); setMagicLinkSent(false); }}
               className={`flex-1 py-4 mono text-xs uppercase tracking-widest font-bold border-r border-ink ${!isSignUp ? "bg-volt text-ink" : "bg-ink text-paper"}`}
             >
               Sign In
             </button>
             <button
-              onClick={() => { setIsSignUp(true); setError(""); }}
+              onClick={() => { setIsSignUp(true); setError(""); setMagicLinkSent(false); }}
               className={`flex-1 py-4 mono text-xs uppercase tracking-widest font-bold ${isSignUp ? "bg-volt text-ink" : "bg-ink text-paper"}`}
             >
               Register
             </button>
           </div>
 
-          <form onSubmit={handleSubmit} className="space-y-6">
-            {error && (
-              <div className="p-4 bg-flame text-paper mono text-[11px] uppercase tracking-wider font-bold">
-                !! ERROR: {error}
+          {magicLinkSent ? (
+            <div className="space-y-6 text-center py-4">
+              <div className="p-4 bg-emerald-950 text-emerald-300 border-2 border-emerald-800 mono text-xs uppercase font-bold tracking-wider leading-relaxed">
+                📩 VERIFICATION EMAIL DISPATCHED TO:<br />
+                <span className="text-white text-sm select-all font-mono block mt-1">{email}</span>
               </div>
-            )}
+              <p className="mono text-xs text-muted-foreground leading-relaxed">
+                We have sent a 1-click verification link to your inbox via Firebase. <br />
+                <strong className="text-ink">Open your email inbox and click the verification link</strong> to complete your sign-in and open your workspace dashboard.
+              </p>
+              <div className="pt-2 flex flex-col gap-2">
+                <button
+                  onClick={() => setMagicLinkSent(false)}
+                  className="w-full brute bg-ink text-paper hover:bg-volt hover:text-ink py-3 mono text-xs uppercase tracking-widest font-bold transition-colors cursor-pointer"
+                >
+                  ← Return to Login Form
+                </button>
+              </div>
+            </div>
+          ) : (
+            <form onSubmit={handleSubmit} className="space-y-6">
+              {error && (
+                <div className="p-4 bg-flame text-paper mono text-[11px] uppercase tracking-wider font-bold">
+                  !! ERROR: {error}
+                </div>
+              )}
 
-            {isSignUp && (
+              {isSignUp && (
+                <div>
+                  <label className="block mono text-[10px] uppercase tracking-widest text-muted-foreground mb-2">Company Name *</label>
+                  <input
+                    type="text"
+                    value={company}
+                    onChange={(e) => setCompany(e.target.value)}
+                    placeholder="e.g. Acme Corp"
+                    className="w-full bg-paper border-2 border-ink px-4 py-3 focus:outline-none focus:bg-volt/10 mono text-sm"
+                    required
+                  />
+                </div>
+              )}
+
               <div>
-                <label className="block mono text-[10px] uppercase tracking-widest text-muted-foreground mb-2">Company Name *</label>
+                <label className="block mono text-[10px] uppercase tracking-widest text-muted-foreground mb-2">Email Address *</label>
                 <input
-                  type="text"
-                  value={company}
-                  onChange={(e) => setCompany(e.target.value)}
-                  placeholder="e.g. Acme Corp"
+                  type="email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  placeholder="client@company.com"
                   className="w-full bg-paper border-2 border-ink px-4 py-3 focus:outline-none focus:bg-volt/10 mono text-sm"
                   required
                 />
               </div>
-            )}
 
-            <div>
-              <label className="block mono text-[10px] uppercase tracking-widest text-muted-foreground mb-2">Email Address *</label>
-              <input
-                type="email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                placeholder="client@company.com"
-                className="w-full bg-paper border-2 border-ink px-4 py-3 focus:outline-none focus:bg-volt/10 mono text-sm"
-                required
-              />
-            </div>
+              <div>
+                <label className="block mono text-[10px] uppercase tracking-widest text-muted-foreground mb-2">Password *</label>
+                <input
+                  type="password"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  placeholder="••••••••"
+                  className="w-full bg-paper border-2 border-ink px-4 py-3 focus:outline-none focus:bg-volt/10 mono text-sm"
+                  required
+                />
+              </div>
 
-            <div>
-              <label className="block mono text-[10px] uppercase tracking-widest text-muted-foreground mb-2">Password *</label>
-              <input
-                type="password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                placeholder="••••••••"
-                className="w-full bg-paper border-2 border-ink px-4 py-3 focus:outline-none focus:bg-volt/10 mono text-sm"
-                required
-              />
-            </div>
-
-            <button
-              type="submit"
-              className="w-full brute bg-ink text-paper hover:bg-volt hover:text-ink py-4 mono text-xs uppercase tracking-widest font-bold transition-colors cursor-pointer"
-            >
-              {isSignUp ? "Create Secure Profile" : "Authenticate Session"} →
-            </button>
-          </form>
+              <button
+                type="submit"
+                disabled={loading}
+                className="w-full brute bg-ink text-paper hover:bg-volt hover:text-ink py-4 mono text-xs uppercase tracking-widest font-bold transition-colors cursor-pointer disabled:opacity-50"
+              >
+                {loading ? "Dispatching Verification OTP..." : (isSignUp ? "Send Registration Email Link →" : "Send Login Verification Link →")}
+              </button>
+            </form>
+          )}
         </div>
       </section>
     </>
