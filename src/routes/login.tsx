@@ -226,7 +226,8 @@ function LoginPage() {
           id: cleanId,
           name: companyName,
           email_domain: domain || "",
-          approved: false,
+          is_vault_active: true,
+          is_status_active: true,
           reqs: [],
           files: [],
           agreements: [],
@@ -241,8 +242,7 @@ function LoginPage() {
             }
           ],
           audit_logs: [{ id: "aud-0", message: `Workspace registered by ${cleanEmail}. Awaiting operational handshake.`, timestamp: new Date().toLocaleString() }],
-          statuses: [],
-          members: []
+          statuses: []
         };
 
         if (isSupabaseConfigured()) {
