@@ -136,6 +136,19 @@ function AdminPage() {
   const [isAuthorized, setIsAuthorized] = useState(false);
   const [passcodeError, setPasscodeError] = useState("");
 
+  const parseArray = (input: any): any[] => {
+    if (Array.isArray(input)) return input;
+    if (typeof input === "string") {
+      try {
+        const parsed = JSON.parse(input);
+        if (Array.isArray(parsed)) return parsed;
+      } catch {
+        return [];
+      }
+    }
+    return [];
+  };
+
   // Check sessionStorage on mount
   useEffect(() => {
     setIsMounted(true);
@@ -343,8 +356,8 @@ function AdminPage() {
             .single();
 
           if (data && !error) {
-            let companyReqs = data.reqs;
-            if (Array.isArray(companyReqs) && companyReqs.length > 0) {
+            let companyReqs = parseArray(data.reqs);
+            if (companyReqs.length > 0) {
               let merged = [...companyReqs];
               DEFAULT_REQUIREMENTS.forEach((def) => {
                 if (!merged.some((m) => m.id === def.id)) {
@@ -354,16 +367,21 @@ function AdminPage() {
               setReqs(merged);
               localStorage.setItem(key, JSON.stringify(merged));
             } else if (storedLocalReqs) {
-              const parsed = JSON.parse(storedLocalReqs);
-              setReqs(parsed);
+              const parsed = parseArray(storedLocalReqs);
+              setReqs(parsed.length > 0 ? parsed : JSON.parse(JSON.stringify(DEFAULT_REQUIREMENTS)));
             } else {
               const initial = JSON.parse(JSON.stringify(DEFAULT_REQUIREMENTS));
               setReqs(initial);
               localStorage.setItem(key, JSON.stringify(initial));
             }
 
-            setMilestones(data.milestones && data.milestones.length > 0 ? data.milestones : (storedLocalMilestones ? JSON.parse(storedLocalMilestones) : DEFAULT_MILESTONES));
-            setAuditLogs(data.audit_logs && data.audit_logs.length > 0 ? data.audit_logs : (storedLocalAudits ? JSON.parse(storedLocalAudits) : [{ id: "aud-0", message: "Client workspace initialized.", timestamp: new Date().toLocaleString() }]));
+            const dbMilestones = parseArray(data.milestones);
+            const localMilestones = parseArray(storedLocalMilestones);
+            setMilestones(dbMilestones.length > 0 ? dbMilestones : (localMilestones.length > 0 ? localMilestones : DEFAULT_MILESTONES));
+
+            const dbAudits = parseArray(data.audit_logs);
+            const localAudits = parseArray(storedLocalAudits);
+            setAuditLogs(dbAudits.length > 0 ? dbAudits : (localAudits.length > 0 ? localAudits : [{ id: "aud-0", message: "Client workspace initialized.", timestamp: new Date().toLocaleString() }]));
             return;
           }
         } catch (err) {
@@ -372,9 +390,9 @@ function AdminPage() {
       }
 
       // 1. Requirements Local Fallback
-      if (storedLocalReqs) {
-        const parsed: Requirement[] = JSON.parse(storedLocalReqs);
-        let merged = [...parsed];
+      const localReqs = parseArray(storedLocalReqs);
+      if (localReqs.length > 0) {
+        let merged = [...localReqs];
         DEFAULT_REQUIREMENTS.forEach((def) => {
           if (!merged.some((m) => m.id === def.id)) {
             merged.push(JSON.parse(JSON.stringify(def)));
@@ -388,21 +406,12 @@ function AdminPage() {
       }
 
       // 2. Milestones Local Fallback
-      if (storedLocalMilestones) {
-        setMilestones(JSON.parse(storedLocalMilestones));
-      } else {
-        setMilestones(DEFAULT_MILESTONES);
-        localStorage.setItem(milestonesKey, JSON.stringify(DEFAULT_MILESTONES));
-      }
+      const localMilestones = parseArray(storedLocalMilestones);
+      setMilestones(localMilestones.length > 0 ? localMilestones : DEFAULT_MILESTONES);
 
       // 3. Audit Logs Local Fallback
-      if (storedLocalAudits) {
-        setAuditLogs(JSON.parse(storedLocalAudits));
-      } else {
-        const initialAudit = [{ id: "aud-0", message: "Client workspace initialized.", timestamp: new Date().toLocaleString() }];
-        setAuditLogs(initialAudit);
-        localStorage.setItem(auditLogsKey, JSON.stringify(initialAudit));
-      }
+      const localAudits = parseArray(storedLocalAudits);
+      setAuditLogs(localAudits.length > 0 ? localAudits : [{ id: "aud-0", message: "Client workspace initialized.", timestamp: new Date().toLocaleString() }]);
     };
 
     loadData();
@@ -1157,43 +1166,49 @@ function AdminPage() {
   };
 
   const getPendingWorkspaces = () => {
-    if (isSupabaseConfigured()) {
+    if (isSupabaseConfigured() && Array.isArray(allDbClients) && allDbClients.length > 0) {
       return allDbClients.filter(c => !c.approved);
     }
-    // Local storage
-    const storedList = localStorage.getItem("t2_local_clients_list");
+    const storedList = typeof window !== "undefined" ? localStorage.getItem("t2_local_clients_list") : null;
     if (!storedList) return [];
-    const parsed = JSON.parse(storedList);
-    return parsed.filter((c: any) => localStorage.getItem(`t2_approved_${c.id}`) !== "true" && c.id !== "acme" && c.id !== "startuptalky" && c.id !== "bitbns");
+    try {
+      const parsed = parseArray(storedList);
+      return parsed.filter((c: any) => localStorage.getItem(`t2_approved_${c.id}`) !== "true" && c.id !== "acme" && c.id !== "startuptalky" && c.id !== "bitbns");
+    } catch {
+      return [];
+    }
   };
 
   const getPendingMembers = () => {
-    if (isSupabaseConfigured()) {
-      return allDbClients.flatMap(c => (c.members || []).map((m: any) => ({ ...m, clientId: c.id, clientName: c.name })).filter((m: any) => !m.approved));
+    if (isSupabaseConfigured() && Array.isArray(allDbClients) && allDbClients.length > 0) {
+      return allDbClients.flatMap(c => parseArray(c.members).map((m: any) => ({ ...m, clientId: c.id, clientName: c.name })).filter((m: any) => !m.approved));
     }
-    // Local storage keys
-    const storedList = localStorage.getItem("t2_local_clients_list");
+    const storedList = typeof window !== "undefined" ? localStorage.getItem("t2_local_clients_list") : null;
     if (!storedList) return [];
-    const parsed = JSON.parse(storedList);
-    return parsed.flatMap((c: any) => {
-      const key = `t2_members_${c.id}`;
-      const list = JSON.parse(localStorage.getItem(key) || "[]");
-      return list.filter((m: any) => !m.approved).map((m: any) => ({ ...m, clientId: c.id, clientName: c.name }));
-    });
+    try {
+      const parsed = parseArray(storedList);
+      return parsed.flatMap((c: any) => {
+        const key = `t2_members_${c.id}`;
+        const list = parseArray(localStorage.getItem(key));
+        return list.filter((m: any) => !m.approved).map((m: any) => ({ ...m, clientId: c.id, clientName: c.name }));
+      });
+    } catch {
+      return [];
+    }
   };
 
   const getAllMembersList = () => {
     let list: any[] = [];
-    if (isSupabaseConfigured() && allDbClients && allDbClients.length > 0) {
-      list = allDbClients.flatMap(c => (c.members || []).map((m: any) => ({ ...m, clientId: c.id, clientName: c.name })));
+    if (isSupabaseConfigured() && Array.isArray(allDbClients) && allDbClients.length > 0) {
+      list = allDbClients.flatMap(c => parseArray(c.members).map((m: any) => ({ ...m, clientId: c.id, clientName: c.name })));
     } else {
       const storedList = typeof window !== "undefined" ? localStorage.getItem("t2_local_clients_list") : null;
       if (storedList) {
         try {
-          const parsed = JSON.parse(storedList);
+          const parsed = parseArray(storedList);
           list = parsed.flatMap((c: any) => {
             const key = `t2_members_${c.id}`;
-            const mList = JSON.parse(localStorage.getItem(key) || "[]");
+            const mList = parseArray(localStorage.getItem(key));
             return mList.map((m: any) => ({ ...m, clientId: c.id, clientName: c.name }));
           });
         } catch {
@@ -1219,7 +1234,7 @@ function AdminPage() {
     || (allDbClients && allDbClients.length > 0 ? allDbClients[0] : null)
     || clients[0]
     || { id: selectedClientId || "workspace", name: selectedClientId ? selectedClientId.toUpperCase() : "Workspace", email: "" };
-  const activeCustomsCount = reqs.filter(r => r.id.startsWith("req-custom-")).length;
+  const activeCustomsCount = (Array.isArray(reqs) ? reqs : []).filter(r => r && r.id && r.id.startsWith("req-custom-")).length;
 
   if (!isMounted) {
     return (
