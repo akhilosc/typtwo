@@ -458,29 +458,7 @@ function DashboardPage() {
     }
 
     const handleStorageChange = () => {
-      const freshReqs = localStorage.getItem(reqKey);
-      if (freshReqs) {
-        const parsed = JSON.parse(freshReqs);
-        setReqs(parsed);
-        const freshVals: Record<string, string> = {};
-        parsed.forEach((r: Requirement) => {
-          freshVals[r.id] = r.value || "";
-        });
-        setInputVals(freshVals);
-      }
-      const freshStatuses = localStorage.getItem(statusKey);
-      if (freshStatuses) setStatuses(JSON.parse(freshStatuses));
-      const freshFiles = localStorage.getItem(filesKey);
-      if (freshFiles) setFiles(JSON.parse(freshFiles));
-
-      const freshAgreements = localStorage.getItem(agreementsKey);
-      if (freshAgreements) setAgreements(JSON.parse(freshAgreements));
-
-      const freshMilestones = localStorage.getItem(milestonesKey);
-      if (freshMilestones) setMilestones(JSON.parse(freshMilestones));
-
-      const freshAudits = localStorage.getItem(auditLogsKey);
-      if (freshAudits) setAuditLogs(JSON.parse(freshAudits));
+      loadData();
     };
 
     window.addEventListener("storage", handleStorageChange);
