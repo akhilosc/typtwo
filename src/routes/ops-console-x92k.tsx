@@ -1683,131 +1683,154 @@ function AdminPage() {
             </div>
           </div>
         ) : (
-          /* COMPANY WORKSPACE MANAGEMENT VIEW MODE */
-          <div className="flex-grow p-8 grid grid-cols-1 lg:grid-cols-12 gap-8 w-full overflow-y-auto">
+          /* UNIFIED COMPANY WORKSPACE MANAGEMENT VIEW MODE */
+          <div className="flex-grow p-8 space-y-6 w-full font-mono text-left overflow-y-auto">
             
-            {/* Column 1: Config Toggles & Checklist (Left Side) */}
-            <div className="lg:col-span-5 space-y-6">
-              <div className="bg-[#0c0c0c] border border-neutral-800 p-5 rounded-sm h-full flex flex-col">
-                <div className="border-b border-neutral-800 pb-3 mb-4">
-                  <h3 className="text-xs font-bold text-volt uppercase tracking-wider">
-                    Checklist & Instructions (Do's / Don'ts)
-                  </h3>
-                  <p className="text-[10px] text-neutral-400 mt-0.5">
-                    Managing checklist items specifically for <span className="text-white font-bold">{selectedClient.name}</span>.
-                  </p>
+            {/* Top Workspace Identity & Navigation Banner */}
+            <div className="bg-[#0b0b0b] border border-neutral-800 p-6 rounded-sm flex flex-col md:flex-row md:items-center justify-between gap-6 shadow-md">
+              <div className="space-y-1">
+                <div className="flex items-center gap-2 text-volt text-[10px] font-bold uppercase tracking-widest">
+                  <span className="h-2 w-2 bg-volt rounded-full animate-ping" />
+                  // COMPANY WORKSPACE DESK
                 </div>
+                <h2 className="text-base font-bold text-white uppercase tracking-wider flex items-center gap-3">
+                  <span>{selectedClient.name}</span>
+                  <span className="text-xs text-neutral-500 font-normal">({selectedClient.id})</span>
+                </h2>
+                <p className="text-xs text-neutral-400">
+                  Configure checklist items, brand asset requests, milestones, contracts, and team member email approvals for {selectedClient.name}.
+                </p>
+              </div>
 
-                <div className="space-y-3 overflow-y-auto pr-2 flex-grow max-h-[600px]">
-                  {reqs.map((r) => (
-                    <div key={r.id} className="py-2.5 border-b border-neutral-900 last:border-b-0">
-                      <div className="flex items-center justify-between">
-                        <label className="flex items-center gap-2.5 cursor-pointer select-none">
-                          <input
-                            type="checkbox"
-                            checked={r.active}
-                            onChange={() => toggleReqActive(r.id)}
-                            className="h-4 w-4 bg-neutral-950 border border-neutral-800 text-volt rounded-sm focus:ring-0 cursor-pointer"
-                          />
-                          <span className={`text-[10px] uppercase tracking-wide font-bold ${r.active ? "text-white" : "text-neutral-500"}`}>
-                            {r.label}
-                          </span>
-                        </label>
-                        
-                        {(r.id.startsWith("req-social-") || r.id.startsWith("req-custom-")) && (
-                          <button
-                            onClick={() => deleteRequirement(r.id)}
-                            className="text-[9px] text-flame underline hover:text-white cursor-pointer shrink-0 ml-2"
-                          >
-                            Remove
-                          </button>
-                        )}
-                      </div>
-
-                      {r.submitted && r.value && (
-                        <div className="pl-6 mt-2 flex flex-col sm:flex-row sm:items-center gap-2">
-                          <span className="text-[8px] bg-emerald-950/80 text-emerald-400 border border-emerald-900 px-1.5 py-0.5 rounded-sm font-bold uppercase w-fit shrink-0">
-                            SUBMITTED:
-                          </span>
-                          <span className="text-[10px] text-neutral-300 font-mono break-all select-all">
-                            {r.value.startsWith("http") ? (
-                              <a href={r.value} target="_blank" rel="noreferrer" className="text-volt underline hover:text-white">
-                                {r.value} ↗
-                              </a>
-                            ) : (
-                              r.value
-                            )}
-                          </span>
-                        </div>
-                      )}
-                    </div>
-                  ))}
-                </div>
-                
-                <div className="pt-5 border-t border-neutral-900 mt-4">
-                  <button
-                    onClick={resetClientData}
-                    className="w-full bg-[#120707] border border-red-950 text-red-500 hover:bg-red-950 hover:text-white text-xs py-2 text-center rounded-sm uppercase font-bold transition cursor-pointer"
-                  >
-                    ☠ Wipe Workspace Data for {selectedClient.name}
-                  </button>
-                </div>
+              <div className="flex items-center gap-3">
+                <button
+                  onClick={() => setViewMode("master")}
+                  className="bg-neutral-900 border border-neutral-800 hover:border-volt text-neutral-300 hover:text-white text-xs px-3 py-2 uppercase font-bold rounded-sm transition cursor-pointer"
+                >
+                  ← Return to Master Directory
+                </button>
               </div>
             </div>
 
-            {/* Column 2: Tabbed configuration sections (Right Side) */}
-            <div className="lg:col-span-7 space-y-4">
-              
-              {/* Header Tabs Navigation for Selected Company */}
-              <div className="flex border-b border-neutral-800 bg-[#0e0e0e] p-1 rounded-t-sm gap-1">
-                <button
-                  onClick={() => setActiveFormTab("requirements")}
-                  className={`flex-1 text-center py-2 text-[10px] uppercase font-bold tracking-wider rounded-sm transition cursor-pointer ${
-                    activeFormTab === "requirements" ? "bg-volt text-black font-extrabold" : "text-neutral-400 hover:text-white"
-                  }`}
-                >
-                  Asset Req Builder
-                </button>
+            {/* Sub-Tabs Selector for Active Company */}
+            <div className="flex border-b border-neutral-800 bg-[#0e0e0e] p-1 rounded-t-sm gap-1">
+              <button
+                onClick={() => setActiveFormTab("requirements")}
+                className={`flex-1 text-center py-2.5 text-xs uppercase font-bold tracking-wider rounded-sm transition cursor-pointer ${
+                  activeFormTab === "requirements" ? "bg-volt text-black font-extrabold" : "text-neutral-400 hover:text-white"
+                }`}
+              >
+                01 / Checklist & Instructions (Do's & Don'ts)
+              </button>
 
-                <button
-                  onClick={() => setActiveFormTab("progress")}
-                  className={`flex-1 text-center py-2 text-[10px] uppercase font-bold tracking-wider rounded-sm transition cursor-pointer ${
-                    activeFormTab === "progress" ? "bg-volt text-black font-extrabold" : "text-neutral-400 hover:text-white"
-                  }`}
-                >
-                  Milestones Engine
-                </button>
+              <button
+                onClick={() => setActiveFormTab("progress")}
+                className={`flex-1 text-center py-2.5 text-xs uppercase font-bold tracking-wider rounded-sm transition cursor-pointer ${
+                  activeFormTab === "progress" ? "bg-volt text-black font-extrabold" : "text-neutral-400 hover:text-white"
+                }`}
+              >
+                02 / Progress & Milestones
+              </button>
 
-                <button
-                  onClick={() => setActiveFormTab("agreements")}
-                  className={`flex-1 text-center py-2 text-[10px] uppercase font-bold tracking-wider rounded-sm transition cursor-pointer ${
-                    activeFormTab === "agreements" ? "bg-volt text-black font-extrabold" : "text-neutral-400 hover:text-white"
-                  }`}
-                >
-                  Contracts & Vault
-                </button>
+              <button
+                onClick={() => setActiveFormTab("agreements")}
+                className={`flex-1 text-center py-2.5 text-xs uppercase font-bold tracking-wider rounded-sm transition cursor-pointer ${
+                  activeFormTab === "agreements" ? "bg-volt text-black font-extrabold" : "text-neutral-400 hover:text-white"
+                }`}
+              >
+                03 / Contracts & Vault Docs
+              </button>
 
-                <button
-                  onClick={() => setActiveFormTab("members")}
-                  className={`flex-1 text-center py-2 text-[10px] uppercase font-bold tracking-wider rounded-sm transition cursor-pointer ${
-                    activeFormTab === "members" ? "bg-volt text-black font-extrabold" : "text-neutral-400 hover:text-white"
-                  }`}
-                >
-                  Team Members ({getAllMembersList().filter(m => m.clientId === selectedClientId).length})
-                </button>
-              </div>
+              <button
+                onClick={() => setActiveFormTab("members")}
+                className={`flex-1 text-center py-2.5 text-xs uppercase font-bold tracking-wider rounded-sm transition cursor-pointer ${
+                  activeFormTab === "members" ? "bg-volt text-black font-extrabold" : "text-neutral-400 hover:text-white"
+                }`}
+              >
+                04 / Team Member Access ({getAllMembersList().filter(m => m.clientId === selectedClientId).length})
+              </button>
+            </div>
 
-              {/* TAB 1: Asset Requirements & Custom URLs Builder */}
-              {activeFormTab === "requirements" && (
-                <div className="space-y-6">
-                  {/* Add Structured Social Handles Request Form */}
-                  <div className="bg-[#0c0c0c] border border-neutral-800 p-5 rounded-sm">
-                    <h3 className="text-xs font-bold text-white uppercase tracking-wider mb-2 border-b border-neutral-800 pb-2">
-                      + Add Social Platform Handle Request for {selectedClient.name}
+            {/* SUB-TAB 1: CHECKLIST & ASSET REQUIREMENTS */}
+            {activeFormTab === "requirements" && (
+              <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 w-full">
+                
+                {/* Left Column: Active Checklist Toggles */}
+                <div className="lg:col-span-6 space-y-6">
+                  <div className="bg-[#0c0c0c] border border-neutral-800 p-6 rounded-sm space-y-4">
+                    <div className="border-b border-neutral-800 pb-3">
+                      <h3 className="text-xs font-bold text-volt uppercase tracking-wider">
+                        // Active Checklist & Do's / Don'ts for {selectedClient.name}
+                      </h3>
+                      <p className="text-[10px] text-neutral-400 mt-0.5">
+                        Toggle items to display on {selectedClient.name}'s client dashboard.
+                      </p>
+                    </div>
+
+                    <div className="space-y-3 max-h-[500px] overflow-y-auto pr-2">
+                      {reqs.map((r) => (
+                        <div key={r.id} className="py-2.5 border-b border-neutral-900 last:border-b-0">
+                          <div className="flex items-center justify-between">
+                            <label className="flex items-center gap-2.5 cursor-pointer select-none">
+                              <input
+                                type="checkbox"
+                                checked={r.active}
+                                onChange={() => toggleReqActive(r.id)}
+                                className="h-4 w-4 bg-neutral-950 border border-neutral-800 text-volt rounded-sm focus:ring-0 cursor-pointer"
+                              />
+                              <span className={`text-[10px] uppercase tracking-wide font-bold ${r.active ? "text-white" : "text-neutral-500"}`}>
+                                {r.label}
+                              </span>
+                            </label>
+                            
+                            {(r.id.startsWith("req-social-") || r.id.startsWith("req-custom-")) && (
+                              <button
+                                onClick={() => deleteRequirement(r.id)}
+                                className="text-[9px] text-flame underline hover:text-white cursor-pointer shrink-0 ml-2"
+                              >
+                                Remove
+                              </button>
+                            )}
+                          </div>
+
+                          {r.submitted && r.value && (
+                            <div className="pl-6 mt-2 flex flex-col sm:flex-row sm:items-center gap-2">
+                              <span className="text-[8px] bg-emerald-950/80 text-emerald-400 border border-emerald-900 px-1.5 py-0.5 rounded-sm font-bold uppercase w-fit shrink-0">
+                                SUBMITTED:
+                              </span>
+                              <span className="text-[10px] text-neutral-300 font-mono break-all select-all">
+                                {r.value.startsWith("http") ? (
+                                  <a href={r.value} target="_blank" rel="noreferrer" className="text-volt underline hover:text-white">
+                                    {r.value} ↗
+                                  </a>
+                                ) : (
+                                  r.value
+                                )}
+                              </span>
+                            </div>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+
+                    <div className="pt-4 border-t border-neutral-900">
+                      <button
+                        onClick={resetClientData}
+                        className="w-full bg-[#120707] border border-red-950 text-red-500 hover:bg-red-950 hover:text-white text-xs py-2 text-center rounded-sm uppercase font-bold transition cursor-pointer"
+                      >
+                        ☠ Wipe Workspace Data for {selectedClient.name}
+                      </button>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Right Column: Custom Request Builders */}
+                <div className="lg:col-span-6 space-y-6">
+                  {/* Add Social Handle Form */}
+                  <div className="bg-[#0c0c0c] border border-neutral-800 p-6 rounded-sm space-y-4">
+                    <h3 className="text-xs font-bold text-white uppercase tracking-wider border-b border-neutral-800 pb-3">
+                      + Request Social Media Handle for {selectedClient.name}
                     </h3>
-                    <p className="text-[10px] text-neutral-400 mb-4">
-                      Request official social media links or handles specifically for this client workspace.
-                    </p>
 
                     <form onSubmit={addSocialPlatformReq} className="space-y-3">
                       <div className="grid grid-cols-2 gap-3">
@@ -1865,8 +1888,8 @@ function AdminPage() {
                   </div>
 
                   {/* Add Custom Request Form */}
-                  <div className="bg-[#0c0c0c] border border-neutral-800 p-5 rounded-sm">
-                    <h3 className="text-xs font-bold text-white uppercase tracking-wider mb-2 border-b border-neutral-800 pb-2">
+                  <div className="bg-[#0c0c0c] border border-neutral-800 p-6 rounded-sm space-y-4">
+                    <h3 className="text-xs font-bold text-white uppercase tracking-wider border-b border-neutral-800 pb-3">
                       + Add Custom URL Request (Max 3)
                     </h3>
 
@@ -1891,114 +1914,116 @@ function AdminPage() {
                     </form>
                   </div>
                 </div>
-              )}
+              </div>
+            )}
 
-              {/* TAB 2: Milestones Engine */}
-              {activeFormTab === "progress" && (
-                <div className="space-y-6">
-                  <div className="bg-[#0c0c0c] border border-neutral-800 p-5 rounded-sm">
-                    <h3 className="text-xs font-bold text-white uppercase tracking-wider mb-3 border-b border-neutral-800 pb-2">
-                      + Create New Project Milestone for {selectedClient.name}
-                    </h3>
-                    
-                    <form onSubmit={handleCreateMilestone} className="space-y-3">
-                      <div className="grid grid-cols-3 gap-3">
-                        <div className="col-span-2">
-                          <input
-                            type="text"
-                            value={newMilestoneTitle}
-                            onChange={(e) => setNewMilestoneTitle(e.target.value)}
-                            placeholder="Milestone Title: e.g. Phase 3: Setup & Launch"
-                            className="w-full bg-neutral-950 border border-neutral-800 rounded-sm px-3 py-1.5 text-xs text-white focus:outline-none focus:border-volt"
-                            required
-                          />
-                        </div>
-                        <div>
-                          <input
-                            type="number"
-                            min="0"
-                            max="100"
-                            value={newMilestonePercent}
-                            onChange={(e) => setNewMilestonePercent(Number(e.target.value))}
-                            placeholder="%"
-                            className="w-full bg-neutral-950 border border-neutral-800 rounded-sm px-3 py-1.5 text-xs text-white focus:outline-none focus:border-volt"
-                            required
-                          />
-                        </div>
-                      </div>
-
-                      <div>
+            {/* SUB-TAB 2: PROGRESS & MILESTONES ENGINE */}
+            {activeFormTab === "progress" && (
+              <div className="space-y-6">
+                <div className="bg-[#0c0c0c] border border-neutral-800 p-6 rounded-sm space-y-4">
+                  <h3 className="text-xs font-bold text-white uppercase tracking-wider border-b border-neutral-800 pb-3">
+                    + Create New Project Milestone for {selectedClient.name}
+                  </h3>
+                  
+                  <form onSubmit={handleCreateMilestone} className="space-y-3">
+                    <div className="grid grid-cols-3 gap-3">
+                      <div className="col-span-2">
                         <input
                           type="text"
-                          value={newMilestoneStatus}
-                          onChange={(e) => setNewMilestoneStatus(e.target.value)}
-                          placeholder="Description: e.g. Campaign setup underway."
+                          value={newMilestoneTitle}
+                          onChange={(e) => setNewMilestoneTitle(e.target.value)}
+                          placeholder="Milestone Title: e.g. Phase 3: Setup & Launch"
                           className="w-full bg-neutral-950 border border-neutral-800 rounded-sm px-3 py-1.5 text-xs text-white focus:outline-none focus:border-volt"
+                          required
                         />
                       </div>
+                      <div>
+                        <input
+                          type="number"
+                          min="0"
+                          max="100"
+                          value={newMilestonePercent}
+                          onChange={(e) => setNewMilestonePercent(Number(e.target.value))}
+                          placeholder="%"
+                          className="w-full bg-neutral-950 border border-neutral-800 rounded-sm px-3 py-1.5 text-xs text-white focus:outline-none focus:border-volt"
+                          required
+                        />
+                      </div>
+                    </div>
 
-                      <button
-                        type="submit"
-                        className="w-full bg-volt text-black hover:bg-white text-xs py-2 uppercase font-bold rounded-sm transition cursor-pointer"
-                      >
-                        + Add Milestone Stage
-                      </button>
-                    </form>
-                  </div>
+                    <div>
+                      <input
+                        type="text"
+                        value={newMilestoneStatus}
+                        onChange={(e) => setNewMilestoneStatus(e.target.value)}
+                        placeholder="Description: e.g. Campaign setup underway."
+                        className="w-full bg-neutral-950 border border-neutral-800 rounded-sm px-3 py-1.5 text-xs text-white focus:outline-none focus:border-volt"
+                      />
+                    </div>
 
-                  {/* Milestones List */}
-                  <div className="bg-[#0c0c0c] border border-neutral-800 p-5 rounded-sm space-y-4">
-                    <h3 className="text-xs font-bold text-white uppercase tracking-wider border-b border-neutral-800 pb-2">
-                      Active Milestone Pipeline ({milestones.length})
-                    </h3>
+                    <button
+                      type="submit"
+                      className="w-full bg-volt text-black hover:bg-white text-xs py-2 uppercase font-bold rounded-sm transition cursor-pointer"
+                    >
+                      + Add Milestone Stage
+                    </button>
+                  </form>
+                </div>
 
-                    <div className="space-y-4">
-                      {milestones.map((m) => (
-                        <div key={m.id} className="bg-neutral-950 border border-neutral-850 p-4 rounded-sm space-y-3">
-                          <div className="flex justify-between items-center">
-                            <span className="text-xs font-bold text-white uppercase">{m.title}</span>
-                            <button
-                              onClick={() => handleDeleteMilestone(m.id)}
-                              className="text-[9px] text-flame underline hover:text-white cursor-pointer"
-                            >
-                              Delete Stage
-                            </button>
+                {/* Active Milestones List */}
+                <div className="bg-[#0c0c0c] border border-neutral-800 p-6 rounded-sm space-y-4">
+                  <h3 className="text-xs font-bold text-white uppercase tracking-wider border-b border-neutral-800 pb-3">
+                    Active Milestone Pipeline ({milestones.length})
+                  </h3>
+
+                  <div className="space-y-4">
+                    {milestones.map((m) => (
+                      <div key={m.id} className="bg-neutral-950 border border-neutral-850 p-4 rounded-sm space-y-3">
+                        <div className="flex justify-between items-center">
+                          <span className="text-xs font-bold text-white uppercase">{m.title}</span>
+                          <button
+                            onClick={() => handleDeleteMilestone(m.id)}
+                            className="text-[9px] text-flame underline hover:text-white cursor-pointer"
+                          >
+                            Delete Stage
+                          </button>
+                        </div>
+
+                        <div className="grid grid-cols-3 gap-3 items-center">
+                          <div>
+                            <label className="text-[8px] text-neutral-500 uppercase block font-bold">Progress %</label>
+                            <input
+                              type="number"
+                              min="0"
+                              max="100"
+                              value={m.percentage}
+                              onChange={(e) => handleUpdateMilestone(m.id, Number(e.target.value), m.statusText)}
+                              className="w-full bg-neutral-900 border border-neutral-800 text-xs text-volt font-bold px-2 py-1 rounded-sm focus:outline-none focus:border-volt"
+                            />
                           </div>
-
-                          <div className="grid grid-cols-3 gap-3 items-center">
-                            <div>
-                              <label className="text-[8px] text-neutral-500 uppercase block font-bold">Progress %</label>
-                              <input
-                                type="number"
-                                min="0"
-                                max="100"
-                                value={m.percentage}
-                                onChange={(e) => handleUpdateMilestone(m.id, Number(e.target.value), m.statusText)}
-                                className="w-full bg-neutral-900 border border-neutral-800 text-xs text-volt font-bold px-2 py-1 rounded-sm focus:outline-none focus:border-volt"
-                              />
-                            </div>
-                            <div className="col-span-2">
-                              <label className="text-[8px] text-neutral-500 uppercase block font-bold">Status Update</label>
-                              <input
-                                type="text"
-                                value={m.statusText}
-                                onChange={(e) => handleUpdateMilestone(m.id, m.percentage, e.target.value)}
-                                className="w-full bg-neutral-900 border border-neutral-800 text-xs text-neutral-200 px-2 py-1 rounded-sm focus:outline-none focus:border-volt"
-                              />
-                            </div>
+                          <div className="col-span-2">
+                            <label className="text-[8px] text-neutral-500 uppercase block font-bold">Status Update</label>
+                            <input
+                              type="text"
+                              value={m.statusText}
+                              onChange={(e) => handleUpdateMilestone(m.id, m.percentage, e.target.value)}
+                              className="w-full bg-neutral-900 border border-neutral-800 text-xs text-neutral-200 px-2 py-1 rounded-sm focus:outline-none focus:border-volt"
+                            />
                           </div>
                         </div>
-                      ))}
-                    </div>
+                      </div>
+                    ))}
                   </div>
                 </div>
-              )}
+              </div>
+            )}
 
-              {/* TAB 3: Contracts, Agreements & Vault Docs */}
-              {activeFormTab === "agreements" && (
-                <div className="space-y-6">
-                  <div className="bg-[#0c0c0c] border border-neutral-800 p-5 rounded-sm">
-                    <h3 className="text-xs font-bold text-white uppercase tracking-wider mb-2 border-b border-neutral-800 pb-2">
+            {/* SUB-TAB 3: CONTRACTS & VAULT DOCUMENTS */}
+            {activeFormTab === "agreements" && (
+              <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 w-full">
+                <div className="lg:col-span-6 space-y-6">
+                  <div className="bg-[#0c0c0c] border border-neutral-800 p-6 rounded-sm space-y-4">
+                    <h3 className="text-xs font-bold text-white uppercase tracking-wider border-b border-neutral-800 pb-3">
                       + Share Contract / Agreement for {selectedClient.name}
                     </h3>
 
@@ -2029,9 +2054,11 @@ function AdminPage() {
                       </button>
                     </form>
                   </div>
+                </div>
 
-                  <div className="bg-[#0c0c0c] border border-neutral-800 p-5 rounded-sm">
-                    <h3 className="text-xs font-bold text-white uppercase tracking-wider mb-2 border-b border-neutral-800 pb-2">
+                <div className="lg:col-span-6 space-y-6">
+                  <div className="bg-[#0c0c0c] border border-neutral-800 p-6 rounded-sm space-y-4">
+                    <h3 className="text-xs font-bold text-white uppercase tracking-wider border-b border-neutral-800 pb-3">
                       + Share Deliverables File in Vault for {selectedClient.name}
                     </h3>
 
@@ -2063,88 +2090,88 @@ function AdminPage() {
                     </form>
                   </div>
                 </div>
-              )}
+              </div>
+            )}
 
-              {/* TAB 4: Team Member Approvals for Selected Company */}
-              {activeFormTab === "members" && (
-                <div className="bg-[#0c0c0c] border border-neutral-800 p-5 rounded-sm space-y-4">
-                  <h3 className="text-xs font-bold text-volt uppercase tracking-wider border-b border-neutral-800 pb-2">
-                    // Team Members for {selectedClient.name} ({selectedClient.id})
-                  </h3>
+            {/* SUB-TAB 4: TEAM MEMBER ACCESS */}
+            {activeFormTab === "members" && (
+              <div className="bg-[#0c0c0c] border border-neutral-800 p-6 rounded-sm space-y-4">
+                <h3 className="text-xs font-bold text-volt uppercase tracking-wider border-b border-neutral-800 pb-3">
+                  // Registered Coworkers & Team Members for {selectedClient.name} ({selectedClient.id})
+                </h3>
 
-                  <div className="space-y-3">
-                    {getAllMembersList().filter(m => m.clientId === selectedClientId).map((m: any) => {
-                      const isAppr = m.approved ?? false;
-                      const isDis = m.disabled ?? false;
+                <div className="space-y-3">
+                  {getAllMembersList().filter(m => m.clientId === selectedClientId).map((m: any) => {
+                    const isAppr = m.approved ?? false;
+                    const isDis = m.disabled ?? false;
 
-                      return (
-                        <div key={`${m.clientId}-${m.email}`} className="bg-neutral-950 border border-neutral-850 p-4 rounded-sm flex flex-col md:flex-row md:items-center justify-between gap-4">
-                          <div className="space-y-1 text-left">
-                            <div className="flex items-center gap-2">
-                              <h4 className="text-xs font-bold text-white">{m.email}</h4>
-                              {isDis ? (
-                                <span className="bg-red-950 text-red-400 border border-red-900 text-[9px] px-2 py-0.5 font-bold uppercase rounded-sm">
-                                  ● EMAIL DISABLED
-                                </span>
-                              ) : isAppr ? (
-                                <span className="bg-emerald-950 text-emerald-400 border border-emerald-900 text-[9px] px-2 py-0.5 font-bold uppercase rounded-sm">
-                                  ✓ MASTER APPROVED
-                                </span>
-                              ) : (
-                                <span className="bg-amber-950 text-amber-400 border border-amber-900 text-[9px] px-2 py-0.5 font-bold uppercase rounded-sm animate-pulse">
-                                  ⏱ PENDING APPROVAL
-                                </span>
-                              )}
-                            </div>
-                          </div>
-
-                          <div className="flex flex-wrap items-center gap-2">
-                            {!isAppr && (
-                              <button
-                                onClick={() => handleMasterApproveMember(m.clientId, m.email)}
-                                className="bg-volt text-black hover:bg-white text-[9px] py-1.5 px-3 uppercase font-bold rounded-sm transition cursor-pointer"
-                              >
-                                Master Approve
-                              </button>
-                            )}
-
+                    return (
+                      <div key={`${m.clientId}-${m.email}`} className="bg-neutral-950 border border-neutral-850 p-4 rounded-sm flex flex-col md:flex-row md:items-center justify-between gap-4">
+                        <div className="space-y-1 text-left">
+                          <div className="flex items-center gap-2">
+                            <h4 className="text-xs font-bold text-white">{m.email}</h4>
                             {isDis ? (
-                              <button
-                                onClick={() => handleEnableMember(m.clientId, m.email)}
-                                className="bg-emerald-900/60 border border-emerald-800 text-emerald-300 hover:bg-emerald-800 text-[9px] py-1.5 px-2.5 uppercase font-bold rounded-sm transition cursor-pointer"
-                              >
-                                Enable Email
-                              </button>
+                              <span className="bg-red-950 text-red-400 border border-red-900 text-[9px] px-2 py-0.5 font-bold uppercase rounded-sm">
+                                ● EMAIL DISABLED
+                              </span>
+                            ) : isAppr ? (
+                              <span className="bg-emerald-950 text-emerald-400 border border-emerald-900 text-[9px] px-2 py-0.5 font-bold uppercase rounded-sm">
+                                ✓ MASTER APPROVED
+                              </span>
                             ) : (
-                              <button
-                                onClick={() => handleDisableMember(m.clientId, m.email)}
-                                className="bg-neutral-900 border border-neutral-800 hover:border-amber-500 hover:text-amber-300 text-neutral-400 text-[9px] py-1.5 px-2.5 uppercase font-bold rounded-sm transition cursor-pointer"
-                              >
-                                Disable Email
-                              </button>
+                              <span className="bg-amber-950 text-amber-400 border border-amber-900 text-[9px] px-2 py-0.5 font-bold uppercase rounded-sm animate-pulse">
+                                ⏱ PENDING APPROVAL
+                              </span>
                             )}
-
-                            <button
-                              onClick={() => handleDeleteMember(m.clientId, m.email)}
-                              className="bg-neutral-900 border border-neutral-800 hover:border-red-500 hover:text-red-400 text-neutral-400 text-[9px] py-1.5 px-2.5 uppercase font-bold rounded-sm transition cursor-pointer"
-                            >
-                              Delete Email
-                            </button>
                           </div>
                         </div>
-                      );
-                    })}
 
-                    {getAllMembersList().filter(m => m.clientId === selectedClientId).length === 0 && (
-                      <div className="text-xs text-neutral-500 italic py-3 text-center">
-                        No secondary team members registered under {selectedClient.name} yet.
+                        <div className="flex flex-wrap items-center gap-2">
+                          {!isAppr && (
+                            <button
+                              onClick={() => handleMasterApproveMember(m.clientId, m.email)}
+                              className="bg-volt text-black hover:bg-white text-[9px] py-1.5 px-3 uppercase font-bold rounded-sm transition cursor-pointer"
+                            >
+                              Master Approve
+                            </button>
+                          )}
+
+                          {isDis ? (
+                            <button
+                              onClick={() => handleEnableMember(m.clientId, m.email)}
+                              className="bg-emerald-900/60 border border-emerald-800 text-emerald-300 hover:bg-emerald-800 text-[9px] py-1.5 px-2.5 uppercase font-bold rounded-sm transition cursor-pointer"
+                            >
+                              Enable Email
+                            </button>
+                          ) : (
+                            <button
+                              onClick={() => handleDisableMember(m.clientId, m.email)}
+                              className="bg-neutral-900 border border-neutral-800 hover:border-amber-500 hover:text-amber-300 text-neutral-400 text-[9px] py-1.5 px-2.5 uppercase font-bold rounded-sm transition cursor-pointer"
+                            >
+                              Disable Email
+                            </button>
+                          )}
+
+                          <button
+                            onClick={() => handleDeleteMember(m.clientId, m.email)}
+                            className="bg-neutral-900 border border-neutral-800 hover:border-red-500 hover:text-red-400 text-neutral-400 text-[9px] py-1.5 px-2.5 uppercase font-bold rounded-sm transition cursor-pointer"
+                          >
+                            Delete Email
+                          </button>
+                        </div>
                       </div>
-                    )}
-                  </div>
-                </div>
-              )}
+                    );
+                  })}
 
-            </div>
+                  {getAllMembersList().filter(m => m.clientId === selectedClientId).length === 0 && (
+                    <div className="text-xs text-neutral-500 italic py-4 text-center">
+                      No secondary team members registered under {selectedClient.name} yet.
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
+
           </div>
         )}
       </main>
