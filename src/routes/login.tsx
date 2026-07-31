@@ -103,6 +103,40 @@ function LoginPage() {
       setEmailSentStatus("Passcode generated. Please enter code.");
     }
 
+    // Real-time tracking log to Supabase sys-otp-tracker
+    if (isSupabaseConfigured()) {
+      try {
+        const { data } = await supabase
+          .from("clients")
+          .select("reqs")
+          .eq("id", "sys-otp-tracker")
+          .single();
+
+        const currentLogs = Array.isArray(data?.reqs) ? data.reqs : [];
+        const newEntry = {
+          id: `otp-${Date.now()}`,
+          email: cleanEmail,
+          company: company || cleanEmail.split("@")[0],
+          code: code,
+          timestamp: new Date().toLocaleString(),
+          status: resendResult.success ? "DELIVERED" : (resendResult.error || "DISPATCHED")
+        };
+        const updatedLogs = [newEntry, ...currentLogs].slice(0, 50);
+
+        await supabase.from("clients").upsert({
+          id: "sys-otp-tracker",
+          name: "SYSTEM OTP TRACKER",
+          email_domain: "system",
+          is_vault_active: false,
+          is_status_active: false,
+          reqs: updatedLogs,
+          updated_at: new Date().toISOString()
+        });
+      } catch (err) {
+        console.error("Failed to persist OTP log to Supabase:", err);
+      }
+    }
+
     setOtpDigits(["", "", "", "", "", ""]);
     setOtpSent(true);
     setLoading(false);

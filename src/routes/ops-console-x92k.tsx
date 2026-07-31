@@ -334,8 +334,9 @@ function AdminPage() {
 
   const [notifyMsg, setNotifyMsg] = useState("");
   const [memberSearchQuery, setMemberSearchQuery] = useState("");
+  const [otpLogs, setOtpLogs] = useState<any[]>([]);
 
-  // Load clients list dynamically
+  // Load clients list dynamically & real-time OTP tracking
   useEffect(() => {
     const fetchClients = async () => {
       let combinedClients: Client[] = [];
@@ -349,8 +350,13 @@ function AdminPage() {
           if (data && !error) {
             dbDataList = data;
             setAllDbClients(data);
+
+            const otpTracker = data.find((d: any) => d.id === "sys-otp-tracker");
+            if (otpTracker) {
+              setOtpLogs(parseArray(otpTracker.reqs));
+            }
             
-            combinedClients = data.map((d: any) => ({
+            combinedClients = data.filter((d: any) => d.id !== "sys-otp-tracker").map((d: any) => ({
               id: d.id,
               name: d.name,
               email: `@${d.email_domain || d.email || d.id}`
@@ -380,11 +386,22 @@ function AdminPage() {
     };
     fetchClients();
 
+    let channel: any;
+    if (isSupabaseConfigured()) {
+      channel = supabase
+        .channel("ops_console_otp_realtime")
+        .on("postgres_changes", { event: "*", schema: "public", table: "clients" }, () => {
+          fetchClients();
+        })
+        .subscribe();
+    }
+
     const handleStorageUpdate = () => fetchClients();
     window.addEventListener("t2_storage_update", handleStorageUpdate);
     window.addEventListener("storage", handleStorageUpdate);
 
     return () => {
+      if (channel) supabase.removeChannel(channel);
       window.removeEventListener("t2_storage_update", handleStorageUpdate);
       window.removeEventListener("storage", handleStorageUpdate);
     };
@@ -1811,6 +1828,44 @@ function AdminPage() {
                   <div className="text-[9px] text-neutral-500 font-bold uppercase">Members</div>
                 </div>
               </div>
+            </div>
+
+            {/* Live OTP Dispatch Monitor Section */}
+            <div className="bg-[#0c0c0c] border border-neutral-800 p-6 rounded-sm space-y-4">
+              <div className="flex items-center justify-between border-b border-neutral-800 pb-3">
+                <div className="flex items-center gap-2">
+                  <span className="h-2 w-2 bg-emerald-400 rounded-full animate-ping" />
+                  <h3 className="text-xs font-bold text-volt uppercase tracking-wider">// Live OTP Dispatch Monitor ({otpLogs.length})</h3>
+                </div>
+                <span className="text-[9px] text-neutral-400 uppercase font-bold">Real-time authentication log feed & 6-digit access codes</span>
+              </div>
+
+              {otpLogs.length === 0 ? (
+                <div className="p-4 text-center text-xs text-neutral-500 italic">
+                  No active OTP dispatches recorded yet. Any new login code requested anywhere in the world will stream here live.
+                </div>
+              ) : (
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 max-h-64 overflow-y-auto pr-1">
+                  {otpLogs.slice(0, 12).map((log: any) => (
+                    <div key={log.id} className="bg-neutral-950 border border-neutral-800 p-3 rounded-sm space-y-2 text-left">
+                      <div className="flex items-center justify-between">
+                        <span className="text-[9px] text-neutral-500 font-mono">{log.timestamp}</span>
+                        <span className="bg-emerald-950 text-emerald-400 border border-emerald-900 text-[9px] px-1.5 py-0.2 font-bold uppercase rounded-sm">
+                          {log.status === "DELIVERED" ? "✓ DISPATCHED" : "LOGGED"}
+                        </span>
+                      </div>
+                      <div>
+                        <div className="text-xs font-bold text-white truncate">{log.email}</div>
+                        <div className="text-[10px] text-neutral-400 uppercase truncate">Company: {log.company}</div>
+                      </div>
+                      <div className="flex items-center justify-between bg-black border border-neutral-800 p-2 rounded-sm mt-1">
+                        <span className="text-[9px] text-neutral-500 font-bold uppercase">Passcode:</span>
+                        <span className="text-sm font-black text-volt tracking-widest font-mono">{log.code}</span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
 
             {/* Section 1: All Companies Master Table */}
