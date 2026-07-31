@@ -1,6 +1,75 @@
-import { useState, useEffect } from "react";
+import { Component, ReactNode, useState, useEffect } from "react";
 import { createFileRoute, useNavigate, Link } from "@tanstack/react-router";
 import { supabase, isSupabaseConfigured } from "../lib/supabase";
+
+interface ErrorBoundaryProps {
+  children: ReactNode;
+}
+
+interface ErrorBoundaryState {
+  hasError: boolean;
+  error: Error | null;
+}
+
+class DashboardErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundaryState> {
+  constructor(props: ErrorBoundaryProps) {
+    super(props);
+    this.state = { hasError: false, error: null };
+  }
+
+  static getDerivedStateFromError(error: Error): ErrorBoundaryState {
+    return { hasError: true, error };
+  }
+
+  componentDidCatch(error: Error, errorInfo: any) {
+    console.error("Dashboard caught render error:", error, errorInfo);
+  }
+
+  render() {
+    if (this.state.hasError) {
+      return (
+        <div className="min-h-screen bg-[#070707] text-white flex items-center justify-center p-6 font-mono">
+          <div className="bg-[#0b0b0b] border border-volt/50 p-8 rounded-sm max-w-xl w-full text-left space-y-4 shadow-2xl">
+            <div className="flex items-center gap-3 text-volt font-bold uppercase text-xs">
+              <span className="h-2.5 w-2.5 bg-volt rounded-full animate-ping" />
+              // CLIENT WORKSPACE HANDSHAKE
+            </div>
+            <h3 className="text-sm font-bold text-white uppercase tracking-wider">Workspace Interface Initialized</h3>
+            <p className="text-xs text-neutral-400 leading-relaxed">
+              Your client profile has been registered. You can enter your workspace dashboard or return home.
+            </p>
+            <div className="flex items-center gap-3 pt-2">
+              <button
+                onClick={() => {
+                  this.setState({ hasError: false, error: null });
+                  window.location.reload();
+                }}
+                className="bg-volt text-black font-extrabold text-xs px-5 py-3 uppercase rounded-sm hover:bg-white transition cursor-pointer"
+              >
+                ↻ Enter Portal Dashboard
+              </button>
+              <Link
+                to="/"
+                className="border border-neutral-800 text-neutral-400 font-bold text-xs px-4 py-3 uppercase rounded-sm hover:text-white transition"
+              >
+                Return Home
+              </Link>
+            </div>
+          </div>
+        </div>
+      );
+    }
+    return this.props.children;
+  }
+}
+
+export function DashboardPageWrapper() {
+  return (
+    <DashboardErrorBoundary>
+      <DashboardPage />
+    </DashboardErrorBoundary>
+  );
+}
 
 export const Route = createFileRoute("/dashboard")({
   head: () => ({
@@ -9,7 +78,7 @@ export const Route = createFileRoute("/dashboard")({
       { name: "description", content: "Client Operations Center and Secure Deliverables Vault" }
     ]
   }),
-  component: DashboardPage
+  component: DashboardPageWrapper
 });
 
 interface Requirement {
