@@ -222,19 +222,13 @@ function AdminPage() {
           if (data && !error) {
             setAllDbClients(data);
             
-            // Only map approved clients to selection list
-            const approvedRows = data.filter((d: any) => d.approved === true);
-            const mapped: Client[] = approvedRows.map((d: any) => ({
+            // Map all companies to selection list
+            const mapped: Client[] = data.map((d: any) => ({
               id: d.id,
               name: d.name,
-              email: `@${d.email_domain}`
+              email: `@${d.email_domain || d.email || d.id}`
             }));
             setClients(mapped);
-            
-            // Set first approved client as default if selected client does not exist in approved list
-            if (mapped.length > 0 && !mapped.some(c => c.id === selectedClientId)) {
-              setSelectedClientId(mapped[0].id);
-            }
             return;
           }
         } catch (err) {
@@ -1220,7 +1214,11 @@ function AdminPage() {
   const pendingMembersList = getPendingMembers();
   const totalPending = pendingWorkspacesList.length + pendingMembersList.length;
 
-  const selectedClient = clients.find(c => c.id === selectedClientId) || clients[0] || { id: "loading", name: "Loading Workspace...", email: "" };
+  const selectedClient = (allDbClients && allDbClients.length > 0 ? allDbClients.find((c: any) => c.id === selectedClientId) : null)
+    || clients.find((c: any) => c.id === selectedClientId)
+    || (allDbClients && allDbClients.length > 0 ? allDbClients[0] : null)
+    || clients[0]
+    || { id: selectedClientId || "workspace", name: selectedClientId ? selectedClientId.toUpperCase() : "Workspace", email: "" };
   const activeCustomsCount = reqs.filter(r => r.id.startsWith("req-custom-")).length;
 
   if (!isMounted) {
