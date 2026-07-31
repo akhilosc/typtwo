@@ -507,6 +507,39 @@ function DashboardPage() {
     setInputVals((prev) => ({ ...prev, [id]: val }));
   };
 
+  const handleInviteMember = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!inviteEmail.trim()) return;
+
+    const newMember = {
+      email: inviteEmail.trim(),
+      role: "Member",
+      invitedAt: new Date().toLocaleDateString(),
+      status: "Pending Verification"
+    };
+
+    const updatedMembers = [...members, newMember];
+    setMembers(updatedMembers);
+    setInviteEmail("");
+    setNotifyMsg("INVITATION SENT FOR REVIEW");
+    setTimeout(() => setNotifyMsg(""), 3000);
+
+    if (isSupabaseConfigured()) {
+      try {
+        await supabase
+          .from("clients")
+          .update({ members: updatedMembers })
+          .eq("id", clientId);
+      } catch (err) {
+        console.error(err);
+      }
+    }
+
+    localStorage.setItem(`t2_members_${clientId}`, JSON.stringify(updatedMembers));
+    window.dispatchEvent(new Event("storage"));
+    window.dispatchEvent(new Event("t2_storage_update"));
+  };
+
   // Submit individual requirement
   const submitRequirement = async (id: string) => {
     const value = inputVals[id] || "";
