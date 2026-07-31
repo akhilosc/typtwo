@@ -185,14 +185,14 @@ function LoginPage() {
           companyName = data.name;
           targetClientId = data.id;
         } else {
-          companyName = domain.split(".")[0].toUpperCase();
-          targetClientId = domain.split(".")[0];
+          companyName = company || domain.split(".")[0].toUpperCase();
+          targetClientId = (company || cleanEmail.split("@")[0]).toLowerCase().replace(/[^a-z0-9]/g, "");
         }
       } else {
         const storedList = localStorage.getItem("t2_local_clients_list");
         if (storedList) {
           const parsedList = JSON.parse(storedList);
-          const match = parsedList.find((c: any) => c.email.includes(domain) || c.email === `@${domain}`);
+          const match = parsedList.find((c: any) => c.email.includes(domain) || c.email === cleanEmail);
           if (match) {
             companyName = match.name;
             targetClientId = match.id;
@@ -209,14 +209,14 @@ function LoginPage() {
             companyName = "Acme Corp";
             targetClientId = "acme";
           } else {
-            companyName = domain.split(".")[0].toUpperCase();
-            targetClientId = domain.split(".")[0];
+            companyName = company || cleanEmail.split("@")[0].toUpperCase();
+            targetClientId = (company || cleanEmail.split("@")[0]).toLowerCase().replace(/[^a-z0-9]/g, "");
           }
         }
       }
 
       if (!targetClientId) {
-        targetClientId = domain.split(".")[0];
+        targetClientId = (company || cleanEmail.split("@")[0]).toLowerCase().replace(/[^a-z0-9]/g, "");
       }
 
       if (isSignUp) {
