@@ -1998,7 +1998,7 @@ function AdminPage() {
                       + Add Custom URL Request (Max 3)
                     </h3>
 
-                    <form onSubmit={addCustomReq} className="space-y-3">
+                    <form onSubmit={addCustomRequirement} className="space-y-3">
                       <div>
                         <input
                           type="text"
