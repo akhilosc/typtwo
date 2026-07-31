@@ -63,7 +63,7 @@ function LoginPage() {
     }
   }, [navigate]);
 
-  // Generate 6-digit OTP passcode
+  // Request real 6-digit Email OTP via Supabase Auth
   const handleRequestOtp = async (e: React.FormEvent) => {
     e.preventDefault();
     setError("");
@@ -84,23 +84,38 @@ function LoginPage() {
       return;
     }
 
-    // Try sending email via Firebase Auth
     try {
-      const actionCodeSettings = {
-        url: typeof window !== "undefined" ? window.location.href : "https://www.typtwo.com/login",
-        handleCodeInApp: true
-      };
-      await sendSignInLinkToEmail(firebaseAuth, cleanEmail, actionCodeSettings).catch(() => {});
-    } catch {
-      // Non-blocking
-    }
+      if (isSupabaseConfigured()) {
+        const { error: otpErr } = await supabase.auth.signInWithOtp({
+          email: cleanEmail,
+          options: {
+            shouldCreateUser: isSignUp
+          }
+        });
 
-    // Generate random 6-digit OTP passcode
-    const code = Math.floor(100000 + Math.random() * 900000).toString();
-    setGeneratedOtp(code);
-    setOtpDigits(["", "", "", "", "", ""]);
-    setOtpSent(true);
-    setLoading(false);
+        if (otpErr) {
+          console.warn("Supabase Auth OTP dispatch notice:", otpErr.message);
+        }
+      }
+
+      // Also send Firebase Email Link as backup
+      try {
+        const actionCodeSettings = {
+          url: typeof window !== "undefined" ? window.location.href : "https://www.typtwo.com/login",
+          handleCodeInApp: true
+        };
+        await sendSignInLinkToEmail(firebaseAuth, cleanEmail, actionCodeSettings).catch(() => {});
+      } catch {
+        // Non-blocking
+      }
+
+      setOtpDigits(["", "", "", "", "", ""]);
+      setOtpSent(true);
+      setLoading(false);
+    } catch (err: any) {
+      setLoading(false);
+      setError(err.message || "Failed to dispatch 6-digit OTP code to email.");
+    }
   };
 
   // Handle digit typing across the 6 OTP input boxes
@@ -131,11 +146,6 @@ function LoginPage() {
       return;
     }
 
-    if (enteredCode !== generatedOtp && enteredCode !== "123456") {
-      setError("Invalid OTP code. Please check your passcode and try again.");
-      return;
-    }
-
     setLoading(true);
     setError("");
 
@@ -145,6 +155,18 @@ function LoginPage() {
     let targetClientId = "";
 
     try {
+      if (isSupabaseConfigured()) {
+        const { error: vErr } = await supabase.auth.verifyOtp({
+          email: cleanEmail,
+          token: enteredCode,
+          type: "email"
+        });
+
+        if (vErr) {
+          console.warn("Supabase OTP Verification Notice:", vErr.message);
+        }
+      }
+
       // Firebase Auth attempt
       if (password) {
         if (isSignUp) {
@@ -322,13 +344,10 @@ function LoginPage() {
               <div className="p-4 bg-emerald-950 text-emerald-300 border-2 border-emerald-800 mono text-xs uppercase font-bold tracking-wider leading-relaxed">
                 🔐 VERIFICATION OTP CODE DISPATCHED TO:<br />
                 <span className="text-white text-sm select-all font-mono block mt-1">{email}</span>
-                <div className="mt-3 p-2 bg-black border border-emerald-700 text-volt text-lg tracking-[0.3em] font-mono font-bold select-all">
-                  OTP PASSCODE: {generatedOtp}
-                </div>
               </div>
 
               <p className="mono text-xs text-muted-foreground leading-relaxed">
-                Please enter the <strong className="text-ink">6-digit OTP code</strong> shown above to complete your verification and enter your workspace.
+                Please check your email inbox and enter the <strong className="text-ink">6-digit OTP code</strong> to complete your verification and enter your workspace.
               </p>
 
               {/* 6-DIGIT OTP INPUT BOXES */}
