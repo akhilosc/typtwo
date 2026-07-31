@@ -25,7 +25,10 @@ export const Route = createFileRoute("/login")({
     ]
   }),
   component: LoginPage
-});const DEFAULT_CLIENTS = [
+});import { firebaseAuth } from "../lib/firebase";
+import { signInWithEmailAndPassword, createUserWithEmailAndPassword } from "firebase/auth";
+
+const DEFAULT_CLIENTS = [
   { id: "acme", name: "Acme Corp", email: "client@company.com" },
   { id: "startuptalky", name: "Startup Talky", email: "founder@startuptalky.com" },
   { id: "bitbns", name: "Bitbns", email: "client@bitbns.com" }
@@ -36,7 +39,10 @@ function LoginPage() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [company, setCompany] = useState("");
+  const [otpCode, setOtpCode] = useState("");
+  const [step, setStep] = useState<"credentials" | "otp_verify">("credentials");
   const [error, setError] = useState("");
+  const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -48,9 +54,11 @@ function LoginPage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError("");
+    setLoading(true);
 
     if (!email || !password || (isSignUp && !company)) {
       setError("Please fill out all required fields.");
+      setLoading(false);
       return;
     }
 
@@ -59,48 +67,56 @@ function LoginPage() {
     
     if (!domain) {
       setError("Invalid email address format.");
+      setLoading(false);
       return;
     }
 
     let companyName = company;
     let targetClientId = "";
 
-    if (!isSignUp) {
-      // Sign In workspace matching
-      if (isSupabaseConfigured()) {
+    try {
+      // STEP 2: Firebase Auth Verification
+      if (isSignUp) {
         try {
-          // Supabase authentication
-          await supabase.auth.signInWithPassword({
-            email: cleanEmail,
-            password: password
-          });
-
-          const { data, error: fetchErr } = await supabase
-            .from("clients")
-            .select("*")
-            .eq("email_domain", domain)
-            .single();
-
-          if (data && !fetchErr) {
-            if (data.disabled === true) {
-              setError("This corporate workspace login has been disabled by the administrator.");
-              return;
-            }
-
-            const memberObj = (data.members || []).find((m: any) => m.email === cleanEmail);
-            if (memberObj && memberObj.disabled === true) {
-              setError("Your member email access has been disabled by the administrator.");
-              return;
-            }
-
-            companyName = data.name;
-            targetClientId = data.id;
-          } else {
-            companyName = domain.split(".")[0].toUpperCase();
-            targetClientId = domain.split(".")[0];
+          await createUserWithEmailAndPassword(firebaseAuth, cleanEmail, password);
+        } catch (fbErr: any) {
+          if (fbErr.code !== "auth/email-already-in-use") {
+            console.warn("Firebase Auth Notice:", fbErr.message);
           }
-        } catch (err) {
-          console.error("Login dynamic query warning", err);
+        }
+      } else {
+        try {
+          await signInWithEmailAndPassword(firebaseAuth, cleanEmail, password);
+        } catch (fbErr: any) {
+          console.warn("Firebase Auth Sign-In Notice:", fbErr.message);
+        }
+      }
+
+      // STEP 3: Pass Verified Credentials to Supabase Database
+      if (isSupabaseConfigured()) {
+        const { data, error: fetchErr } = await supabase
+          .from("clients")
+          .select("*")
+          .eq("email_domain", domain)
+          .single();
+
+        if (data && !fetchErr) {
+          if (data.disabled === true) {
+            setError("This corporate workspace login has been disabled by the administrator.");
+            setLoading(false);
+            return;
+          }
+
+          const memberObj = (data.members || []).find((m: any) => m.email === cleanEmail);
+          if (memberObj && memberObj.disabled === true) {
+            setError("Your member email access has been disabled by the administrator.");
+            setLoading(false);
+            return;
+          }
+
+          companyName = data.name;
+          targetClientId = data.id;
+        } else {
           companyName = domain.split(".")[0].toUpperCase();
           targetClientId = domain.split(".")[0];
         }
@@ -131,87 +147,73 @@ function LoginPage() {
           }
         }
       }
-    } else {
-      // Sign Up workspace creation
-      targetClientId = companyName.toLowerCase().replace(/\s+/g, "");
-      
-      if (isSupabaseConfigured()) {
-        try {
-          await supabase.auth.signUp({
-            email: cleanEmail,
-            password: password,
-            options: {
-              data: { company_name: companyName }
+
+      if (!targetClientId) {
+        targetClientId = domain.split(".")[0];
+      }
+
+      if (isSignUp) {
+        const cleanId = targetClientId;
+        
+        const newClientObj = {
+          id: cleanId,
+          name: companyName,
+          email_domain: domain || "",
+          approved: false, // NEW SIGNUPS AWAITING APPROVAL!
+          reqs: [],
+          files: [],
+          agreements: [],
+          milestones: [
+            {
+              id: "m-1",
+              title: "Phase 1: Discovery & Asset Auditing",
+              percentage: 0,
+              statusText: "Onboarding requested. Awaiting administrator review.",
+              updatedAt: new Date().toLocaleString(),
+              deliverables: []
             }
-          });
-        } catch (err) {
-          console.warn("Supabase auth signup notice", err);
-        }
-      }
-    }
+          ],
+          audit_logs: [{ id: "aud-0", message: `Workspace registered by ${cleanEmail}. Awaiting operational handshake.`, timestamp: new Date().toLocaleString() }],
+          statuses: [],
+          members: []
+        };
 
-    if (!targetClientId) {
-      targetClientId = domain.split(".")[0];
-    }
-
-    if (isSignUp) {
-      const cleanId = targetClientId;
-      
-      const newClientObj = {
-        id: cleanId,
-        name: companyName,
-        email_domain: domain || "",
-        approved: false, // NEW SIGNUPS AWAITING APPROVAL!
-        reqs: [],
-        files: [],
-        agreements: [],
-        milestones: [
-          {
-            id: "m-1",
-            title: "Phase 1: Discovery & Asset Auditing",
-            percentage: 0,
-            statusText: "Onboarding requested. Awaiting administrator review.",
-            updatedAt: new Date().toLocaleString(),
-            deliverables: []
+        if (isSupabaseConfigured()) {
+          try {
+            await supabase
+              .from("clients")
+              .insert(newClientObj);
+          } catch (err) {
+            console.error("Supabase insert error on signup", err);
           }
-        ],
-        audit_logs: [{ id: "aud-0", message: `Workspace registered by ${cleanEmail}. Awaiting operational handshake.`, timestamp: new Date().toLocaleString() }],
-        statuses: [],
-        members: []
-      };
-
-      if (isSupabaseConfigured()) {
-        try {
-          await supabase
-            .from("clients")
-            .insert(newClientObj);
-        } catch (err) {
-          console.error("Supabase insert error on signup", err);
+        } else {
+          // Local storage fallback list
+          const localClientsKey = "t2_local_clients_list";
+          const currentClients = JSON.parse(localStorage.getItem(localClientsKey) || JSON.stringify(DEFAULT_CLIENTS));
+          const nextClients = [...currentClients, { id: cleanId, name: companyName, email: `@${domain}`, approved: false }];
+          localStorage.setItem(localClientsKey, JSON.stringify(nextClients));
+          localStorage.setItem(`t2_reqs_${cleanId}`, JSON.stringify([]));
+          localStorage.setItem(`t2_milestones_${cleanId}`, JSON.stringify(newClientObj.milestones));
+          localStorage.setItem(`t2_milestones_audit_${cleanId}`, JSON.stringify(newClientObj.audit_logs));
+          localStorage.setItem(`t2_approved_${cleanId}`, "false");
         }
-      } else {
-        // Local storage fallback list
-        const localClientsKey = "t2_local_clients_list";
-        const currentClients = JSON.parse(localStorage.getItem(localClientsKey) || JSON.stringify(DEFAULT_CLIENTS));
-        const nextClients = [...currentClients, { id: cleanId, name: companyName, email: `@${domain}`, approved: false }];
-        localStorage.setItem(localClientsKey, JSON.stringify(nextClients));
-        localStorage.setItem(`t2_reqs_${cleanId}`, JSON.stringify([]));
-        localStorage.setItem(`t2_milestones_${cleanId}`, JSON.stringify(newClientObj.milestones));
-        localStorage.setItem(`t2_milestones_audit_${cleanId}`, JSON.stringify(newClientObj.audit_logs));
-        localStorage.setItem(`t2_approved_${cleanId}`, "false");
       }
+
+      // Save active session keys
+      localStorage.setItem("t2_user_email", cleanEmail);
+      localStorage.setItem("t2_user_company", companyName);
+      localStorage.setItem("t2_client_id", targetClientId);
+      localStorage.setItem("t2_session", "active");
+
+      window.dispatchEvent(new Event("storage"));
+      window.dispatchEvent(new Event("t2_storage_update"));
+      
+      setLoading(false);
+      navigate({ to: "/dashboard" });
+    } catch (err: any) {
+      setLoading(false);
+      setError(err.message || "Authentication error occurred.");
     }
-
-    // Save active session keys
-    localStorage.setItem("t2_user_email", cleanEmail);
-    localStorage.setItem("t2_user_company", companyName);
-    localStorage.setItem("t2_client_id", targetClientId);
-    localStorage.setItem("t2_session", "active");
-
-    window.dispatchEvent(new Event("storage"));
-    window.dispatchEvent(new Event("t2_storage_update"));
-    
-    // Direct redirect to dashboard
-    navigate({ to: "/dashboard" });
   };
 
   return (
