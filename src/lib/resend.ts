@@ -1,48 +1,134 @@
 export async function sendOtpEmail(toEmail: string, otpCode: string): Promise<{ success: boolean; error?: string }> {
   const RESEND_API_KEY = "re_t51z66gQ_DNsBjYgJQuM5TSoXHHQX3kXx";
 
+  const directLoginUrl = `https://www.typtwo.com/login?email=${encodeURIComponent(toEmail)}`;
+
   const htmlContent = `
-    <!DOCTYPE html>
-    <html>
+    <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+    <html xmlns="http://www.w3.org/1999/xhtml">
     <head>
-      <meta charset="utf-8">
-      <title>Typtwo Security Passcode</title>
+      <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+      <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+      <title>Typtwo Security Verification</title>
     </head>
-    <body style="background-color: #050505; color: #ffffff; font-family: -apple-system, BlinkMacSystemFont, 'SF Mono', 'Roboto Mono', Menlo, monospace; padding: 40px 20px; margin: 0;">
-      <div style="max-width: 500px; margin: 0 auto; background: #0c0c0c; border: 1px solid #222222; padding: 32px; border-radius: 4px;">
-        <!-- Header / Logo -->
-        <div style="border-bottom: 1px solid #1e1e1e; padding-bottom: 16px; margin-bottom: 24px;">
-          <span style="color: #ccff00; font-size: 11px; font-weight: bold; letter-spacing: 0.15em; text-transform: uppercase;">// TYPTWO OPERATIONS DESK</span>
-          <h2 style="color: #ffffff; font-size: 20px; font-weight: bold; margin: 8px 0 0 0; text-transform: uppercase;">Security Verification Code</h2>
-        </div>
+    <body style="background-color: #050505; color: #ffffff; font-family: -apple-system, BlinkMacSystemFont, 'SF Mono', 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; padding: 30px 10px; margin: 0; -webkit-text-size-adjust: 100%; -ms-text-size-adjust: 100%;">
+      
+      <!-- Container Box -->
+      <table align="center" border="0" cellpadding="0" cellspacing="0" width="100%" style="max-width: 540px; background-color: #0b0b0b; border: 1px solid #222222; border-collapse: collapse; margin: 0 auto; border-radius: 6px; overflow: hidden;">
+        
+        <!-- Top Neon Accent Line -->
+        <tr>
+          <td style="background-color: #ccff00; height: 4px; font-size: 0; line-height: 0;">&nbsp;</td>
+        </tr>
 
-        <!-- Main Body -->
-        <p style="color: #a3a3a3; font-size: 13px; line-height: 1.6; margin-bottom: 24px;">
-          Use the 6-digit passcode below to complete your authentication and enter your corporate workspace dashboard:
-        </p>
+        <!-- Header Padding Area -->
+        <tr>
+          <td style="padding: 32px 32px 20px 32px; background-color: #0b0b0b;">
+            <table width="100%" border="0" cellpadding="0" cellspacing="0">
+              <tr>
+                <td align="left">
+                  <span style="color: #ccff00; font-family: 'SF Mono', Monaco, Consolas, monospace; font-size: 10px; font-weight: 700; letter-spacing: 0.2em; text-transform: uppercase; display: block; margin-bottom: 6px;">
+                    // TYPTWO OPERATIONS DESK &bull; PORTAL ACCESS
+                  </span>
+                  <h1 style="color: #ffffff; font-size: 22px; font-weight: 800; margin: 0; tracking-tight: -0.02em; text-transform: uppercase; letter-spacing: 0.05em;">
+                    Portal Verification Code
+                  </h1>
+                </td>
+                <td align="right" valign="top">
+                  <span style="background-color: #161616; border: 1px solid #2a2a2a; color: #888888; font-family: monospace; font-size: 9px; font-weight: 700; padding: 4px 8px; border-radius: 3px; text-transform: uppercase;">
+                    AES-256 SSL
+                  </span>
+                </td>
+              </tr>
+            </table>
+          </td>
+        </tr>
 
-        <!-- 6-DIGIT OTP PASSCODE BOX -->
-        <div style="background-color: #111111; border: 2px solid #ccff00; text-align: center; padding: 20px; border-radius: 4px; margin-bottom: 24px;">
-          <span style="color: #666666; font-size: 10px; font-weight: bold; letter-spacing: 0.2em; display: block; margin-bottom: 8px;">YOUR 6-DIGIT PASSCODE</span>
-          <span style="color: #ccff00; font-size: 32px; font-weight: bold; letter-spacing: 0.35em; font-family: monospace; display: block;">${otpCode}</span>
-        </div>
+        <!-- Divider -->
+        <tr>
+          <td style="padding: 0 32px;">
+            <div style="border-bottom: 1px solid #1a1a1a;"></div>
+          </td>
+        </tr>
 
-        <p style="color: #666666; font-size: 11px; line-height: 1.5; margin-bottom: 24px;">
-          This passcode is valid for 10 minutes. If you did not request this login code, please safely disregard this email.
-        </p>
+        <!-- Main Body Content -->
+        <tr>
+          <td style="padding: 24px 32px; background-color: #0b0b0b;">
+            <p style="color: #b0b0b0; font-size: 13px; line-height: 1.6; margin: 0 0 24px 0;">
+              Hello,<br /><br />
+              You requested access to your corporate workspace on <strong style="color: #ffffff;">Typtwo Client Desk</strong>. Please enter the 6-digit passcode below into your browser screen to complete authentication:
+            </p>
+
+            <!-- 6-DIGIT HERO PASSCODE BOX -->
+            <table width="100%" border="0" cellpadding="0" cellspacing="0" style="margin-bottom: 24px;">
+              <tr>
+                <td align="center" style="background-color: #000000; border: 2px solid #ccff00; border-radius: 4px; padding: 24px 16px;">
+                  <span style="color: #666666; font-family: 'SF Mono', Monaco, Consolas, monospace; font-size: 10px; font-weight: 700; letter-spacing: 0.25em; text-transform: uppercase; display: block; margin-bottom: 10px;">
+                    YOUR 6-DIGIT SECURITY PASSCODE
+                  </span>
+                  <span style="color: #ccff00; font-family: 'SF Mono', Monaco, Consolas, monospace; font-size: 38px; font-weight: 800; letter-spacing: 0.35em; display: block; text-shadow: 0 0 12px rgba(204, 255, 0, 0.2);">
+                    ${otpCode}
+                  </span>
+                </td>
+              </tr>
+            </table>
+
+            <!-- Direct Action Button Fallback -->
+            <table width="100%" border="0" cellpadding="0" cellspacing="0" style="margin-bottom: 24px;">
+              <tr>
+                <td align="center">
+                  <a href="${directLoginUrl}" target="_blank" style="background-color: #ccff00; color: #000000; display: block; font-family: 'SF Mono', Monaco, Consolas, monospace; font-size: 11px; font-weight: 800; letter-spacing: 0.15em; text-transform: uppercase; text-decoration: none; padding: 14px 24px; border-radius: 3px; text-align: center; border: 1px solid #ccff00;">
+                    Verify & Open Workspace Dashboard &rarr;
+                  </a>
+                </td>
+              </tr>
+            </table>
+
+            <!-- Security Callout Box -->
+            <table width="100%" border="0" cellpadding="0" cellspacing="0" style="background-color: #121212; border: 1px solid #222222; border-radius: 4px; margin-bottom: 10px;">
+              <tr>
+                <td style="padding: 14px 16px;">
+                  <table width="100%" border="0" cellpadding="0" cellspacing="0">
+                    <tr>
+                      <td width="24" valign="top" style="color: #ccff00; font-size: 14px;">🔒</td>
+                      <td style="color: #888888; font-size: 11px; line-height: 1.5; font-family: monospace;">
+                        <strong style="color: #cccccc;">SECURITY NOTICE:</strong> This code is valid for <span style="color: #ccff00;">10 minutes</span>. Never share this code with anyone. Typtwo staff will never ask for your passcode.
+                      </td>
+                    </tr>
+                  </table>
+                </td>
+              </tr>
+            </table>
+
+          </td>
+        </tr>
 
         <!-- Footer -->
-        <div style="border-top: 1px solid #1e1e1e; padding-top: 16px; font-size: 10px; color: #555555; text-transform: uppercase; font-weight: bold;">
-          TYPTWO INC. &bull; CLIENT OPERATIONS CENTER &bull; WWW.TYPTWO.COM
-        </div>
-      </div>
+        <tr>
+          <td style="background-color: #070707; border-top: 1px solid #1a1a1a; padding: 24px 32px; text-align: center;">
+            <p style="color: #555555; font-family: 'SF Mono', Monaco, Consolas, monospace; font-size: 10px; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; margin: 0 0 8px 0;">
+              TYPTWO INC. &bull; HIGH-PERFORMANCE DIGITAL OPERATIONS
+            </p>
+            <p style="color: #444444; font-size: 10px; margin: 0 0 12px 0;">
+              Confidential automated security notification dispatched to <span style="color: #666666;">${toEmail}</span>.
+            </p>
+            <p style="color: #444444; font-size: 10px; margin: 0;">
+              <a href="https://www.typtwo.com" style="color: #777777; text-decoration: none; font-weight: bold;">www.typtwo.com</a> &bull; 
+              <a href="mailto:support@typtwo.com" style="color: #777777; text-decoration: none; font-weight: bold;">support@typtwo.com</a>
+            </p>
+          </td>
+        </tr>
+
+      </table>
+
     </body>
     </html>
   `;
 
-  // Try sending via custom domain or onboarding@resend.dev fallback
+  // Priority Senders
   const sendOptions = [
     { from: "Typtwo Operations <auth@typtwo.com>", to: [toEmail] },
+    { from: "Typtwo Operations <noreply@typtwo.com>", to: [toEmail] },
     { from: "Typtwo Operations <onboarding@resend.dev>", to: [toEmail] }
   ];
 
