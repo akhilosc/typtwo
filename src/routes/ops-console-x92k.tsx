@@ -206,6 +206,7 @@ function AdminPage() {
   const [newAgreementUrl, setNewAgreementUrl] = useState("");
 
   const [notifyMsg, setNotifyMsg] = useState("");
+  const [memberSearchQuery, setMemberSearchQuery] = useState("");
 
   // Load clients list dynamically
   useEffect(() => {
@@ -1170,21 +1171,31 @@ function AdminPage() {
   };
 
   const getAllMembersList = () => {
+    let list: any[] = [];
     if (isSupabaseConfigured() && allDbClients && allDbClients.length > 0) {
-      return allDbClients.flatMap(c => (c.members || []).map((m: any) => ({ ...m, clientId: c.id, clientName: c.name })));
+      list = allDbClients.flatMap(c => (c.members || []).map((m: any) => ({ ...m, clientId: c.id, clientName: c.name })));
+    } else {
+      const storedList = typeof window !== "undefined" ? localStorage.getItem("t2_local_clients_list") : null;
+      if (storedList) {
+        try {
+          const parsed = JSON.parse(storedList);
+          list = parsed.flatMap((c: any) => {
+            const key = `t2_members_${c.id}`;
+            const mList = JSON.parse(localStorage.getItem(key) || "[]");
+            return mList.map((m: any) => ({ ...m, clientId: c.id, clientName: c.name }));
+          });
+        } catch {
+          list = [];
+        }
+      }
     }
-    const storedList = typeof window !== "undefined" ? localStorage.getItem("t2_local_clients_list") : null;
-    if (!storedList) return [];
-    try {
-      const parsed = JSON.parse(storedList);
-      return parsed.flatMap((c: any) => {
-        const key = `t2_members_${c.id}`;
-        const list = JSON.parse(localStorage.getItem(key) || "[]");
-        return list.map((m: any) => ({ ...m, clientId: c.id, clientName: c.name }));
-      });
-    } catch {
-      return [];
+
+    if (memberSearchQuery.trim()) {
+      const q = memberSearchQuery.toLowerCase().trim();
+      return list.filter(m => (m.email || "").toLowerCase().includes(q) || (m.clientName || "").toLowerCase().includes(q) || (m.clientId || "").toLowerCase().includes(q));
     }
+
+    return list;
   };
 
   const pendingWorkspacesList = getPendingWorkspaces();
@@ -1982,11 +1993,20 @@ function AdminPage() {
                 </div>
 
                 {/* 2. Team Member Email Directory & Master Approvals */}
-                <div className="bg-[#0c0c0c] border border-neutral-800 p-5 rounded-sm space-y-4 font-mono">
-                  <div className="flex items-center justify-between border-b border-neutral-800 pb-3">
+                <div className="bg-[#0c0c0c] border border-neutral-800 p-5 rounded-sm space-y-4 font-mono mt-8">
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between border-b border-neutral-800 pb-3 gap-3">
                     <div>
-                      <h3 className="text-xs font-bold text-volt uppercase tracking-wider">// Team Member Email Access Directory</h3>
-                      <p className="text-[10px] text-neutral-400 mt-0.5">Master approve invited team member emails or disable specific email logins.</p>
+                      <h3 className="text-xs font-bold text-volt uppercase tracking-wider">// Company Team Members & Email Accounts Directory</h3>
+                      <p className="text-[10px] text-neutral-400 mt-0.5">Master approve invited team member emails or disable specific email logins across companies.</p>
+                    </div>
+                    <div className="w-full sm:w-64">
+                      <input
+                        type="text"
+                        value={memberSearchQuery}
+                        onChange={(e) => setMemberSearchQuery(e.target.value)}
+                        placeholder="🔍 Search email or company..."
+                        className="w-full bg-neutral-950 border border-neutral-800 rounded-sm px-3 py-1.5 text-[10px] text-white focus:outline-none focus:border-volt"
+                      />
                     </div>
                   </div>
 
