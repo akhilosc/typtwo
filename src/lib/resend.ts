@@ -129,12 +129,14 @@ async function sendOtpEmailInternal(toEmail: string, otpCode: string): Promise<{
 
   // Priority Senders
   const sendOptions = [
-    { from: "Typtwo Operations <auth@typtwo.com>", to: [toEmail] },
-    { from: "Typtwo Operations <noreply@typtwo.com>", to: [toEmail] },
-    { from: "Typtwo Operations <onboarding@resend.dev>", to: [toEmail] }
+    { from: "Typtwo Security <auth@typtwo.com>", to: [toEmail] },
+    { from: "Typtwo Security <noreply@typtwo.com>", to: [toEmail] },
+    { from: "Typtwo Security <onboarding@resend.dev>", to: [toEmail] }
   ];
 
   let lastErrorMsg = "Failed to dispatch email via Resend API";
+
+  const plainTextContent = `Your Typtwo verification code is: ${otpCode}\n\nValid for 10 minutes.\nDirect workspace access: ${directLoginUrl}\n\nTyptwo Client Operations Center`;
 
   for (const senderOpt of sendOptions) {
     try {
@@ -147,8 +149,10 @@ async function sendOtpEmailInternal(toEmail: string, otpCode: string): Promise<{
         body: JSON.stringify({
           from: senderOpt.from,
           to: senderOpt.to,
-          subject: `⚡ ${otpCode} is your secret key to Typtwo`,
-          html: htmlContent
+          reply_to: "support@typtwo.com",
+          subject: `Your Typtwo Security Code: ${otpCode}`,
+          html: htmlContent,
+          text: plainTextContent
         })
       });
 
