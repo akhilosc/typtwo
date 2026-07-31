@@ -127,11 +127,7 @@ interface MilestoneAuditLog {
   timestamp: string;
 }
 
-const DEFAULT_CLIENTS: Client[] = [
-  { id: "startuptalky", name: "Startup Talky", email: "founder@startuptalky.com" },
-  { id: "acme", name: "Acme Corp", email: "client@company.com" },
-  { id: "bitbns", name: "BitBNS", email: "team@bitbns.com" }
-];
+const DEFAULT_CLIENTS: Client[] = [];
 
 const DEFAULT_REQUIREMENTS = [
   // Core Branding Assets
@@ -337,12 +333,11 @@ function AdminPage() {
 
       // Local storage fallback list
       const storedList = getSafeLocalStorage("t2_local_clients_list");
-      if (storedList) {
+      if (storedList !== null) {
         const parsed = parseArray(storedList);
-        setClients(parsed.length > 0 ? parsed : DEFAULT_CLIENTS);
+        setClients(parsed);
       } else {
-        setClients(DEFAULT_CLIENTS);
-        setSafeLocalStorage("t2_local_clients_list", JSON.stringify(DEFAULT_CLIENTS));
+        setClients([]);
       }
     };
     fetchClients();
