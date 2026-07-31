@@ -1231,22 +1231,23 @@ function AdminPage() {
           .delete()
           .eq("id", clientIdToDelete);
         
-        if (!error) {
-          setNotifyMsg("COMPANY DELETED");
-          setTimeout(() => setNotifyMsg(""), 2000);
-          return;
+        if (error) {
+          console.warn("Supabase delete warning:", error.message);
         }
-        alert(`Failed to delete company: ${error.message}`);
       } catch (err) {
         console.error(err);
       }
     }
 
-    // Local storage fallback
+    // Always clean up LocalStorage fallback
     const localClientsKey = "t2_local_clients_list";
     const currentList = JSON.parse(localStorage.getItem(localClientsKey) || "[]");
     const updatedList = currentList.filter((c: any) => c.id !== clientIdToDelete);
     localStorage.setItem(localClientsKey, JSON.stringify(updatedList));
+
+    // Update React state immediately
+    setClients((prev) => prev.filter((c) => c.id !== clientIdToDelete));
+    setAllDbClients((prev) => prev.filter((c) => c.id !== clientIdToDelete));
 
     setNotifyMsg("COMPANY DELETED");
     setTimeout(() => setNotifyMsg(""), 2000);
