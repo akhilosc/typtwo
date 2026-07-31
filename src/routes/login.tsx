@@ -285,20 +285,17 @@ function LoginPage() {
         }
       }
 
-      // Dispatch Firebase Email Link / OTP to user's inbox
-      const actionCodeSettings = {
-        url: typeof window !== "undefined" ? window.location.href : "https://www.typtwo.com/login",
-        handleCodeInApp: true
-      };
+      // Save active session keys
+      localStorage.setItem("t2_user_email", cleanEmail);
+      localStorage.setItem("t2_user_company", companyName);
+      localStorage.setItem("t2_client_id", targetClientId);
+      localStorage.setItem("t2_session", "active");
 
-      await sendSignInLinkToEmail(firebaseAuth, cleanEmail, actionCodeSettings);
-      window.localStorage.setItem("t2_email_for_signIn", cleanEmail);
-      window.localStorage.setItem("t2_pending_company", companyName);
-      window.localStorage.setItem("t2_pending_client_id", targetClientId);
+      window.dispatchEvent(new Event("storage"));
+      window.dispatchEvent(new Event("t2_storage_update"));
       
-      setMagicLinkSent(true);
       setLoading(false);
-      return;
+      navigate({ to: "/dashboard" });
     } catch (err: any) {
       setLoading(false);
       setError(err.message || "Authentication error occurred.");
@@ -407,13 +404,24 @@ function LoginPage() {
                 />
               </div>
 
-              <button
-                type="submit"
-                disabled={loading}
-                className="w-full brute bg-ink text-paper hover:bg-volt hover:text-ink py-4 mono text-xs uppercase tracking-widest font-bold transition-colors cursor-pointer disabled:opacity-50"
-              >
-                {loading ? "Dispatching Verification OTP..." : (isSignUp ? "Send Registration Email Link →" : "Send Login Verification Link →")}
-              </button>
+              <div className="space-y-3">
+                <button
+                  type="submit"
+                  disabled={loading}
+                  className="w-full brute bg-ink text-paper hover:bg-volt hover:text-ink py-4 mono text-xs uppercase tracking-widest font-bold transition-colors cursor-pointer disabled:opacity-50"
+                >
+                  {loading ? "Authenticating Credentials..." : (isSignUp ? "Create Account & Enter Workspace →" : "Sign In & Enter Workspace →")}
+                </button>
+
+                <button
+                  type="button"
+                  onClick={handleSendMagicLink}
+                  disabled={loading}
+                  className="w-full bg-paper border border-ink text-ink hover:bg-neutral-200 py-2.5 mono text-[10px] uppercase tracking-wider font-bold transition-colors cursor-pointer disabled:opacity-50"
+                >
+                  📩 Or Send 1-Click Email Link to Inbox →
+                </button>
+              </div>
             </form>
           )}
         </div>
