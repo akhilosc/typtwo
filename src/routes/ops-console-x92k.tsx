@@ -1169,6 +1169,24 @@ function AdminPage() {
     });
   };
 
+  const getAllMembersList = () => {
+    if (isSupabaseConfigured() && allDbClients && allDbClients.length > 0) {
+      return allDbClients.flatMap(c => (c.members || []).map((m: any) => ({ ...m, clientId: c.id, clientName: c.name })));
+    }
+    const storedList = typeof window !== "undefined" ? localStorage.getItem("t2_local_clients_list") : null;
+    if (!storedList) return [];
+    try {
+      const parsed = JSON.parse(storedList);
+      return parsed.flatMap((c: any) => {
+        const key = `t2_members_${c.id}`;
+        const list = JSON.parse(localStorage.getItem(key) || "[]");
+        return list.map((m: any) => ({ ...m, clientId: c.id, clientName: c.name }));
+      });
+    } catch {
+      return [];
+    }
+  };
+
   const pendingWorkspacesList = getPendingWorkspaces();
   const pendingMembersList = getPendingMembers();
   const totalPending = pendingWorkspacesList.length + pendingMembersList.length;
