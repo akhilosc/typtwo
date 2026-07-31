@@ -208,7 +208,7 @@ function LoginPage() {
         is_vault_active: true,
         is_status_active: true,
         reqs: [
-          { id: "sys-approval", approved: isSignUp ? false : true, disabled: false, registered_email: cleanEmail }
+          { id: "sys-approval", approved: false, disabled: false, registered_email: cleanEmail }
         ],
         files: [],
         agreements: [],
