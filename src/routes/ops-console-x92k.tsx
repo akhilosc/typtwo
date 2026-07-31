@@ -169,8 +169,11 @@ function AdminPage() {
   const [onboardDomain, setOnboardDomain] = useState("");
   const [reqs, setReqs] = useState<Requirement[]>([]);
   
-  // Tab selector for forms panel (on the right)
-  const [activeFormTab, setActiveFormTab] = useState<"requirements" | "progress" | "agreements" | "approvals">("progress");
+  // Master Overview vs Selected Company Workspace Mode
+  const [viewMode, setViewMode] = useState<"master" | "company">("master");
+
+  // Tab selector for company management desk
+  const [activeFormTab, setActiveFormTab] = useState<"requirements" | "progress" | "agreements" | "members">("requirements");
 
   // Custom requirement form state
   const [customLabel, setCustomLabel] = useState("");
@@ -319,13 +322,24 @@ function AdminPage() {
     setOnboardDomain("");
   };
 
-  // Load client configurations
+  // Load client configurations per company
   useEffect(() => {
+    if (!selectedClientId) return;
+
     const key = `t2_reqs_${selectedClientId}`;
     const milestonesKey = `t2_milestones_${selectedClientId}`;
     const auditLogsKey = `t2_milestones_audit_${selectedClientId}`;
     
+    // Reset workspace states immediately to prevent state bleeding across companies
+    setReqs([]);
+    setMilestones([]);
+    setAuditLogs([]);
+
     const loadData = async () => {
+      const storedLocalReqs = typeof window !== "undefined" ? localStorage.getItem(key) : null;
+      const storedLocalMilestones = typeof window !== "undefined" ? localStorage.getItem(milestonesKey) : null;
+      const storedLocalAudits = typeof window !== "undefined" ? localStorage.getItem(auditLogsKey) : null;
+
       if (isSupabaseConfigured()) {
         try {
           const { data, error } = await supabase
@@ -335,20 +349,27 @@ function AdminPage() {
             .single();
 
           if (data && !error) {
-            // Load requirements
-            let merged = [...(data.reqs || [])];
-            DEFAULT_REQUIREMENTS.forEach((def) => {
-              if (!merged.some((m) => m.id === def.id)) {
-                merged.push(JSON.parse(JSON.stringify(def)));
-              }
-            });
-            setReqs(merged);
+            let companyReqs = data.reqs;
+            if (Array.isArray(companyReqs) && companyReqs.length > 0) {
+              let merged = [...companyReqs];
+              DEFAULT_REQUIREMENTS.forEach((def) => {
+                if (!merged.some((m) => m.id === def.id)) {
+                  merged.push(JSON.parse(JSON.stringify(def)));
+                }
+              });
+              setReqs(merged);
+              localStorage.setItem(key, JSON.stringify(merged));
+            } else if (storedLocalReqs) {
+              const parsed = JSON.parse(storedLocalReqs);
+              setReqs(parsed);
+            } else {
+              const initial = JSON.parse(JSON.stringify(DEFAULT_REQUIREMENTS));
+              setReqs(initial);
+              localStorage.setItem(key, JSON.stringify(initial));
+            }
 
-            // Load milestones
-            setMilestones(data.milestones && data.milestones.length > 0 ? data.milestones : DEFAULT_MILESTONES);
-
-            // Load audit logs
-            setAuditLogs(data.audit_logs || []);
+            setMilestones(data.milestones && data.milestones.length > 0 ? data.milestones : (storedLocalMilestones ? JSON.parse(storedLocalMilestones) : DEFAULT_MILESTONES));
+            setAuditLogs(data.audit_logs && data.audit_logs.length > 0 ? data.audit_logs : (storedLocalAudits ? JSON.parse(storedLocalAudits) : [{ id: "aud-0", message: "Client workspace initialized.", timestamp: new Date().toLocaleString() }]));
             return;
           }
         } catch (err) {
@@ -356,11 +377,10 @@ function AdminPage() {
         }
       }
 
-      // 1. Requirements
-      const stored = localStorage.getItem(key);
-      if (stored) {
-        const parsed: Requirement[] = JSON.parse(stored);
-        const merged = [...parsed];
+      // 1. Requirements Local Fallback
+      if (storedLocalReqs) {
+        const parsed: Requirement[] = JSON.parse(storedLocalReqs);
+        let merged = [...parsed];
         DEFAULT_REQUIREMENTS.forEach((def) => {
           if (!merged.some((m) => m.id === def.id)) {
             merged.push(JSON.parse(JSON.stringify(def)));
@@ -373,21 +393,19 @@ function AdminPage() {
         localStorage.setItem(key, JSON.stringify(initial));
       }
 
-      // 2. Milestones
-      const storedMilestones = localStorage.getItem(milestonesKey);
-      if (storedMilestones) {
-        setMilestones(JSON.parse(storedMilestones));
+      // 2. Milestones Local Fallback
+      if (storedLocalMilestones) {
+        setMilestones(JSON.parse(storedLocalMilestones));
       } else {
         setMilestones(DEFAULT_MILESTONES);
         localStorage.setItem(milestonesKey, JSON.stringify(DEFAULT_MILESTONES));
       }
 
-      // 3. Audit Logs
-      const storedAudits = localStorage.getItem(auditLogsKey);
-      if (storedAudits) {
-        setAuditLogs(JSON.parse(storedAudits));
+      // 3. Audit Logs Local Fallback
+      if (storedLocalAudits) {
+        setAuditLogs(JSON.parse(storedLocalAudits));
       } else {
-        const initialAudit = [{ id: "aud-0", message: "Client milestones database initialized.", timestamp: new Date().toLocaleString() }];
+        const initialAudit = [{ id: "aud-0", message: "Client workspace initialized.", timestamp: new Date().toLocaleString() }];
         setAuditLogs(initialAudit);
         localStorage.setItem(auditLogsKey, JSON.stringify(initialAudit));
       }
@@ -1278,23 +1296,45 @@ function AdminPage() {
 
   return (
     <div className="flex min-h-screen bg-[#0a0a0a] text-neutral-100 font-mono text-left">
-      {/* Sidebar: Client Selector */}
+      {/* Sidebar: Navigation & Workspace Selector */}
       <aside className="w-64 border-r border-neutral-800 bg-[#0e0e0e] flex flex-col justify-between p-6 shrink-0">
         <div className="space-y-6">
           <div>
-            <Link to="/" className="flex items-center gap-2 pb-5 border-b border-neutral-800 mb-8">
+            <Link to="/" className="flex items-center gap-2 pb-5 border-b border-neutral-800 mb-6">
               <span className="h-2 w-2 bg-flame rounded-full blink" />
               <span className="font-bold text-sm tracking-wider text-white uppercase">TYPTWO CONSOLE</span>
             </Link>
 
-            <span className="text-[9px] text-neutral-500 uppercase tracking-widest block mb-4 font-bold">// Select Client Workspace</span>
-            <nav className="space-y-1 max-h-[180px] overflow-y-auto pr-1">
+            {/* Navigation Mode Selector */}
+            <div className="space-y-1 mb-6">
+              <button
+                onClick={() => setViewMode("master")}
+                className={`w-full text-left px-3 py-2 text-xs uppercase tracking-wide rounded-sm transition cursor-pointer font-bold flex items-center justify-between ${
+                  viewMode === "master"
+                    ? "bg-volt text-black"
+                    : "bg-neutral-900 text-neutral-400 hover:text-white"
+                }`}
+              >
+                <span>🏛️ Master Overview</span>
+                {pendingWorkspacesList.length > 0 && (
+                  <span className="bg-flame text-white text-[8px] px-1.5 py-0.2 font-bold rounded-sm animate-pulse">
+                    {pendingWorkspacesList.length}
+                  </span>
+                )}
+              </button>
+            </div>
+
+            <span className="text-[9px] text-neutral-500 uppercase tracking-widest block mb-3 font-bold">// Select Company Workspace</span>
+            <nav className="space-y-1 max-h-[160px] overflow-y-auto pr-1">
               {clients.map((c) => (
                 <button
                   key={c.id}
-                  onClick={() => setSelectedClientId(c.id)}
+                  onClick={() => {
+                    setSelectedClientId(c.id);
+                    setViewMode("company");
+                  }}
                   className={`w-full text-left px-3 py-2 text-xs uppercase tracking-wide rounded-sm transition cursor-pointer font-bold ${
-                    selectedClientId === c.id
+                    viewMode === "company" && selectedClientId === c.id
                       ? "bg-volt text-black"
                       : "bg-neutral-900 text-neutral-400 hover:text-white"
                   }`}
@@ -1309,7 +1349,7 @@ function AdminPage() {
           </div>
 
           {/* Onboard New Client Form */}
-          <div className="pt-6 border-t border-neutral-800">
+          <div className="pt-5 border-t border-neutral-800">
             <h4 className="text-[9px] text-volt uppercase tracking-widest font-bold mb-3">
               // Onboard Client Workspace
             </h4>
@@ -1362,21 +1402,57 @@ function AdminPage() {
             🔒 Lock & Exit Console
           </button>
           <div className="text-[9px] text-neutral-500 uppercase text-center font-bold">
-            Ops Desk v2.5
+            Ops Desk v2.6
           </div>
         </div>
       </aside>
 
       {/* Main Panel */}
       <main className="flex-grow flex flex-col min-w-0 bg-[#070707]">
+        {/* Header Bar */}
         <header className="h-14 border-b border-neutral-800 px-8 flex items-center justify-between bg-[#0b0b0b] shrink-0">
-          <div className="text-xs uppercase tracking-widest text-white font-bold">
-            Configuring: {selectedClient.name} ({selectedClient.email})
+          <div className="flex items-center gap-3">
+            {viewMode === "company" ? (
+              <>
+                <button
+                  onClick={() => setViewMode("master")}
+                  className="bg-neutral-900 border border-neutral-800 hover:border-volt text-neutral-300 hover:text-white text-[10px] px-2.5 py-1 uppercase font-bold rounded-sm transition cursor-pointer"
+                >
+                  ← Master Directory
+                </button>
+                <span className="text-neutral-600">|</span>
+                <span className="text-xs uppercase tracking-wider text-white font-bold">
+                  Managing: <span className="text-volt">{selectedClient.name}</span> ({selectedClient.id})
+                </span>
+              </>
+            ) : (
+              <span className="text-xs uppercase tracking-widest text-white font-bold flex items-center gap-2">
+                <span className="h-2 w-2 bg-volt rounded-full blink" />
+                // Master Enterprise Operations Directory
+              </span>
+            )}
           </div>
+
           <div className="flex items-center gap-4">
+            {/* Quick company switch dropdown */}
+            {viewMode === "company" && (
+              <select
+                value={selectedClientId}
+                onChange={(e) => setSelectedClientId(e.target.value)}
+                className="bg-neutral-950 border border-neutral-800 text-xs text-white px-3 py-1 rounded-sm focus:outline-none focus:border-volt uppercase font-bold cursor-pointer"
+              >
+                {clients.map((c) => (
+                  <option key={c.id} value={c.id}>
+                    Company: {c.name} ({c.id})
+                  </option>
+                ))}
+              </select>
+            )}
+
             {notifyMsg && (
               <span className="text-[10px] text-volt uppercase font-bold animate-pulse">● {notifyMsg}</span>
             )}
+
             <button
               onClick={handleAdminLogout}
               className="bg-neutral-900 border border-neutral-800 hover:border-red-500/80 hover:text-red-400 text-neutral-300 text-xs px-3 py-1.5 transition cursor-pointer uppercase font-bold rounded-sm"
@@ -1386,632 +1462,620 @@ function AdminPage() {
           </div>
         </header>
 
-        {/* Content layout */}
-        <div className="flex-grow p-8 grid grid-cols-1 lg:grid-cols-12 gap-8 w-full">
-          
-          {/* Column 1: Config Toggles & Checklist (Left Side) */}
-          <div className="lg:col-span-5 space-y-6">
-            <div className="bg-[#0c0c0c] border border-neutral-800 p-5 rounded-sm h-full flex flex-col">
-              <h3 className="text-xs font-bold text-white uppercase tracking-wider mb-4 border-b border-neutral-800 pb-2">
-                1. Configure Dashboard Checklist
-              </h3>
-
-              <div className="space-y-3 overflow-y-auto pr-2 flex-grow max-h-[600px]">
-                {reqs.map((r) => (
-                  <div key={r.id} className="py-2.5 border-b border-neutral-900 last:border-b-0">
-                    <div className="flex items-center justify-between">
-                      <label className="flex items-center gap-2.5 cursor-pointer select-none">
-                        <input
-                          type="checkbox"
-                          checked={r.active}
-                          onChange={() => toggleReqActive(r.id)}
-                          className="h-4 w-4 bg-neutral-950 border border-neutral-800 text-volt rounded-sm focus:ring-0 cursor-pointer"
-                        />
-                        <span className={`text-[10px] uppercase tracking-wide font-bold ${r.active ? "text-white" : "text-neutral-500"}`}>
-                          {r.label}
-                        </span>
-                      </label>
-                      
-                      {(r.id.startsWith("req-social-") || r.id.startsWith("req-custom-")) && (
-                        <button
-                          onClick={() => deleteRequirement(r.id)}
-                          className="text-[9px] text-flame underline hover:text-white cursor-pointer shrink-0 ml-2"
-                        >
-                          Remove
-                        </button>
-                      )}
-                    </div>
-
-                    {r.submitted && r.value && (
-                      <div className="pl-6 mt-2 flex flex-col sm:flex-row sm:items-center gap-2">
-                        <span className="text-[8px] bg-emerald-950/80 text-emerald-400 border border-emerald-900 px-1.5 py-0.5 rounded-sm font-bold uppercase w-fit shrink-0">
-                          SUBMITTED:
-                        </span>
-                        <span className="text-[10px] text-neutral-300 font-mono break-all select-all">
-                          {r.value.startsWith("http") ? (
-                            <a href={r.value} target="_blank" rel="noreferrer" className="text-volt underline hover:text-white">
-                              {r.value} ↗
-                            </a>
-                          ) : (
-                            r.value
-                          )}
-                        </span>
-                      </div>
-                    )}
-                  </div>
-                ))}
+        {/* Dynamic Content Views */}
+        {viewMode === "master" ? (
+          /* MASTER OVERVIEW VIEW MODE */
+          <div className="flex-grow p-8 space-y-8 w-full font-mono text-left overflow-y-auto">
+            {/* Master Stats Summary Banner */}
+            <div className="bg-[#0b0b0b] border border-neutral-800 p-6 rounded-sm flex flex-col md:flex-row md:items-center justify-between gap-6 shadow-lg">
+              <div className="space-y-1">
+                <div className="flex items-center gap-2 text-volt text-[10px] font-bold uppercase tracking-widest">
+                  <span className="h-2 w-2 bg-volt rounded-full animate-ping" />
+                  // MASTER OPERATIONS CONTROL
+                </div>
+                <h2 className="text-base font-bold text-white uppercase tracking-wider">
+                  Enterprise Workspaces & Access Control Desk
+                </h2>
+                <p className="text-xs text-neutral-400">
+                  Approve or reject client registrations, manage login access, or click "Manage Workspace" to configure company-specific checklists & instructions.
+                </p>
               </div>
-              
-              <div className="pt-5 border-t border-neutral-900 mt-4">
-                <button
-                  onClick={resetClientData}
-                  className="w-full bg-[#120707] border border-red-950 text-red-500 hover:bg-red-950 hover:text-white text-xs py-2 text-center rounded-sm uppercase font-bold transition cursor-pointer"
-                >
-                  ☠ Wipe Client Workspace
-                </button>
+
+              <div className="flex items-center gap-4 border-t md:border-t-0 md:border-l border-neutral-800 pt-4 md:pt-0 pl-0 md:pl-6 shrink-0">
+                <div className="text-center">
+                  <div className="text-xl font-bold text-volt">{allDbClients.length || clients.length}</div>
+                  <div className="text-[9px] text-neutral-500 font-bold uppercase">Companies</div>
+                </div>
+                <div className="text-center border-l border-neutral-800 pl-4">
+                  <div className="text-xl font-bold text-flame">{pendingWorkspacesList.length}</div>
+                  <div className="text-[9px] text-neutral-500 font-bold uppercase">Pending</div>
+                </div>
+                <div className="text-center border-l border-neutral-800 pl-4">
+                  <div className="text-xl font-bold text-white">{getAllMembersList().length}</div>
+                  <div className="text-[9px] text-neutral-500 font-bold uppercase">Members</div>
+                </div>
+              </div>
+            </div>
+
+            {/* Section 1: All Companies Master Table */}
+            <div className="bg-[#0c0c0c] border border-neutral-800 p-6 rounded-sm space-y-4">
+              <div className="flex items-center justify-between border-b border-neutral-800 pb-3">
+                <h3 className="text-xs font-bold text-volt uppercase tracking-wider">// Company Workspaces Directory</h3>
+                <span className="text-[9px] text-neutral-400 uppercase font-bold">Click "Manage Workspace →" to configure company-specific do's & don'ts</span>
+              </div>
+
+              <div className="space-y-3">
+                {(allDbClients.length > 0 ? allDbClients : clients).map((c: any) => {
+                  const isAppr = c.approved ?? true;
+                  const isDis = c.disabled ?? false;
+
+                  return (
+                    <div key={c.id} className="bg-neutral-950 border border-neutral-850 p-4 rounded-sm flex flex-col lg:flex-row lg:items-center justify-between gap-4">
+                      <div className="space-y-1 text-left">
+                        <div className="flex items-center gap-2">
+                          <h4 className="text-xs font-bold text-white uppercase">{c.name}</h4>
+                          {isDis ? (
+                            <span className="bg-red-950 text-red-400 border border-red-900 text-[9px] px-2 py-0.5 font-bold uppercase rounded-sm">
+                              ● LOGIN DISABLED
+                            </span>
+                          ) : isAppr ? (
+                            <span className="bg-emerald-950 text-emerald-400 border border-emerald-900 text-[9px] px-2 py-0.5 font-bold uppercase rounded-sm">
+                              ✓ APPROVED
+                            </span>
+                          ) : (
+                            <span className="bg-amber-950 text-amber-400 border border-amber-900 text-[9px] px-2 py-0.5 font-bold uppercase rounded-sm animate-pulse">
+                              ⏱ AWAITING APPROVAL
+                            </span>
+                          )}
+                        </div>
+                        <div className="text-[9px] text-neutral-500 uppercase tracking-wider">
+                          Workspace ID: <span className="text-neutral-350">{c.id}</span> | Domain: <span className="text-neutral-350">{c.email_domain || c.email || "N/A"}</span>
+                        </div>
+                      </div>
+
+                      {/* Master Company Action Controls */}
+                      <div className="flex flex-wrap items-center gap-2">
+                        <button
+                          onClick={() => {
+                            setSelectedClientId(c.id);
+                            setViewMode("company");
+                          }}
+                          className="bg-volt text-black hover:bg-white text-[10px] py-1.5 px-3 uppercase font-extrabold rounded-sm transition cursor-pointer"
+                        >
+                          ⚡ Manage Workspace →
+                        </button>
+
+                        {!isAppr && (
+                          <button
+                            onClick={() => handleApproveWorkspace(c.id)}
+                            className="bg-emerald-900/60 border border-emerald-800 text-emerald-300 hover:bg-emerald-800 text-[9px] py-1.5 px-2.5 uppercase font-bold rounded-sm transition cursor-pointer"
+                          >
+                            Approve
+                          </button>
+                        )}
+                        {isAppr && (
+                          <button
+                            onClick={() => handleRejectWorkspace(c.id)}
+                            className="bg-neutral-900 border border-amber-800/60 hover:border-amber-500 text-amber-400 text-[9px] py-1.5 px-2.5 uppercase font-bold rounded-sm transition cursor-pointer"
+                          >
+                            Reject
+                          </button>
+                        )}
+
+                        {isDis ? (
+                          <button
+                            onClick={() => handleEnableWorkspace(c.id)}
+                            className="bg-emerald-900/60 border border-emerald-800 text-emerald-300 hover:bg-emerald-800 text-[9px] py-1.5 px-2.5 uppercase font-bold rounded-sm transition cursor-pointer"
+                          >
+                            Enable Login
+                          </button>
+                        ) : (
+                          <button
+                            onClick={() => handleDisableWorkspace(c.id)}
+                            className="bg-neutral-900 border border-neutral-800 hover:border-amber-500 hover:text-amber-300 text-neutral-400 text-[9px] py-1.5 px-2.5 uppercase font-bold rounded-sm transition cursor-pointer"
+                          >
+                            Disable Login
+                          </button>
+                        )}
+
+                        <button
+                          onClick={() => handleDeleteWorkspace(c.id)}
+                          className="bg-neutral-900 border border-neutral-800 hover:border-red-500 hover:text-red-400 text-neutral-400 text-[9px] py-1.5 px-2.5 uppercase font-bold rounded-sm transition cursor-pointer"
+                        >
+                          Delete
+                        </button>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+
+            {/* Section 2: Team Member Email Directory (Placed below) */}
+            <div className="bg-[#0c0c0c] border border-neutral-800 p-6 rounded-sm space-y-4">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between border-b border-neutral-800 pb-3 gap-3">
+                <div>
+                  <h3 className="text-xs font-bold text-volt uppercase tracking-wider">// Team Member Email Accounts Directory</h3>
+                  <p className="text-[10px] text-neutral-400 mt-0.5">Master approve invited team member emails or disable specific email logins across companies.</p>
+                </div>
+                <div className="w-full sm:w-64">
+                  <input
+                    type="text"
+                    value={memberSearchQuery}
+                    onChange={(e) => setMemberSearchQuery(e.target.value)}
+                    placeholder="🔍 Search email or company..."
+                    className="w-full bg-neutral-950 border border-neutral-800 rounded-sm px-3 py-1.5 text-[10px] text-white focus:outline-none focus:border-volt"
+                  />
+                </div>
+              </div>
+
+              <div className="space-y-3">
+                {getAllMembersList().map((m: any) => {
+                  const isAppr = m.approved ?? false;
+                  const isDis = m.disabled ?? false;
+
+                  return (
+                    <div key={`${m.clientId}-${m.email}`} className="bg-neutral-950 border border-neutral-850 p-4 rounded-sm flex flex-col md:flex-row md:items-center justify-between gap-4">
+                      <div className="space-y-1 text-left">
+                        <div className="flex items-center gap-2">
+                          <h4 className="text-xs font-bold text-white">{m.email}</h4>
+                          {isDis ? (
+                            <span className="bg-red-950 text-red-400 border border-red-900 text-[9px] px-2 py-0.5 font-bold uppercase rounded-sm">
+                              ● EMAIL DISABLED
+                            </span>
+                          ) : isAppr ? (
+                            <span className="bg-emerald-950 text-emerald-400 border border-emerald-900 text-[9px] px-2 py-0.5 font-bold uppercase rounded-sm">
+                              ✓ MASTER APPROVED
+                            </span>
+                          ) : (
+                            <span className="bg-amber-950 text-amber-400 border border-amber-900 text-[9px] px-2 py-0.5 font-bold uppercase rounded-sm animate-pulse">
+                              ⏱ PENDING APPROVAL
+                            </span>
+                          )}
+                        </div>
+                        <div className="text-[9px] text-neutral-500 uppercase tracking-wider">
+                          Workspace: <span className="text-neutral-350">{m.clientName}</span> ({m.clientId})
+                        </div>
+                      </div>
+
+                      {/* Member Action Controls */}
+                      <div className="flex flex-wrap items-center gap-2">
+                        {!isAppr && (
+                          <button
+                            onClick={() => handleMasterApproveMember(m.clientId, m.email)}
+                            className="bg-volt text-black hover:bg-white text-[9px] py-1.5 px-3 uppercase font-bold rounded-sm transition cursor-pointer"
+                          >
+                            Master Approve
+                          </button>
+                        )}
+
+                        {isDis ? (
+                          <button
+                            onClick={() => handleEnableMember(m.clientId, m.email)}
+                            className="bg-emerald-900/60 border border-emerald-800 text-emerald-300 hover:bg-emerald-800 text-[9px] py-1.5 px-2.5 uppercase font-bold rounded-sm transition cursor-pointer"
+                          >
+                            Enable Email
+                          </button>
+                        ) : (
+                          <button
+                            onClick={() => handleDisableMember(m.clientId, m.email)}
+                            className="bg-neutral-900 border border-neutral-800 hover:border-amber-500 hover:text-amber-300 text-neutral-400 text-[9px] py-1.5 px-2.5 uppercase font-bold rounded-sm transition cursor-pointer"
+                          >
+                            Disable Email
+                          </button>
+                        )}
+
+                        <button
+                          onClick={() => handleDeleteMember(m.clientId, m.email)}
+                          className="bg-neutral-900 border border-neutral-800 hover:border-red-500 hover:text-red-400 text-neutral-400 text-[9px] py-1.5 px-2.5 uppercase font-bold rounded-sm transition cursor-pointer"
+                        >
+                          Delete Email
+                        </button>
+                      </div>
+                    </div>
+                  );
+                })}
+
+                {getAllMembersList().length === 0 && (
+                  <div className="text-xs text-neutral-500 italic py-3 text-center">
+                    No member email accounts registered yet.
+                  </div>
+                )}
               </div>
             </div>
           </div>
-
-          {/* Column 2: Tabbed configuration sections (Right Side) */}
-          <div className="lg:col-span-7 space-y-4">
+        ) : (
+          /* COMPANY WORKSPACE MANAGEMENT VIEW MODE */
+          <div className="flex-grow p-8 grid grid-cols-1 lg:grid-cols-12 gap-8 w-full overflow-y-auto">
             
-            {/* Header Tabs Navigation */}
-            <div className="flex border-b border-neutral-800 bg-[#0e0e0e] p-1 rounded-t-sm gap-1">
-              <button
-                onClick={() => setActiveFormTab("progress")}
-                className={`flex-1 text-center py-2 text-[10px] uppercase font-bold tracking-wider rounded-sm transition cursor-pointer ${
-                  activeFormTab === "progress" ? "bg-volt text-black font-extrabold" : "text-neutral-400 hover:text-white"
-                }`}
-              >
-                Milestones Engine
-              </button>
+            {/* Column 1: Config Toggles & Checklist (Left Side) */}
+            <div className="lg:col-span-5 space-y-6">
+              <div className="bg-[#0c0c0c] border border-neutral-800 p-5 rounded-sm h-full flex flex-col">
+                <div className="border-b border-neutral-800 pb-3 mb-4">
+                  <h3 className="text-xs font-bold text-volt uppercase tracking-wider">
+                    Checklist & Instructions (Do's / Don'ts)
+                  </h3>
+                  <p className="text-[10px] text-neutral-400 mt-0.5">
+                    Managing checklist items specifically for <span className="text-white font-bold">{selectedClient.name}</span>.
+                  </p>
+                </div>
 
-              <button
-                onClick={() => setActiveFormTab("requirements")}
-                className={`flex-1 text-center py-2 text-[10px] uppercase font-bold tracking-wider rounded-sm transition cursor-pointer ${
-                  activeFormTab === "requirements" ? "bg-volt text-black font-extrabold" : "text-neutral-400 hover:text-white"
-                }`}
-              >
-                Asset Req Builder
-              </button>
-              
-              <button
-                onClick={() => setActiveFormTab("agreements")}
-                className={`flex-1 text-center py-2 text-[10px] uppercase font-bold tracking-wider rounded-sm transition cursor-pointer ${
-                  activeFormTab === "agreements" ? "bg-volt text-black font-extrabold" : "text-neutral-400 hover:text-white"
-                }`}
-              >
-                Contracts & Vault
-              </button>
+                <div className="space-y-3 overflow-y-auto pr-2 flex-grow max-h-[600px]">
+                  {reqs.map((r) => (
+                    <div key={r.id} className="py-2.5 border-b border-neutral-900 last:border-b-0">
+                      <div className="flex items-center justify-between">
+                        <label className="flex items-center gap-2.5 cursor-pointer select-none">
+                          <input
+                            type="checkbox"
+                            checked={r.active}
+                            onChange={() => toggleReqActive(r.id)}
+                            className="h-4 w-4 bg-neutral-950 border border-neutral-800 text-volt rounded-sm focus:ring-0 cursor-pointer"
+                          />
+                          <span className={`text-[10px] uppercase tracking-wide font-bold ${r.active ? "text-white" : "text-neutral-500"}`}>
+                            {r.label}
+                          </span>
+                        </label>
+                        
+                        {(r.id.startsWith("req-social-") || r.id.startsWith("req-custom-")) && (
+                          <button
+                            onClick={() => deleteRequirement(r.id)}
+                            className="text-[9px] text-flame underline hover:text-white cursor-pointer shrink-0 ml-2"
+                          >
+                            Remove
+                          </button>
+                        )}
+                      </div>
 
-              <button
-                onClick={() => setActiveFormTab("approvals")}
-                className={`flex-1 text-center py-2 text-[10px] uppercase font-bold tracking-wider rounded-sm transition cursor-pointer relative ${
-                  activeFormTab === "approvals" ? "bg-volt text-black font-extrabold" : "text-neutral-400 hover:text-white"
-                }`}
-              >
-                Approvals Center
-                {totalPending > 0 && (
-                  <span className="absolute top-1 right-1 h-2 w-2 bg-flame rounded-full animate-ping" />
-                )}
-              </button>
+                      {r.submitted && r.value && (
+                        <div className="pl-6 mt-2 flex flex-col sm:flex-row sm:items-center gap-2">
+                          <span className="text-[8px] bg-emerald-950/80 text-emerald-400 border border-emerald-900 px-1.5 py-0.5 rounded-sm font-bold uppercase w-fit shrink-0">
+                            SUBMITTED:
+                          </span>
+                          <span className="text-[10px] text-neutral-300 font-mono break-all select-all">
+                            {r.value.startsWith("http") ? (
+                              <a href={r.value} target="_blank" rel="noreferrer" className="text-volt underline hover:text-white">
+                                {r.value} ↗
+                              </a>
+                            ) : (
+                              r.value
+                            )}
+                          </span>
+                        </div>
+                      )}
+                    </div>
+                  ))}
+                </div>
+                
+                <div className="pt-5 border-t border-neutral-900 mt-4">
+                  <button
+                    onClick={resetClientData}
+                    className="w-full bg-[#120707] border border-red-950 text-red-500 hover:bg-red-950 hover:text-white text-xs py-2 text-center rounded-sm uppercase font-bold transition cursor-pointer"
+                  >
+                    ☠ Wipe Workspace Data for {selectedClient.name}
+                  </button>
+                </div>
+              </div>
             </div>
 
-            {/* TAB 1: Milestones Engine */}
-            {activeFormTab === "progress" && (
-              <div className="space-y-6">
-                
-                {/* 1. Add New Milestone Form */}
-                <div className="bg-[#0c0c0c] border border-neutral-800 p-5 rounded-sm">
-                  <h3 className="text-xs font-bold text-white uppercase tracking-wider mb-3 border-b border-neutral-800 pb-2">
-                    + Create New Project Milestone
-                  </h3>
-                  
-                  <form onSubmit={handleCreateMilestone} className="space-y-3">
-                    <div className="grid grid-cols-3 gap-3">
-                      <div className="col-span-2">
+            {/* Column 2: Tabbed configuration sections (Right Side) */}
+            <div className="lg:col-span-7 space-y-4">
+              
+              {/* Header Tabs Navigation for Selected Company */}
+              <div className="flex border-b border-neutral-800 bg-[#0e0e0e] p-1 rounded-t-sm gap-1">
+                <button
+                  onClick={() => setActiveFormTab("requirements")}
+                  className={`flex-1 text-center py-2 text-[10px] uppercase font-bold tracking-wider rounded-sm transition cursor-pointer ${
+                    activeFormTab === "requirements" ? "bg-volt text-black font-extrabold" : "text-neutral-400 hover:text-white"
+                  }`}
+                >
+                  Asset Req Builder
+                </button>
+
+                <button
+                  onClick={() => setActiveFormTab("progress")}
+                  className={`flex-1 text-center py-2 text-[10px] uppercase font-bold tracking-wider rounded-sm transition cursor-pointer ${
+                    activeFormTab === "progress" ? "bg-volt text-black font-extrabold" : "text-neutral-400 hover:text-white"
+                  }`}
+                >
+                  Milestones Engine
+                </button>
+
+                <button
+                  onClick={() => setActiveFormTab("agreements")}
+                  className={`flex-1 text-center py-2 text-[10px] uppercase font-bold tracking-wider rounded-sm transition cursor-pointer ${
+                    activeFormTab === "agreements" ? "bg-volt text-black font-extrabold" : "text-neutral-400 hover:text-white"
+                  }`}
+                >
+                  Contracts & Vault
+                </button>
+
+                <button
+                  onClick={() => setActiveFormTab("members")}
+                  className={`flex-1 text-center py-2 text-[10px] uppercase font-bold tracking-wider rounded-sm transition cursor-pointer ${
+                    activeFormTab === "members" ? "bg-volt text-black font-extrabold" : "text-neutral-400 hover:text-white"
+                  }`}
+                >
+                  Team Members ({getAllMembersList().filter(m => m.clientId === selectedClientId).length})
+                </button>
+              </div>
+
+              {/* TAB 1: Asset Requirements & Custom URLs Builder */}
+              {activeFormTab === "requirements" && (
+                <div className="space-y-6">
+                  {/* Add Structured Social Handles Request Form */}
+                  <div className="bg-[#0c0c0c] border border-neutral-800 p-5 rounded-sm">
+                    <h3 className="text-xs font-bold text-white uppercase tracking-wider mb-2 border-b border-neutral-800 pb-2">
+                      + Add Social Platform Handle Request for {selectedClient.name}
+                    </h3>
+                    <p className="text-[10px] text-neutral-400 mb-4">
+                      Request official social media links or handles specifically for this client workspace.
+                    </p>
+
+                    <form onSubmit={addSocialPlatformReq} className="space-y-3">
+                      <div className="grid grid-cols-2 gap-3">
+                        <div>
+                          <label className="text-[9px] text-neutral-500 uppercase font-bold block mb-1">
+                            Platform
+                          </label>
+                          <select
+                            value={selPlatform}
+                            onChange={(e) => setSelPlatform(e.target.value)}
+                            className="w-full bg-neutral-950 border border-neutral-850 px-3 py-1.5 text-xs text-white rounded-sm focus:outline-none focus:border-volt"
+                          >
+                            <option value="LinkedIn">LinkedIn</option>
+                            <option value="X (Twitter)">X (Twitter)</option>
+                            <option value="Instagram">Instagram</option>
+                            <option value="YouTube">YouTube</option>
+                            <option value="TikTok">TikTok</option>
+                            <option value="Facebook">Facebook</option>
+                          </select>
+                        </div>
+                        <div>
+                          <label className="text-[9px] text-neutral-500 uppercase font-bold block mb-1">
+                            Account Scope
+                          </label>
+                          <select
+                            value={selSubOption}
+                            onChange={(e) => setSelSubOption(e.target.value)}
+                            className="w-full bg-neutral-950 border border-neutral-850 px-3 py-1.5 text-xs text-white rounded-sm focus:outline-none focus:border-volt"
+                          >
+                            <option value="Personal Profile URL">Personal Profile URL</option>
+                            <option value="Business Page URL">Business Page URL</option>
+                            <option value="Founder Account URL">Founder Account URL</option>
+                            <option value="Company Handle">Company Handle</option>
+                          </select>
+                        </div>
+                      </div>
+
+                      <div>
                         <input
                           type="text"
-                          value={newMilestoneTitle}
-                          onChange={(e) => setNewMilestoneTitle(e.target.value)}
-                          placeholder="Milestone Title: e.g. Phase 3: Setup & Launch"
+                          value={socialContext}
+                          onChange={(e) => setSocialContext(e.target.value)}
+                          placeholder="Optional Notes: e.g. CEO Profile Link"
+                          className="w-full bg-neutral-950 border border-neutral-850 px-3 py-1.5 text-xs text-white rounded-sm focus:outline-none focus:border-volt"
+                        />
+                      </div>
+
+                      <button
+                        type="submit"
+                        className="w-full bg-volt text-black hover:bg-white text-xs py-2 uppercase font-bold rounded-sm transition cursor-pointer"
+                      >
+                        + Add Social Handle Checklist Requirement
+                      </button>
+                    </form>
+                  </div>
+
+                  {/* Add Custom Request Form */}
+                  <div className="bg-[#0c0c0c] border border-neutral-800 p-5 rounded-sm">
+                    <h3 className="text-xs font-bold text-white uppercase tracking-wider mb-2 border-b border-neutral-800 pb-2">
+                      + Add Custom URL Request (Max 3)
+                    </h3>
+
+                    <form onSubmit={addCustomReq} className="space-y-3">
+                      <div>
+                        <input
+                          type="text"
+                          value={customLabel}
+                          onChange={(e) => setCustomLabel(e.target.value)}
+                          placeholder="Requirement Label: e.g. Brand Design Deck"
+                          disabled={activeCustomsCount >= 3}
+                          className="w-full bg-neutral-950 border border-neutral-850 rounded-sm px-3.5 py-2 text-xs text-white focus:outline-none focus:border-volt disabled:opacity-50"
+                        />
+                      </div>
+                      <button
+                        type="submit"
+                        disabled={activeCustomsCount >= 3}
+                        className="w-full bg-neutral-900 border border-neutral-805 hover:border-volt text-neutral-300 hover:text-white text-xs py-2 uppercase font-bold rounded-sm transition cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+                      >
+                        {activeCustomsCount >= 3 ? "Custom Limits Reached (Max 3)" : "+ Add Custom URL Request"}
+                      </button>
+                    </form>
+                  </div>
+                </div>
+              )}
+
+              {/* TAB 2: Milestones Engine */}
+              {activeFormTab === "progress" && (
+                <div className="space-y-6">
+                  <div className="bg-[#0c0c0c] border border-neutral-800 p-5 rounded-sm">
+                    <h3 className="text-xs font-bold text-white uppercase tracking-wider mb-3 border-b border-neutral-800 pb-2">
+                      + Create New Project Milestone for {selectedClient.name}
+                    </h3>
+                    
+                    <form onSubmit={handleCreateMilestone} className="space-y-3">
+                      <div className="grid grid-cols-3 gap-3">
+                        <div className="col-span-2">
+                          <input
+                            type="text"
+                            value={newMilestoneTitle}
+                            onChange={(e) => setNewMilestoneTitle(e.target.value)}
+                            placeholder="Milestone Title: e.g. Phase 3: Setup & Launch"
+                            className="w-full bg-neutral-950 border border-neutral-800 rounded-sm px-3 py-1.5 text-xs text-white focus:outline-none focus:border-volt"
+                            required
+                          />
+                        </div>
+                        <div>
+                          <input
+                            type="number"
+                            min="0"
+                            max="100"
+                            value={newMilestonePercent}
+                            onChange={(e) => setNewMilestonePercent(Number(e.target.value))}
+                            placeholder="%"
+                            className="w-full bg-neutral-950 border border-neutral-800 rounded-sm px-3 py-1.5 text-xs text-white focus:outline-none focus:border-volt"
+                            required
+                          />
+                        </div>
+                      </div>
+
+                      <div>
+                        <input
+                          type="text"
+                          value={newMilestoneStatus}
+                          onChange={(e) => setNewMilestoneStatus(e.target.value)}
+                          placeholder="Description: e.g. Campaign setup underway."
                           className="w-full bg-neutral-950 border border-neutral-800 rounded-sm px-3 py-1.5 text-xs text-white focus:outline-none focus:border-volt"
-                          required
+                        />
+                      </div>
+
+                      <button
+                        type="submit"
+                        className="w-full bg-volt text-black hover:bg-white text-xs py-2 uppercase font-bold rounded-sm transition cursor-pointer"
+                      >
+                        + Add Milestone Stage
+                      </button>
+                    </form>
+                  </div>
+
+                  {/* Milestones List */}
+                  <div className="bg-[#0c0c0c] border border-neutral-800 p-5 rounded-sm space-y-4">
+                    <h3 className="text-xs font-bold text-white uppercase tracking-wider border-b border-neutral-800 pb-2">
+                      Active Milestone Pipeline ({milestones.length})
+                    </h3>
+
+                    <div className="space-y-4">
+                      {milestones.map((m) => (
+                        <div key={m.id} className="bg-neutral-950 border border-neutral-850 p-4 rounded-sm space-y-3">
+                          <div className="flex justify-between items-center">
+                            <span className="text-xs font-bold text-white uppercase">{m.title}</span>
+                            <button
+                              onClick={() => handleDeleteMilestone(m.id)}
+                              className="text-[9px] text-flame underline hover:text-white cursor-pointer"
+                            >
+                              Delete Stage
+                            </button>
+                          </div>
+
+                          <div className="grid grid-cols-3 gap-3 items-center">
+                            <div>
+                              <label className="text-[8px] text-neutral-500 uppercase block font-bold">Progress %</label>
+                              <input
+                                type="number"
+                                min="0"
+                                max="100"
+                                value={m.percentage}
+                                onChange={(e) => handleUpdateMilestone(m.id, Number(e.target.value), m.statusText)}
+                                className="w-full bg-neutral-900 border border-neutral-800 text-xs text-volt font-bold px-2 py-1 rounded-sm focus:outline-none focus:border-volt"
+                              />
+                            </div>
+                            <div className="col-span-2">
+                              <label className="text-[8px] text-neutral-500 uppercase block font-bold">Status Update</label>
+                              <input
+                                type="text"
+                                value={m.statusText}
+                                onChange={(e) => handleUpdateMilestone(m.id, m.percentage, e.target.value)}
+                                className="w-full bg-neutral-900 border border-neutral-800 text-xs text-neutral-200 px-2 py-1 rounded-sm focus:outline-none focus:border-volt"
+                              />
+                            </div>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* TAB 3: Contracts, Agreements & Vault Docs */}
+              {activeFormTab === "agreements" && (
+                <div className="space-y-6">
+                  <div className="bg-[#0c0c0c] border border-neutral-800 p-5 rounded-sm">
+                    <h3 className="text-xs font-bold text-white uppercase tracking-wider mb-2 border-b border-neutral-800 pb-2">
+                      + Share Contract / Agreement for {selectedClient.name}
+                    </h3>
+
+                    <form onSubmit={addCorporateAgreement} className="space-y-3">
+                      <div>
+                        <input
+                          type="text"
+                          value={newAgreementName}
+                          onChange={(e) => setNewAgreementName(e.target.value)}
+                          placeholder="Agreement Name: e.g. Master Services Agreement (MSA)"
+                          className="w-full bg-neutral-950 border border-neutral-800 rounded-sm px-3.5 py-2 text-xs text-white focus:outline-none focus:border-volt"
                         />
                       </div>
                       <div>
                         <input
-                          type="number"
-                          min="0"
-                          max="100"
-                          value={newMilestonePercent}
-                          onChange={(e) => setNewMilestonePercent(Number(e.target.value))}
-                          placeholder="Progress %"
-                          className="w-full bg-neutral-950 border border-neutral-800 rounded-sm px-3 py-1.5 text-xs text-white focus:outline-none focus:border-volt font-bold"
+                          type="text"
+                          value={newAgreementUrl}
+                          onChange={(e) => setNewAgreementUrl(e.target.value)}
+                          placeholder="Secure Access URL / Drive Link"
+                          className="w-full bg-neutral-950 border border-neutral-800 rounded-sm px-3.5 py-2 text-xs text-white focus:outline-none focus:border-volt"
                         />
                       </div>
-                    </div>
+                      <button
+                        type="submit"
+                        className="w-full bg-volt text-black hover:bg-white text-xs py-2 uppercase font-bold rounded-sm transition cursor-pointer"
+                      >
+                        Publish Agreement Link
+                      </button>
+                    </form>
+                  </div>
 
-                    <input
-                      type="text"
-                      value={newMilestoneStatus}
-                      onChange={(e) => setNewMilestoneStatus(e.target.value)}
-                      placeholder="Status Description (e.g. Configuring campaign assets)"
-                      className="w-full bg-neutral-950 border border-neutral-800 rounded-sm px-3 py-1.5 text-xs text-white focus:outline-none focus:border-volt"
-                    />
+                  <div className="bg-[#0c0c0c] border border-neutral-800 p-5 rounded-sm">
+                    <h3 className="text-xs font-bold text-white uppercase tracking-wider mb-2 border-b border-neutral-800 pb-2">
+                      + Share Deliverables File in Vault for {selectedClient.name}
+                    </h3>
 
-                    <button
-                      type="submit"
-                      className="w-full bg-volt text-black hover:bg-white text-xs py-2 uppercase font-bold rounded-sm transition cursor-pointer"
-                    >
-                      Publish New Milestone →
-                    </button>
-                  </form>
+                    <form onSubmit={addVaultDocument} className="space-y-3">
+                      <div>
+                        <input
+                          type="text"
+                          value={newFileName}
+                          onChange={(e) => setNewFileName(e.target.value)}
+                          placeholder="File Name: e.g. Campaign_Assets_Blueprint.pdf"
+                          className="w-full bg-neutral-950 border border-neutral-805 px-3.5 py-2 text-xs focus:outline-none text-white focus:border-volt"
+                        />
+                      </div>
+                      <div>
+                        <input
+                          type="text"
+                          value={newFileUrl}
+                          onChange={(e) => setNewFileUrl(e.target.value)}
+                          placeholder="File Access URL"
+                          className="w-full bg-neutral-950 border border-neutral-805 px-3.5 py-2 text-xs focus:outline-none text-white focus:border-volt"
+                        />
+                      </div>
+                      <button
+                        type="submit"
+                        className="w-full bg-neutral-900 border border-neutral-800 hover:border-volt text-neutral-300 hover:text-white text-xs py-2 uppercase font-bold rounded-sm transition cursor-pointer text-center"
+                      >
+                        Publish Vault File Link
+                      </button>
+                    </form>
+                  </div>
                 </div>
+              )}
 
-                {/* 2. Manage & Edit Existing Milestones */}
+              {/* TAB 4: Team Member Approvals for Selected Company */}
+              {activeFormTab === "members" && (
                 <div className="bg-[#0c0c0c] border border-neutral-800 p-5 rounded-sm space-y-4">
-                  <h3 className="text-xs font-bold text-white uppercase tracking-wider border-b border-neutral-800 pb-2">
-                    Active Milestones & Deliverables Panel
+                  <h3 className="text-xs font-bold text-volt uppercase tracking-wider border-b border-neutral-800 pb-2">
+                    // Team Members for {selectedClient.name} ({selectedClient.id})
                   </h3>
-
-                  <div className="space-y-4 max-h-[350px] overflow-y-auto pr-2">
-                    {milestones.map((m) => (
-                      <div key={m.id} className="p-4 bg-neutral-950 border border-neutral-800 rounded-sm space-y-3">
-                        <div className="flex items-center justify-between border-b border-neutral-900 pb-2">
-                          <span className="text-xs text-white font-bold uppercase truncate">{m.title}</span>
-                          <button
-                            onClick={() => handleDeleteMilestone(m.id)}
-                            className="text-[9px] text-flame underline hover:text-white cursor-pointer"
-                          >
-                            Delete
-                          </button>
-                        </div>
-
-                        {/* Inline editor inputs */}
-                        <div className="grid grid-cols-12 gap-3 items-center">
-                          <div className="col-span-8 flex items-center gap-2">
-                            <input
-                              type="range"
-                              min="0"
-                              max="100"
-                              value={m.percentage}
-                              onChange={(e) => handleUpdateMilestone(m.id, Number(e.target.value), m.statusText)}
-                              className="w-full accent-volt h-1 bg-neutral-900 rounded-sm cursor-pointer"
-                            />
-                            <span className="text-xs text-volt font-bold w-8 text-right">{m.percentage}%</span>
-                          </div>
-                          
-                          <div className="col-span-4 text-right text-[8px] text-neutral-500 font-bold uppercase truncate">
-                            Update: {m.updatedAt.split(',')[0]}
-                          </div>
-                        </div>
-
-                        <div>
-                          <input
-                            type="text"
-                            value={m.statusText}
-                            onChange={(e) => handleUpdateMilestone(m.id, m.percentage, e.target.value)}
-                            placeholder="Milestone description updates..."
-                            className="w-full bg-[#0a0a0a] border border-neutral-900 text-xs px-2 py-1 text-neutral-300 rounded-sm focus:outline-none focus:border-volt"
-                          />
-                        </div>
-
-                        {/* Deliverables posted to this milestone */}
-                        <div className="space-y-1 bg-neutral-900/60 p-2.5 rounded-sm border border-neutral-900">
-                          <span className="text-[8px] text-neutral-500 font-bold uppercase block mb-1">Attached Milestone Deliverables:</span>
-                          {m.deliverables.map((del, delIdx) => (
-                            <div key={delIdx} className="flex justify-between items-center text-[10px] text-neutral-300">
-                              <span className="truncate pr-4">📄 {del.name} ({del.url.substring(0, 20)}...)</span>
-                              <button
-                                onClick={() => handleDeleteMilestoneDeliverable(m.id, delIdx)}
-                                className="text-[8px] text-red-500 hover:text-white cursor-pointer"
-                              >
-                                Remove
-                              </button>
-                            </div>
-                          ))}
-                          
-                          {m.deliverables.length === 0 && (
-                            <span className="text-[9px] text-neutral-600 block italic">No deliverables linked yet.</span>
-                          )}
-
-                          {/* Deliverable posting trigger inline */}
-                          <div className="pt-2 border-t border-neutral-900 mt-2">
-                            {activeMilestoneAttachmentId === m.id ? (
-                              <form onSubmit={handleAddMilestoneDeliverable} className="space-y-2">
-                                <div className="grid grid-cols-2 gap-2">
-                                  <input
-                                    type="text"
-                                    placeholder="Doc Name"
-                                    value={attachedDocName}
-                                    onChange={(e) => setAttachedDocName(e.target.value)}
-                                    className="bg-neutral-950 border border-neutral-850 px-2 py-1 text-[10px] text-white rounded-sm focus:outline-none"
-                                  />
-                                  <input
-                                    type="text"
-                                    placeholder="Doc Access URL / Link"
-                                    value={attachedDocUrl}
-                                    onChange={(e) => setAttachedDocUrl(e.target.value)}
-                                    className="bg-neutral-950 border border-neutral-850 px-2 py-1 text-[10px] text-white rounded-sm focus:outline-none"
-                                  />
-                                </div>
-                                <div className="space-y-1 bg-[#0a0a0a] p-1.5 rounded-sm border border-neutral-900">
-                                  <label className="text-[8px] text-neutral-500 uppercase font-bold block">
-                                    OR Upload Local File from Device
-                                  </label>
-                                  <input
-                                    type="file"
-                                    onChange={(e) => handleLocalFileUpload(e, setAttachedDocName, setAttachedDocUrl)}
-                                    className="text-[9px] text-neutral-400 file:mr-2 file:py-1 file:px-2 file:rounded-sm file:border-0 file:text-[9px] file:font-bold file:bg-neutral-900 file:text-neutral-350 hover:file:bg-neutral-800 cursor-pointer"
-                                  />
-                                </div>
-                                <div className="flex gap-2">
-                                  <button
-                                    type="submit"
-                                    className="flex-1 bg-volt text-black text-[9px] py-1 font-bold rounded-sm cursor-pointer hover:bg-white"
-                                  >
-                                    Attach Link
-                                  </button>
-                                  <button
-                                    type="button"
-                                    onClick={() => setActiveMilestoneAttachmentId(null)}
-                                    className="bg-neutral-800 text-neutral-400 text-[9px] py-1 px-2.5 rounded-sm cursor-pointer"
-                                  >
-                                    Cancel
-                                  </button>
-                                </div>
-                              </form>
-                            ) : (
-                              <button
-                                onClick={() => {
-                                  setActiveMilestoneAttachmentId(m.id);
-                                  setAttachedDocName("");
-                                  setAttachedDocUrl("");
-                                }}
-                                className="text-[9px] text-volt hover:text-white underline font-bold cursor-pointer"
-                              >
-                                + Post Deliverable / URL Link directly to this Milestone
-                              </button>
-                            )}
-                          </div>
-                        </div>
-
-                      </div>
-                    ))}
-                  </div>
-                </div>
-
-                {/* 3. Terminal Audit log feed trail */}
-                <div className="bg-[#0c0c0c] border border-neutral-800 p-5 rounded-sm">
-                  <h3 className="text-xs font-bold text-white uppercase tracking-wider mb-3 border-b border-neutral-800 pb-2">
-                    Milestones History & Audit trail
-                  </h3>
-                  <div className="bg-neutral-950 border border-neutral-900 p-4 rounded-sm max-h-[150px] overflow-y-auto space-y-1.5">
-                    {auditLogs.map((log) => (
-                      <div key={log.id} className="text-[10px] font-mono text-neutral-400 leading-normal">
-                        <span className="text-neutral-600 font-bold">[{log.timestamp.split(',')[1]?.trim() || log.timestamp}]</span>{" "}
-                        <span className="text-volt font-bold">&gt;&gt;</span> {log.message}
-                      </div>
-                    ))}
-                  </div>
-                </div>
-
-              </div>
-            )}
-
-            {/* TAB 2: Asset Requirements Builder */}
-            {activeFormTab === "requirements" && (
-              <div className="space-y-6">
-                {/* Social Platform Option Creator */}
-                <div className="bg-[#0c0c0c] border border-neutral-800 p-5 rounded-sm">
-                  <h3 className="text-xs font-bold text-white uppercase tracking-wider mb-2 border-b border-neutral-800 pb-2">
-                    + Add Custom Social Handle Request
-                  </h3>
-                  <p className="text-[10px] text-neutral-400 mb-3">Add supplementary handles (e.g. for multiple founders).</p>
-
-                  <form onSubmit={addSocialPlatformReq} className="space-y-3">
-                    <div className="grid grid-cols-2 gap-2">
-                      <select
-                        value={selPlatform}
-                        onChange={(e) => setSelPlatform(e.target.value)}
-                        className="bg-neutral-950 border border-neutral-800 rounded-sm px-3 py-2 text-xs text-white focus:outline-none focus:border-volt cursor-pointer"
-                      >
-                        {SOCIAL_PLATFORMS.map(p => (
-                          <option key={p} value={p}>{p}</option>
-                        ))}
-                      </select>
-
-                      <select
-                        value={selSubOption}
-                        onChange={(e) => setSelSubOption(e.target.value)}
-                        className="bg-neutral-950 border border-neutral-800 rounded-sm px-3 py-2 text-xs text-white focus:outline-none focus:border-volt cursor-pointer"
-                      >
-                        {SOCIAL_SUB_OPTIONS.map(o => (
-                          <option key={o} value={o}>{o}</option>
-                        ))}
-                      </select>
-                    </div>
-
-                    <div>
-                      <input
-                        type="text"
-                        value={socialContext}
-                        onChange={(e) => setSocialContext(e.target.value)}
-                        placeholder="Context: e.g. Founder 2, Brand Page"
-                        className="w-full bg-neutral-950 border border-neutral-800 rounded-sm px-3.5 py-2 text-xs text-white focus:outline-none focus:border-volt"
-                      />
-                    </div>
-
-                    <button
-                      type="submit"
-                      className="w-full bg-volt text-black hover:bg-white text-xs py-2 uppercase font-bold rounded-sm transition cursor-pointer"
-                    >
-                      + Add Platform Requirement
-                    </button>
-                  </form>
-                </div>
-
-                {/* Custom URL Collector form (max 3) */}
-                <div className="bg-[#0c0c0c] border border-neutral-800 p-5 rounded-sm">
-                  <h3 className="text-xs font-bold text-white uppercase tracking-wider mb-2 border-b border-neutral-800 pb-2 flex justify-between items-center">
-                    <span>+ Add Custom URL Request</span>
-                    <span className="text-[9px] text-neutral-400 font-normal">Active: {activeCustomsCount}/3</span>
-                  </h3>
-                  
-                  <form onSubmit={addCustomRequirement} className="space-y-3">
-                    <input
-                      type="text"
-                      value={customLabel}
-                      onChange={(e) => setCustomLabel(e.target.value)}
-                      placeholder="e.g. Pitch Video Link, Figma Deck..."
-                      disabled={activeCustomsCount >= 3}
-                      className="w-full bg-neutral-950 border border-neutral-800 rounded-sm px-3.5 py-2 text-xs text-white focus:outline-none focus:border-volt disabled:opacity-50 disabled:cursor-not-allowed"
-                      required
-                    />
-                    
-                    <button
-                      type="submit"
-                      disabled={activeCustomsCount >= 3}
-                      className="w-full bg-neutral-900 border border-neutral-805 hover:border-volt text-neutral-300 hover:text-white text-xs py-2 uppercase font-bold rounded-sm transition cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
-                    >
-                      {activeCustomsCount >= 3 ? "Custom Limits Reached (Max 3)" : "+ Add Custom URL Request"}
-                    </button>
-                  </form>
-                </div>
-              </div>
-            )}
-
-            {/* TAB 3: Contracts, Agreements & Vault Docs */}
-            {activeFormTab === "agreements" && (
-              <div className="space-y-6">
-                {/* Share Corporate Agreement/Contract Form */}
-                <div className="bg-[#0c0c0c] border border-neutral-800 p-5 rounded-sm">
-                  <h3 className="text-xs font-bold text-white uppercase tracking-wider mb-2 border-b border-neutral-800 pb-2">
-                    + Share Corporate Contract/Agreement Link
-                  </h3>
-
-                  <form onSubmit={addCorporateAgreement} className="space-y-3">
-                    <div>
-                      <input
-                        type="text"
-                        value={newAgreementName}
-                        onChange={(e) => setNewAgreementName(e.target.value)}
-                        placeholder="Agreement Name: e.g. Master Services Agreement (MSA)"
-                        className="w-full bg-neutral-950 border border-neutral-800 rounded-sm px-3.5 py-2 text-xs text-white focus:outline-none focus:border-volt"
-                      />
-                    </div>
-                    <div>
-                      <input
-                        type="text"
-                        value={newAgreementUrl}
-                        onChange={(e) => setNewAgreementUrl(e.target.value)}
-                        placeholder="Secure Agreement Link / Access URL"
-                        className="w-full bg-neutral-950 border border-neutral-800 rounded-sm px-3.5 py-2 text-xs text-white focus:outline-none focus:border-volt"
-                      />
-                    </div>
-                    <div className="space-y-1.5 bg-[#0a0a0a] p-2.5 rounded-sm border border-neutral-900">
-                      <label className="text-[9px] text-neutral-500 uppercase font-bold block">
-                        OR Upload Local File from Device
-                      </label>
-                      <input
-                        type="file"
-                        onChange={(e) => handleLocalFileUpload(e, setNewAgreementName, setNewAgreementUrl)}
-                        className="text-[10px] text-neutral-400 file:mr-2 file:py-1 file:px-2.5 file:rounded-sm file:border-0 file:text-[9px] file:font-bold file:bg-neutral-900 file:text-neutral-300 hover:file:bg-neutral-800 cursor-pointer"
-                      />
-                    </div>
-                    <button
-                      type="submit"
-                      className="w-full bg-volt text-black hover:bg-white text-xs py-2 uppercase font-bold rounded-sm transition cursor-pointer"
-                    >
-                      Publish Agreement Link
-                    </button>
-                  </form>
-                </div>
-
-                {/* Share Deliverables File in Vault */}
-                <div className="bg-[#0c0c0c] border border-neutral-800 p-5 rounded-sm">
-                  <h3 className="text-xs font-bold text-white uppercase tracking-wider mb-2 border-b border-neutral-800 pb-2">
-                    + Share Deliverables Link in Vault
-                  </h3>
-
-                  <form onSubmit={addVaultDocument} className="space-y-3">
-                    <div>
-                      <input
-                        type="text"
-                        value={newFileName}
-                        onChange={(e) => setNewFileName(e.target.value)}
-                        placeholder="File Name: e.g. Campaign_Assets_Blueprint.pdf"
-                        className="w-full bg-neutral-950 border border-neutral-805 px-3.5 py-2 text-xs focus:outline-none text-white focus:border-volt"
-                      />
-                    </div>
-                    <div>
-                      <input
-                        type="text"
-                        value={newFileUrl}
-                        onChange={(e) => setNewFileUrl(e.target.value)}
-                        placeholder="File Access Link / Access URL"
-                        className="w-full bg-neutral-950 border border-neutral-805 px-3.5 py-2 text-xs focus:outline-none text-white focus:border-volt"
-                      />
-                    </div>
-                    <div className="space-y-1.5 bg-[#0a0a0a] p-2.5 rounded-sm border border-neutral-900">
-                      <label className="text-[9px] text-neutral-500 uppercase font-bold block">
-                        OR Upload Local File from Device
-                      </label>
-                      <input
-                        type="file"
-                        onChange={(e) => handleLocalFileUpload(e, setNewFileName, setNewFileUrl)}
-                        className="text-[10px] text-neutral-400 file:mr-2 file:py-1 file:px-2.5 file:rounded-sm file:border-0 file:text-[9px] file:font-bold file:bg-neutral-900 file:text-neutral-300 hover:file:bg-neutral-800 cursor-pointer"
-                      />
-                    </div>
-                    <button
-                      type="submit"
-                      className="w-full bg-neutral-900 border border-neutral-800 hover:border-volt text-neutral-300 hover:text-white text-xs py-2 uppercase font-bold rounded-sm transition cursor-pointer text-center"
-                    >
-                      Publish Vault File Link
-                    </button>
-                  </form>
-                </div>
-
-                {/* Operations timeline status log */}
-                <div className="bg-[#0c0c0c] border border-neutral-800 p-5 rounded-sm">
-                  <h3 className="text-xs font-bold text-white uppercase tracking-wider mb-3 border-b border-neutral-800 pb-2">
-                    + Log Feed Checkpoint Check-in
-                  </h3>
-
-                  <form onSubmit={addStatusUpdate} className="space-y-3">
-                    <textarea
-                      value={newStatusText}
-                      onChange={(e) => setNewStatusText(e.target.value)}
-                      placeholder="e.g. Set up target newsletter lists and launched custom templates."
-                      rows={2}
-                      className="w-full bg-neutral-950 border border-neutral-800 rounded-sm px-3.5 py-2 text-xs focus:outline-none text-white focus:border-volt"
-                      required
-                    />
-                    <button
-                      type="submit"
-                      className="w-full bg-neutral-900 border border-neutral-800 hover:border-volt text-neutral-350 hover:text-white text-xs py-2 uppercase font-bold rounded-sm transition cursor-pointer text-center"
-                    >
-                      Publish Timeline Checkpoint
-                    </button>
-                  </form>
-                </div>
-              </div>
-            )}
-
-            {/* TAB 4: Enterprise Access & Approvals Control Center */}
-            {activeFormTab === "approvals" && (
-              <div className="space-y-6 text-left">
-                {/* 1. All Registered Companies Control Table */}
-                <div className="bg-[#0c0c0c] border border-neutral-800 p-5 rounded-sm space-y-4 font-mono">
-                  <div className="flex items-center justify-between border-b border-neutral-800 pb-3">
-                    <div>
-                      <h3 className="text-xs font-bold text-volt uppercase tracking-wider">// Company Workspaces Directory</h3>
-                      <p className="text-[10px] text-neutral-400 mt-0.5">Approve, reject, disable login, or permanently delete registered enterprise companies.</p>
-                    </div>
-                    <span className="bg-volt/10 text-volt px-2 py-0.5 rounded-sm text-[9px] font-bold">
-                      {allDbClients.length || clients.length} TOTAL COMPANIES
-                    </span>
-                  </div>
 
                   <div className="space-y-3">
-                    {(allDbClients.length > 0 ? allDbClients : clients).map((c: any) => {
-                      const isAppr = c.approved ?? true;
-                      const isDis = c.disabled ?? false;
-
-                      return (
-                        <div key={c.id} className="bg-neutral-950 border border-neutral-850 p-4 rounded-sm flex flex-col md:flex-row md:items-center justify-between gap-4">
-                          <div className="space-y-1 text-left">
-                            <div className="flex items-center gap-2">
-                              <h4 className="text-xs font-bold text-white uppercase">{c.name}</h4>
-                              {isDis ? (
-                                <span className="bg-red-950 text-red-400 border border-red-900 text-[9px] px-2 py-0.5 font-bold uppercase rounded-sm">
-                                  ● LOGIN DISABLED
-                                </span>
-                              ) : isAppr ? (
-                                <span className="bg-emerald-950 text-emerald-400 border border-emerald-900 text-[9px] px-2 py-0.5 font-bold uppercase rounded-sm">
-                                  ✓ APPROVED
-                                </span>
-                              ) : (
-                                <span className="bg-amber-950 text-amber-400 border border-amber-900 text-[9px] px-2 py-0.5 font-bold uppercase rounded-sm animate-pulse">
-                                  ⏱ AWAITING APPROVAL
-                                </span>
-                              )}
-                            </div>
-                            <div className="text-[9px] text-neutral-500 uppercase tracking-wider">
-                              ID: <span className="text-neutral-350">{c.id}</span> | Domain: <span className="text-neutral-350">{c.email_domain || c.email || "N/A"}</span>
-                            </div>
-                          </div>
-
-                          {/* Company Action Controls */}
-                          <div className="flex flex-wrap items-center gap-2">
-                            {!isAppr && (
-                              <button
-                                onClick={() => handleApproveWorkspace(c.id)}
-                                className="bg-volt text-black hover:bg-white text-[9px] py-1.5 px-3 uppercase font-bold rounded-sm transition cursor-pointer"
-                              >
-                                Approve
-                              </button>
-                            )}
-                            {isAppr && (
-                              <button
-                                onClick={() => handleRejectWorkspace(c.id)}
-                                className="bg-neutral-900 border border-amber-800/60 hover:border-amber-500 text-amber-400 text-[9px] py-1.5 px-2.5 uppercase font-bold rounded-sm transition cursor-pointer"
-                              >
-                                Reject / Set Pending
-                              </button>
-                            )}
-
-                            {isDis ? (
-                              <button
-                                onClick={() => handleEnableWorkspace(c.id)}
-                                className="bg-emerald-900/60 border border-emerald-800 text-emerald-300 hover:bg-emerald-800 text-[9px] py-1.5 px-2.5 uppercase font-bold rounded-sm transition cursor-pointer"
-                              >
-                                Enable Login
-                              </button>
-                            ) : (
-                              <button
-                                onClick={() => handleDisableWorkspace(c.id)}
-                                className="bg-neutral-900 border border-neutral-800 hover:border-amber-500 hover:text-amber-300 text-neutral-400 text-[9px] py-1.5 px-2.5 uppercase font-bold rounded-sm transition cursor-pointer"
-                              >
-                                Disable Login
-                              </button>
-                            )}
-
-                            <button
-                              onClick={() => handleDeleteWorkspace(c.id)}
-                              className="bg-neutral-900 border border-neutral-800 hover:border-red-500 hover:text-red-400 text-neutral-400 text-[9px] py-1.5 px-2.5 uppercase font-bold rounded-sm transition cursor-pointer"
-                            >
-                              Delete Company
-                            </button>
-                          </div>
-                        </div>
-                      );
-                    })}
-                  </div>
-                </div>
-
-                {/* 2. Team Member Email Directory & Master Approvals */}
-                <div className="bg-[#0c0c0c] border border-neutral-800 p-5 rounded-sm space-y-4 font-mono mt-8">
-                  <div className="flex flex-col sm:flex-row sm:items-center justify-between border-b border-neutral-800 pb-3 gap-3">
-                    <div>
-                      <h3 className="text-xs font-bold text-volt uppercase tracking-wider">// Company Team Members & Email Accounts Directory</h3>
-                      <p className="text-[10px] text-neutral-400 mt-0.5">Master approve invited team member emails or disable specific email logins across companies.</p>
-                    </div>
-                    <div className="w-full sm:w-64">
-                      <input
-                        type="text"
-                        value={memberSearchQuery}
-                        onChange={(e) => setMemberSearchQuery(e.target.value)}
-                        placeholder="🔍 Search email or company..."
-                        className="w-full bg-neutral-950 border border-neutral-800 rounded-sm px-3 py-1.5 text-[10px] text-white focus:outline-none focus:border-volt"
-                      />
-                    </div>
-                  </div>
-
-                  <div className="space-y-3">
-                    {getAllMembersList().map((m: any) => {
+                    {getAllMembersList().filter(m => m.clientId === selectedClientId).map((m: any) => {
                       const isAppr = m.approved ?? false;
                       const isDis = m.disabled ?? false;
 
@@ -2034,12 +2098,8 @@ function AdminPage() {
                                 </span>
                               )}
                             </div>
-                            <div className="text-[9px] text-neutral-500 uppercase tracking-wider">
-                              Workspace: <span className="text-neutral-350">{m.clientName}</span> ({m.clientId})
-                            </div>
                           </div>
 
-                          {/* Member Action Controls */}
                           <div className="flex flex-wrap items-center gap-2">
                             {!isAppr && (
                               <button
@@ -2077,19 +2137,18 @@ function AdminPage() {
                       );
                     })}
 
-                    {getAllMembersList().length === 0 && (
+                    {getAllMembersList().filter(m => m.clientId === selectedClientId).length === 0 && (
                       <div className="text-xs text-neutral-500 italic py-3 text-center">
-                        No member email invitations or secondary accounts registered yet.
+                        No secondary team members registered under {selectedClient.name} yet.
                       </div>
                     )}
                   </div>
                 </div>
-              </div>
-            )}
+              )}
 
+            </div>
           </div>
-
-        </div>
+        )}
       </main>
     </div>
   );
