@@ -1,6 +1,69 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, Component, ReactNode } from "react";
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { supabase, isSupabaseConfigured } from "../lib/supabase";
+
+interface ErrorBoundaryProps {
+  children: ReactNode;
+}
+
+interface ErrorBoundaryState {
+  hasError: boolean;
+  error: Error | null;
+}
+
+class OpsConsoleErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundaryState> {
+  constructor(props: ErrorBoundaryProps) {
+    super(props);
+    this.state = { hasError: false, error: null };
+  }
+
+  static getDerivedStateFromError(error: Error): ErrorBoundaryState {
+    return { hasError: true, error };
+  }
+
+  componentDidCatch(error: Error, errorInfo: any) {
+    console.error("OpsConsole caught render error:", error, errorInfo);
+  }
+
+  render() {
+    if (this.state.hasError) {
+      return (
+        <div className="min-h-screen bg-[#070707] text-white flex items-center justify-center p-6 font-mono">
+          <div className="bg-[#0b0b0b] border border-red-900/80 p-8 rounded-sm max-w-xl w-full text-left space-y-4 shadow-xl">
+            <div className="flex items-center gap-3 text-red-500 font-bold uppercase text-xs">
+              <span className="h-2.5 w-2.5 bg-red-500 rounded-full animate-ping" />
+              // Ops Workspace State Recovery
+            </div>
+            <h3 className="text-sm font-bold text-white uppercase">Workspace Interface Temporarily Interrupted</h3>
+            <p className="text-xs text-neutral-400 leading-relaxed">
+              An unexpected render notice occurred ({this.state.error?.message || "State mismatch"}). You can safely return to the Master Directory or re-initialize.
+            </p>
+            <div className="flex items-center gap-3 pt-2">
+              <button
+                onClick={() => {
+                  this.setState({ hasError: false, error: null });
+                  window.location.reload();
+                }}
+                className="bg-volt text-black font-extrabold text-xs px-4 py-2 uppercase rounded-sm hover:bg-white transition cursor-pointer"
+              >
+                ↻ Refresh Master Workspace
+              </button>
+            </div>
+          </div>
+        </div>
+      );
+    }
+    return this.props.children;
+  }
+}
+
+function AdminPageWrapper() {
+  return (
+    <OpsConsoleErrorBoundary>
+      <AdminPage />
+    </OpsConsoleErrorBoundary>
+  );
+}
 
 export const Route = createFileRoute("/ops-console-x92k")({
   head: () => ({
@@ -9,7 +72,7 @@ export const Route = createFileRoute("/ops-console-x92k")({
       { name: "description", content: "Master requirements controls and client configuration." }
     ]
   }),
-  component: AdminPage
+  component: AdminPageWrapper
 });
 
 interface Client {
@@ -1252,12 +1315,16 @@ function AdminPage() {
   const pendingMembersList = getPendingMembers();
   const totalPending = pendingWorkspacesList.length + pendingMembersList.length;
 
-  const selectedClient = (allDbClients && allDbClients.length > 0 ? allDbClients.find((c: any) => c.id === selectedClientId) : null)
-    || clients.find((c: any) => c.id === selectedClientId)
+  const selectedClient = (allDbClients && allDbClients.length > 0 ? allDbClients.find((c: any) => c && String(c.id).trim().toLowerCase() === String(selectedClientId).trim().toLowerCase()) : null)
+    || clients.find((c: any) => c && String(c.id).trim().toLowerCase() === String(selectedClientId).trim().toLowerCase())
     || (allDbClients && allDbClients.length > 0 ? allDbClients[0] : null)
     || clients[0]
-    || { id: selectedClientId || "workspace", name: selectedClientId ? selectedClientId.toUpperCase() : "Workspace", email: "" };
-  const activeCustomsCount = (Array.isArray(reqs) ? reqs : []).filter(r => r && r.id && r.id.startsWith("req-custom-")).length;
+    || { id: selectedClientId || "workspace", name: selectedClientId ? String(selectedClientId).toUpperCase() : "Workspace", email: "" };
+
+  const safeReqs = (Array.isArray(reqs) ? reqs : []).filter(r => r && typeof r === "object" && r.id);
+  const safeMilestones = (Array.isArray(milestones) ? milestones : []).filter(m => m && typeof m === "object" && m.id);
+  const safeAuditLogs = (Array.isArray(auditLogs) ? auditLogs : []).filter(a => a && typeof a === "object");
+  const activeCustomsCount = safeReqs.filter(r => r.id && String(r.id).startsWith("req-custom-")).length;
 
   if (!isMounted) {
     return (
@@ -1785,7 +1852,7 @@ function AdminPage() {
                   activeFormTab === "members" ? "bg-volt text-black font-extrabold" : "text-neutral-400 hover:text-white"
                 }`}
               >
-                04 / Team Member Access ({getAllMembersList().filter(m => m.clientId === selectedClientId).length})
+                04 / Team Member Access ({getAllMembersList().filter(m => m && String(m.clientId || "").toLowerCase() === String(selectedClientId || "").toLowerCase()).length})
               </button>
             </div>
 
@@ -1806,7 +1873,7 @@ function AdminPage() {
                     </div>
 
                     <div className="space-y-3 max-h-[500px] overflow-y-auto pr-2">
-                      {reqs.map((r) => (
+                      {safeReqs.map((r) => (
                         <div key={r.id} className="py-2.5 border-b border-neutral-900 last:border-b-0">
                           <div className="flex items-center justify-between">
                             <label className="flex items-center gap-2.5 cursor-pointer select-none">
@@ -1821,7 +1888,7 @@ function AdminPage() {
                               </span>
                             </label>
                             
-                            {(r.id.startsWith("req-social-") || r.id.startsWith("req-custom-")) && (
+                            {(r.id && (r.id.startsWith("req-social-") || r.id.startsWith("req-custom-"))) && (
                               <button
                                 onClick={() => deleteRequirement(r.id)}
                                 className="text-[9px] text-flame underline hover:text-white cursor-pointer shrink-0 ml-2"
@@ -2011,11 +2078,11 @@ function AdminPage() {
                 {/* Active Milestones List */}
                 <div className="bg-[#0c0c0c] border border-neutral-800 p-6 rounded-sm space-y-4">
                   <h3 className="text-xs font-bold text-white uppercase tracking-wider border-b border-neutral-800 pb-3">
-                    Active Milestone Pipeline ({milestones.length})
+                    Active Milestone Pipeline ({safeMilestones.length})
                   </h3>
 
                   <div className="space-y-4">
-                    {milestones.map((m) => (
+                    {safeMilestones.map((m) => (
                       <div key={m.id} className="bg-neutral-950 border border-neutral-850 p-4 rounded-sm space-y-3">
                         <div className="flex justify-between items-center">
                           <span className="text-xs font-bold text-white uppercase">{m.title}</span>
@@ -2139,7 +2206,7 @@ function AdminPage() {
                 </h3>
 
                 <div className="space-y-3">
-                  {getAllMembersList().filter(m => m.clientId === selectedClientId).map((m: any) => {
+                  {getAllMembersList().filter(m => m && String(m.clientId || "").toLowerCase() === String(selectedClientId || "").toLowerCase()).map((m: any) => {
                     const isAppr = m.approved ?? false;
                     const isDis = m.disabled ?? false;
 
@@ -2201,7 +2268,7 @@ function AdminPage() {
                     );
                   })}
 
-                  {getAllMembersList().filter(m => m.clientId === selectedClientId).length === 0 && (
+                  {getAllMembersList().filter(m => m && String(m.clientId || "").toLowerCase() === String(selectedClientId || "").toLowerCase()).length === 0 && (
                     <div className="text-xs text-neutral-500 italic py-4 text-center">
                       No secondary team members registered under {selectedClient.name} yet.
                     </div>
