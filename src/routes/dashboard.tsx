@@ -34,26 +34,35 @@ class DashboardErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundary
               <span className="h-2.5 w-2.5 bg-volt rounded-full animate-ping" />
               // CLIENT WORKSPACE HANDSHAKE
             </div>
-            <h3 className="text-sm font-bold text-white uppercase tracking-wider">Workspace Interface Initialized</h3>
+            <h3 className="text-sm font-bold text-white uppercase tracking-wider">Workspace Session Handshake</h3>
             <p className="text-xs text-neutral-400 leading-relaxed">
-              Your client profile has been registered. You can enter your workspace dashboard or return home.
+              Your client profile has been registered. You can enter your workspace dashboard or sign in again.
             </p>
+            {this.state.error && (
+              <div className="bg-neutral-950 border border-neutral-800 p-3 rounded-sm text-[10px] text-red-400 font-mono overflow-x-auto">
+                {this.state.error.toString()}
+              </div>
+            )}
             <div className="flex items-center gap-3 pt-2">
               <button
                 onClick={() => {
                   this.setState({ hasError: false, error: null });
-                  window.location.reload();
+                  window.location.href = "/dashboard";
                 }}
                 className="bg-volt text-black font-extrabold text-xs px-5 py-3 uppercase rounded-sm hover:bg-white transition cursor-pointer"
               >
                 ↻ Enter Portal Dashboard
               </button>
-              <Link
-                to="/"
-                className="border border-neutral-800 text-neutral-400 font-bold text-xs px-4 py-3 uppercase rounded-sm hover:text-white transition"
+              <button
+                onClick={() => {
+                  localStorage.removeItem("t2_session");
+                  localStorage.removeItem("t2_client_id");
+                  window.location.href = "/login";
+                }}
+                className="border border-neutral-800 text-neutral-400 font-bold text-xs px-4 py-3 uppercase rounded-sm hover:text-white hover:border-volt transition cursor-pointer"
               >
-                Return Home
-              </Link>
+                Reset Session & Sign In
+              </button>
             </div>
           </div>
         </div>
@@ -535,9 +544,17 @@ function DashboardPage() {
     alert("Requirement submitted to the Typtwo Operations Desk.");
   };
 
-  const isVaultActive = reqs.find(r => r.id === "req-vault")?.active ?? true;
-  const isStatusActive = reqs.find(r => r.id === "req-status-feed")?.active ?? true;
-  const activeInputReqs = reqs.filter(r => r.active && r.type !== "boolean");
+  const safeReqs = (Array.isArray(reqs) ? reqs : []).filter(r => r && typeof r === "object");
+  const safeFiles = (Array.isArray(files) ? files : []).filter(f => f && typeof f === "object");
+  const safeAgreements = (Array.isArray(agreements) ? agreements : []).filter(a => a && typeof a === "object");
+  const safeStatuses = (Array.isArray(statuses) ? statuses : []).filter(s => s && typeof s === "object");
+  const safeInvoices = (Array.isArray(invoices) ? invoices : []).filter(i => i && typeof i === "object");
+  const safeMilestones = (Array.isArray(milestones) ? milestones : []).filter(m => m && typeof m === "object");
+  const safeAuditLogs = (Array.isArray(auditLogs) ? auditLogs : []).filter(a => a && typeof a === "object");
+
+  const isVaultActive = safeReqs.find(r => r.id === "req-vault")?.active ?? true;
+  const isStatusActive = safeReqs.find(r => r.id === "req-status-feed")?.active ?? true;
+  const activeInputReqs = safeReqs.filter(r => r.active === true && r.type && r.type !== "boolean");
 
   if (!isMounted) {
     return (
@@ -737,47 +754,49 @@ function DashboardPage() {
             <>
               {/* Project Progress Tracker Banner */}
               {(() => {
-            const avgPercentage = milestones.length > 0
-              ? Math.round(milestones.reduce((acc, curr) => acc + curr.percentage, 0) / milestones.length)
-              : 0;
-            const activeMilestone = milestones.find(m => m.percentage < 100) || milestones[milestones.length - 1];
+                const avgPercentage = safeMilestones.length > 0
+                  ? Math.round(safeMilestones.reduce((acc, curr) => acc + (Number(curr?.percentage) || 0), 0) / safeMilestones.length)
+                  : 0;
+                const activeMilestone = safeMilestones.length > 0
+                  ? (safeMilestones.find(m => m && typeof m.percentage === "number" && m.percentage < 100) || safeMilestones[safeMilestones.length - 1])
+                  : null;
 
-            return (
-              <div className="bg-[#0b0b0b] border border-neutral-800 p-5 rounded-sm flex flex-col md:flex-row md:items-center justify-between gap-6">
-                <div className="space-y-1.5 max-w-xl">
-                  <div className="flex items-center gap-2">
-                    <span className="h-2 w-2 bg-volt rounded-full animate-pulse" />
-                    <span className="text-[10px] text-volt uppercase font-bold tracking-widest font-mono">// SYSTEM CAMPAIGN PROGRESS</span>
+                return (
+                  <div className="bg-[#0b0b0b] border border-neutral-800 p-5 rounded-sm flex flex-col md:flex-row md:items-center justify-between gap-6">
+                    <div className="space-y-1.5 max-w-xl">
+                      <div className="flex items-center gap-2">
+                        <span className="h-2 w-2 bg-volt rounded-full animate-pulse" />
+                        <span className="text-[10px] text-volt uppercase font-bold tracking-widest font-mono">// SYSTEM CAMPAIGN PROGRESS</span>
+                      </div>
+                      <h2 className="text-sm font-bold text-white uppercase tracking-wider">
+                        {activeMilestone ? activeMilestone.title : "Workspace Initialized"}
+                      </h2>
+                      <p className="text-xs text-neutral-400 leading-relaxed">
+                        {activeMilestone ? activeMilestone.statusText : "All onboarding requirements and active setups tracked."}
+                      </p>
+                    </div>
+                    
+                    <div className="shrink-0 flex flex-col items-center justify-center border-t md:border-t-0 md:border-l border-neutral-800 pt-4 md:pt-0 pl-0 md:pl-6">
+                      <div className="text-2xl font-bold text-volt tracking-tight">{avgPercentage}%</div>
+                      <span className="text-[8px] text-neutral-500 uppercase tracking-widest font-bold mt-1">OVERALL COMPLETION</span>
+                      <div className="w-32 bg-neutral-900 border border-neutral-800 h-1.5 rounded-full overflow-hidden mt-2.5">
+                        <div className="bg-volt h-full transition-all duration-500" style={{ width: `${avgPercentage}%` }} />
+                      </div>
+                    </div>
                   </div>
-                  <h2 className="text-sm font-bold text-white uppercase tracking-wider">
-                    {activeMilestone ? activeMilestone.title : "Workspace Ready"}
-                  </h2>
-                  <p className="text-xs text-neutral-400 leading-relaxed">
-                    {activeMilestone ? activeMilestone.statusText : "All onboarding requirements and active setups finalized."}
-                  </p>
-                </div>
-                
-                <div className="shrink-0 flex flex-col items-center justify-center border-t md:border-t-0 md:border-l border-neutral-800 pt-4 md:pt-0 pl-0 md:pl-6">
-                  <div className="text-2xl font-bold text-volt tracking-tight">{avgPercentage}%</div>
-                  <span className="text-[8px] text-neutral-500 uppercase tracking-widest font-bold mt-1">OVERALL COMPLETION</span>
-                  <div className="w-32 bg-neutral-900 border border-neutral-800 h-1.5 rounded-full overflow-hidden mt-2.5">
-                    <div className="bg-volt h-full transition-all duration-500" style={{ width: `${avgPercentage}%` }} />
-                  </div>
-                </div>
-              </div>
-            );
-          })()}
+                );
+              })()}
 
-          {/* Onboarding & Campaign Roadmap Grid */}
-          {activeTab === "requirements" && (
-            <div className="bg-[#0b0b0b] border border-neutral-800 p-5 rounded-sm space-y-4">
-              <h3 className="text-xs font-bold text-white uppercase tracking-wider border-b border-neutral-850 pb-2 flex justify-between items-center">
-                <span>// Client Milestones & Onboarding Roadmap</span>
-                <span className="text-[9px] text-neutral-500 font-bold font-mono">TRACKED CHECKS: {milestones.length}</span>
-              </h3>
+              {/* Onboarding & Campaign Roadmap Grid */}
+              {activeTab === "requirements" && (
+                <div className="bg-[#0b0b0b] border border-neutral-800 p-5 rounded-sm space-y-4">
+                  <h3 className="text-xs font-bold text-white uppercase tracking-wider border-b border-neutral-850 pb-2 flex justify-between items-center">
+                    <span>// Client Milestones & Onboarding Roadmap</span>
+                    <span className="text-[9px] text-neutral-500 font-bold font-mono">TRACKED CHECKS: {safeMilestones.length}</span>
+                  </h3>
 
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                {milestones.map((m) => (
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    {safeMilestones.map((m) => (
                   <div key={m.id} className="p-4 bg-[#0c0c0c] border border-neutral-800 rounded-sm space-y-3 flex flex-col justify-between">
                     <div className="space-y-2">
                       <div className="flex justify-between items-start">
@@ -831,7 +850,7 @@ function DashboardPage() {
                   >
                     <div className="flex items-center justify-between">
                       <span className="text-[9px] uppercase tracking-wider text-neutral-500 font-bold">
-                        Type: {r.type.replace('_', ' ')}
+                        Type: {String(r.type || "custom").replace('_', ' ')}
                       </span>
                       {r.submitted ? (
                         <span className="text-[9px] bg-emerald-950/80 text-emerald-400 border border-emerald-900 px-2.5 py-0.5 font-bold rounded-sm uppercase">
