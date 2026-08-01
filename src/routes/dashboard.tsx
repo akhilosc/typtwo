@@ -875,7 +875,7 @@ function DashboardPage() {
   return (
     <div className={`flex min-h-screen font-mono transition-colors duration-300 ${isLight ? "bg-[#f4f3ef] text-[#0a0a0a]" : "bg-[#0a0a0a] text-neutral-100"}`}>
       {/* Left Navigation Sidebar */}
-      <aside className={`w-64 flex flex-col justify-between p-6 shrink-0 text-left transition-colors duration-300 ${isLight ? "border-r-2 border-black bg-[#eeebe3]" : "border-r border-neutral-800 bg-[#0e0e0e]"}`}>
+      <aside className={`w-72 flex flex-col justify-between p-6 shrink-0 text-left transition-colors duration-300 ${isLight ? "border-r-2 border-black bg-[#eeebe3]" : "border-r border-neutral-800 bg-[#0e0e0e]"}`}>
         <div>
           {/* Brand Logo */}
           <Link to="/" className={`flex items-center gap-2 pb-6 mb-8 border-b ${isLight ? "border-black" : "border-neutral-800"}`}>
@@ -885,102 +885,84 @@ function DashboardPage() {
 
           {/* User Organization context card */}
           <div className={`p-4 rounded-sm mb-8 transition-colors ${isLight ? "bg-white border-2 border-black shadow-[3px_3px_0px_#000000]" : "bg-neutral-900 border border-neutral-800"}`}>
-            <span className={`text-[9px] uppercase font-bold tracking-wider ${isLight ? "text-black" : "text-volt"}`}>// Account Space</span>
+            <span className={`text-[9px] uppercase font-bold tracking-wider ${isLight ? "text-black font-extrabold" : "text-volt"}`}>// Account Space</span>
             <div className={`text-xs font-bold truncate mt-1 ${isLight ? "text-black" : "text-white"}`}>{company}</div>
-            <div className={`text-[10px] truncate mt-0.5 ${isLight ? "text-neutral-700" : "text-neutral-400"}`}>{email}</div>
+            <div className={`text-[10px] truncate mt-0.5 ${isLight ? "text-neutral-700 font-medium" : "text-neutral-400"}`}>{email}</div>
           </div>
 
           {/* Navigation Menu */}
           <nav className="space-y-2">
             <button
               onClick={() => setActiveTab("requirements")}
-              className={`w-full flex items-center justify-between px-3.5 py-2.5 text-xs uppercase tracking-wider rounded-sm transition cursor-pointer font-bold ${
+              className={`w-full flex items-center justify-between px-3.5 py-2.5 text-xs uppercase tracking-wider rounded-sm transition cursor-pointer font-bold whitespace-nowrap ${
                 activeTab === "requirements" 
                   ? isLight ? "bg-volt text-black border-2 border-black shadow-[2px_2px_0px_#000]" : "bg-volt text-black" 
                   : isLight ? "text-neutral-800 hover:bg-[#e2dec9] hover:text-black border border-transparent" : "text-neutral-400 hover:bg-neutral-950 hover:text-white"
               }`}
             >
               <span>01 / Action Items</span>
-              <span className="text-[9px] opacity-75">[{activeInputReqs.length}]</span>
+              <span className="text-[10px] opacity-80 font-mono">[{activeInputReqs.length}]</span>
             </button>
 
             {isVaultActive && (
               <button
                 onClick={() => setActiveTab("vault")}
-                className={`w-full flex items-center justify-between px-3.5 py-2.5 text-xs uppercase tracking-wider rounded-sm transition cursor-pointer font-bold ${
+                className={`w-full flex items-center justify-between px-3.5 py-2.5 text-xs uppercase tracking-wider rounded-sm transition cursor-pointer font-bold whitespace-nowrap ${
                   activeTab === "vault" 
                     ? isLight ? "bg-volt text-black border-2 border-black shadow-[2px_2px_0px_#000]" : "bg-volt text-black" 
                     : isLight ? "text-neutral-800 hover:bg-[#e2dec9] hover:text-black border border-transparent" : "text-neutral-400 hover:bg-neutral-950 hover:text-white"
                 }`}
               >
                 <span>02 / Vault Docs</span>
-                <span className="text-[9px] opacity-75">[{files.length}]</span>
+                <span className="text-[10px] opacity-80 font-mono">[{files.length}]</span>
               </button>
             )}
 
             <button
               onClick={() => setActiveTab("agreements")}
-              className={`w-full flex items-center justify-between px-3.5 py-2.5 text-xs uppercase tracking-wider rounded-sm transition cursor-pointer font-bold ${
+              className={`w-full flex items-center justify-between px-3.5 py-2.5 text-xs uppercase tracking-wider rounded-sm transition cursor-pointer font-bold whitespace-nowrap ${
                 activeTab === "agreements" 
                   ? isLight ? "bg-volt text-black border-2 border-black shadow-[2px_2px_0px_#000]" : "bg-volt text-black" 
                   : isLight ? "text-neutral-800 hover:bg-[#e2dec9] hover:text-black border border-transparent" : "text-neutral-400 hover:bg-neutral-950 hover:text-white"
               }`}
             >
               <span>03 / Agreements</span>
-              <span className="text-[9px] opacity-75">[{agreements.length}]</span>
+              <span className="text-[10px] opacity-80 font-mono">[{agreements.length}]</span>
             </button>
 
             {isStatusActive && (
               <button
                 onClick={() => setActiveTab("feed")}
-                className={`w-full flex items-center justify-between px-3.5 py-2.5 text-xs uppercase tracking-wider rounded-sm transition cursor-pointer font-bold ${
+                className={`w-full flex items-center justify-between px-3.5 py-2.5 text-xs uppercase tracking-wider rounded-sm transition cursor-pointer font-bold whitespace-nowrap ${
                   activeTab === "feed" 
                     ? isLight ? "bg-volt text-black border-2 border-black shadow-[2px_2px_0px_#000]" : "bg-volt text-black" 
                     : isLight ? "text-neutral-800 hover:bg-[#e2dec9] hover:text-black border border-transparent" : "text-neutral-400 hover:bg-neutral-950 hover:text-white"
                 }`}
               >
-                <span>04 / Operations Feed</span>
-                <span className="text-[9px] opacity-75">● Live</span>
+                <span>04 / Live Feed</span>
+                <span className="text-[10px] opacity-80 font-mono">● LIVE</span>
               </button>
             )}
 
             <button
               onClick={() => setActiveTab("billing")}
-              className={`w-full flex items-center justify-between px-3.5 py-2.5 text-xs uppercase tracking-wider rounded-sm transition cursor-pointer font-bold ${
+              className={`w-full flex items-center justify-between px-3.5 py-2.5 text-xs uppercase tracking-wider rounded-sm transition cursor-pointer font-bold whitespace-nowrap ${
                 activeTab === "billing" 
                   ? isLight ? "bg-volt text-black border-2 border-black shadow-[2px_2px_0px_#000]" : "bg-volt text-black" 
                   : isLight ? "text-neutral-800 hover:bg-[#e2dec9] hover:text-black border border-transparent" : "text-neutral-400 hover:bg-neutral-950 hover:text-white"
               }`}
             >
-              <span>05 / Billing & Invoices</span>
-              <span className="text-[9px] opacity-75">[{invoices.length}]</span>
+              <span>05 / Billing &amp; Invoices</span>
+              <span className="text-[10px] opacity-80 font-mono">[{invoices.length}]</span>
             </button>
           </nav>
         </div>
 
-        {/* Theme Switcher & Logout bottom area */}
-        <div className={`pt-6 border-t space-y-2 ${isLight ? "border-black" : "border-neutral-800"}`}>
-          <button
-            onClick={toggleTheme}
-            className={`w-full text-xs py-2 text-center transition cursor-pointer uppercase font-black rounded-sm border-2 ${
-              isLight 
-                ? "bg-black text-white border-black hover:bg-neutral-800" 
-                : "bg-volt text-black border-volt hover:bg-white"
-            }`}
-          >
-            {isLight ? "🌙 Switch to Dark Mode" : "☀️ Switch to Light Paper"}
-          </button>
-
-          <button
-            onClick={handleLogout}
-            className={`w-full text-xs py-2 text-center transition cursor-pointer uppercase font-bold border ${
-              isLight 
-                ? "bg-white text-black border-black hover:bg-black hover:text-white" 
-                : "bg-neutral-900 border-neutral-800 hover:bg-neutral-950 text-neutral-300"
-            }`}
-          >
-            ← Exit Workspace
-          </button>
+        {/* Clean Sidebar Footer */}
+        <div className={`pt-6 border-t font-mono text-[9px] uppercase font-bold tracking-widest ${
+          isLight ? "border-black text-neutral-600" : "border-neutral-800 text-neutral-500"
+        }`}>
+          // TYPTWO NODE v2.4 SECURE
         </div>
       </aside>
 
@@ -998,10 +980,11 @@ function DashboardPage() {
               UAE_EDGE_T2_{clientId.toUpperCase()}
             </span>
           </div>
+
           <div className="flex items-center gap-3">
             <button
               onClick={toggleTheme}
-              className={`px-3 py-1 text-xs font-black uppercase rounded-sm border-2 cursor-pointer transition ${
+              className={`px-3 py-1.5 text-xs font-black uppercase rounded-sm border-2 cursor-pointer transition ${
                 isLight 
                   ? "bg-black text-white border-black hover:bg-neutral-800" 
                   : "bg-volt text-black border-volt hover:bg-white"
@@ -1012,7 +995,7 @@ function DashboardPage() {
 
             <button
               onClick={handleLogout}
-              className={`text-xs px-3 py-1.5 text-center transition cursor-pointer uppercase font-bold rounded-sm border ${
+              className={`text-xs px-3.5 py-1.5 text-center transition cursor-pointer uppercase font-bold rounded-sm border ${
                 isLight 
                   ? "bg-white border-black text-black hover:bg-black hover:text-white" 
                   : "bg-neutral-900 border-neutral-800 hover:border-red-500/80 hover:text-red-400 text-neutral-300"
