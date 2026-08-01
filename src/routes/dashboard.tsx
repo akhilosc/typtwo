@@ -1019,7 +1019,7 @@ function DashboardPage() {
         </header>
 
         {/* Content area */}
-        <div className="flex-grow p-8 overflow-y-auto max-w-5xl w-full space-y-8">
+        <div className="flex-grow p-8 overflow-y-auto w-full max-w-7xl space-y-8">
           
           {!approved ? (
             <div className="max-w-2xl mx-auto py-12 space-y-8 text-left">
@@ -1159,8 +1159,8 @@ function DashboardPage() {
 
                     {/* 2-Column Overview Details Grid */}
                     <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
-                      {/* Left Column (7 Cols): Campaign Milestones */}
-                      <div className="lg:col-span-7 space-y-5">
+                      {/* Left Column (8 Cols): Campaign Milestones */}
+                      <div className="lg:col-span-8 space-y-5">
                         {/* Pending Action Banner Alert */}
                         {nextAction && (
                           <div className={`p-4 rounded-sm border-2 flex items-center justify-between gap-3 ${
