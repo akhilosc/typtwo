@@ -229,7 +229,7 @@ function DashboardPage() {
   const [email, setEmail] = useState("");
   const [company, setCompany] = useState("");
   const [clientId, setClientId] = useState("");
-  const [activeTab, setActiveTab] = useState<"requirements" | "vault" | "agreements" | "feed" | "billing">("requirements");
+  const [activeTab, setActiveTab] = useState<"overview" | "requirements" | "vault" | "agreements" | "feed" | "billing">("overview");
   const [reqCategory, setReqCategory] = useState<"all" | "brand" | "social" | "access">("all");
   const [openAccordionCategory, setOpenAccordionCategory] = useState<string>("brand");
   const [theme, setTheme] = useState<"dark" | "light">("dark");
@@ -893,6 +893,18 @@ function DashboardPage() {
           {/* Navigation Menu */}
           <nav className="space-y-2">
             <button
+              onClick={() => setActiveTab("overview")}
+              className={`w-full flex items-center justify-between px-3.5 py-2.5 text-xs uppercase tracking-wider rounded-sm transition cursor-pointer font-bold whitespace-nowrap ${
+                activeTab === "overview" 
+                  ? isLight ? "bg-volt text-black border-2 border-black shadow-[2px_2px_0px_#000]" : "bg-volt text-black" 
+                  : isLight ? "text-neutral-800 hover:bg-[#e2dec9] hover:text-black border border-transparent" : "text-neutral-400 hover:bg-neutral-950 hover:text-white"
+              }`}
+            >
+              <span>01 / Executive Overview</span>
+              <span className="text-[10px] opacity-80 font-mono">● LIVE</span>
+            </button>
+
+            <button
               onClick={() => setActiveTab("requirements")}
               className={`w-full flex items-center justify-between px-3.5 py-2.5 text-xs uppercase tracking-wider rounded-sm transition cursor-pointer font-bold whitespace-nowrap ${
                 activeTab === "requirements" 
@@ -900,7 +912,7 @@ function DashboardPage() {
                   : isLight ? "text-neutral-800 hover:bg-[#e2dec9] hover:text-black border border-transparent" : "text-neutral-400 hover:bg-neutral-950 hover:text-white"
               }`}
             >
-              <span>01 / Action Items</span>
+              <span>02 / Action Items</span>
               <span className="text-[10px] opacity-80 font-mono">[{activeInputReqs.length}]</span>
             </button>
 
@@ -913,7 +925,7 @@ function DashboardPage() {
                     : isLight ? "text-neutral-800 hover:bg-[#e2dec9] hover:text-black border border-transparent" : "text-neutral-400 hover:bg-neutral-950 hover:text-white"
                 }`}
               >
-                <span>02 / Vault Docs</span>
+                <span>03 / Vault Docs</span>
                 <span className="text-[10px] opacity-80 font-mono">[{files.length}]</span>
               </button>
             )}
@@ -926,7 +938,7 @@ function DashboardPage() {
                   : isLight ? "text-neutral-800 hover:bg-[#e2dec9] hover:text-black border border-transparent" : "text-neutral-400 hover:bg-neutral-950 hover:text-white"
               }`}
             >
-              <span>03 / Agreements</span>
+              <span>04 / Agreements</span>
               <span className="text-[10px] opacity-80 font-mono">[{agreements.length}]</span>
             </button>
 
@@ -939,7 +951,7 @@ function DashboardPage() {
                     : isLight ? "text-neutral-800 hover:bg-[#e2dec9] hover:text-black border border-transparent" : "text-neutral-400 hover:bg-neutral-950 hover:text-white"
                 }`}
               >
-                <span>04 / Live Feed</span>
+                <span>05 / Live Feed</span>
                 <span className="text-[10px] opacity-80 font-mono">● LIVE</span>
               </button>
             )}
@@ -952,7 +964,7 @@ function DashboardPage() {
                   : isLight ? "text-neutral-800 hover:bg-[#e2dec9] hover:text-black border border-transparent" : "text-neutral-400 hover:bg-neutral-950 hover:text-white"
               }`}
             >
-              <span>05 / Billing &amp; Invoices</span>
+              <span>06 / Billing &amp; Invoices</span>
               <span className="text-[10px] opacity-80 font-mono">[{invoices.length}]</span>
             </button>
           </nav>
@@ -1069,7 +1081,214 @@ function DashboardPage() {
             </div>
           ) : (
             <>
-              {/* Self-Guiding 2-Column Executive Workspace Layout */}
+              {/* 01 / EXECUTIVE OVERVIEW TAB */}
+              {activeTab === "overview" && (() => {
+                const activeReqs = activeInputReqs;
+                const completedCount = activeReqs.filter(r => r.submitted || (inputVals[r.id] && inputVals[r.id].trim() !== "")).length;
+                const readinessPercent = activeReqs.length > 0 ? Math.round((completedCount / activeReqs.length) * 100) : 100;
+                const pendingCount = activeReqs.length - completedCount;
+                const nextAction = activeReqs.find(r => !r.submitted && (!inputVals[r.id] || inputVals[r.id].trim() === ""));
+
+                return (
+                  <div className="space-y-6 font-mono text-left">
+                    {/* Executive Welcome Hero Card */}
+                    <div className={`p-6 rounded-sm space-y-4 border-2 transition-all ${
+                      isLight 
+                        ? "bg-white border-black text-black shadow-[5px_5px_0px_#000]" 
+                        : "bg-[#0c0c0c] border-volt/40 text-white shadow-xl"
+                    }`}>
+                      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b pb-4 border-neutral-800">
+                        <div className="space-y-1">
+                          <div className="flex items-center gap-2">
+                            <span className="h-2.5 w-2.5 bg-volt rounded-full animate-ping" />
+                            <span className={`text-[10px] font-extrabold uppercase tracking-widest ${isLight ? "text-black" : "text-volt"}`}>
+                              // EXECUTIVE WORKSPACE DESK
+                            </span>
+                          </div>
+                          <h1 className={`text-xl font-extrabold uppercase tracking-wide ${isLight ? "text-black font-extrabold" : "text-white"}`}>
+                            {company} Dashboard
+                          </h1>
+                          <p className={`text-xs ${isLight ? "text-neutral-700 font-medium" : "text-neutral-400"}`}>
+                            Real-time campaign status, onboarding readiness, and shared deliverables vault.
+                          </p>
+                        </div>
+
+                        <div className="flex items-center gap-3 shrink-0">
+                          <button
+                            onClick={() => setActiveTab("requirements")}
+                            className="bg-volt text-black text-xs px-4 py-2 uppercase font-extrabold rounded-sm border-2 border-black hover:bg-white transition cursor-pointer shadow-[2px_2px_0px_#000]"
+                          >
+                            Open Action Items ({pendingCount}) →
+                          </button>
+                        </div>
+                      </div>
+
+                      {/* 4 Executive Key Indicator Tiles */}
+                      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 pt-2">
+                        <div className={`p-3.5 rounded-sm border-2 ${isLight ? "bg-[#f4f3ef] border-black" : "bg-[#111111] border-neutral-800"}`}>
+                          <span className="text-[9px] text-neutral-400 uppercase font-bold tracking-wider block">// Campaign Phase</span>
+                          <div className={`text-xs font-black uppercase mt-1 ${isLight ? "text-black" : "text-white"}`}>Phase 2: Strategy Setup</div>
+                          <span className="text-[9px] text-volt font-bold mt-0.5 block">● Active Operations</span>
+                        </div>
+
+                        <div className={`p-3.5 rounded-sm border-2 ${isLight ? "bg-[#f4f3ef] border-black" : "bg-[#111111] border-neutral-800"}`}>
+                          <span className="text-[9px] text-neutral-400 uppercase font-bold tracking-wider block">// Readiness Score</span>
+                          <div className={`text-xs font-black uppercase mt-1 ${isLight ? "text-black" : "text-volt"}`}>{readinessPercent}% Complete</div>
+                          <div className="w-full bg-neutral-900 h-1.5 rounded-xs overflow-hidden mt-1.5">
+                            <div className="bg-volt h-full transition-all" style={{ width: `${readinessPercent}%` }} />
+                          </div>
+                        </div>
+
+                        <div className={`p-3.5 rounded-sm border-2 ${isLight ? "bg-[#f4f3ef] border-black" : "bg-[#111111] border-neutral-800"}`}>
+                          <span className="text-[9px] text-neutral-400 uppercase font-bold tracking-wider block">// Action Items</span>
+                          <div className={`text-xs font-black uppercase mt-1 ${isLight ? "text-black" : "text-white"}`}>{pendingCount} Items Pending</div>
+                          <button onClick={() => setActiveTab("requirements")} className="text-[9px] text-volt hover:underline font-bold mt-0.5 block">
+                            Resolve Now →
+                          </button>
+                        </div>
+
+                        <div className={`p-3.5 rounded-sm border-2 ${isLight ? "bg-[#f4f3ef] border-black" : "bg-[#111111] border-neutral-800"}`}>
+                          <span className="text-[9px] text-neutral-400 uppercase font-bold tracking-wider block">// Shared Vault</span>
+                          <div className={`text-xs font-black uppercase mt-1 ${isLight ? "text-black" : "text-white"}`}>{files.length} Shared Files</div>
+                          <button onClick={() => setActiveTab("vault")} className="text-[9px] text-volt hover:underline font-bold mt-0.5 block">
+                            Access Vault →
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* 2-Column Overview Details Grid */}
+                    <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+                      {/* Left Column (7 Cols): Campaign Milestones */}
+                      <div className="lg:col-span-7 space-y-5">
+                        {/* Pending Action Banner Alert */}
+                        {nextAction && (
+                          <div className={`p-4 rounded-sm border-2 flex items-center justify-between gap-3 ${
+                            isLight ? "bg-volt/20 border-black text-black" : "bg-volt/10 border-volt/40 text-white"
+                          }`}>
+                            <div className="space-y-0.5">
+                              <span className="text-[9px] bg-black text-white px-2 py-0.5 font-black uppercase rounded-xs">ACTION REQUIRED</span>
+                              <div className="text-xs font-extrabold uppercase tracking-wide pt-1">
+                                👉 Submit {nextAction.label}
+                              </div>
+                            </div>
+                            <button
+                              onClick={() => setActiveTab("requirements")}
+                              className="bg-volt text-black text-xs px-4 py-2 font-black uppercase rounded-sm border border-black hover:bg-white transition cursor-pointer shrink-0"
+                            >
+                              Complete Item →
+                            </button>
+                          </div>
+                        )}
+
+                        {/* Campaign Milestones Progress Grid */}
+                        <div className={`p-5 rounded-sm space-y-4 border-2 ${
+                          isLight ? "bg-white border-black shadow-[4px_4px_0px_#000]" : "bg-[#0b0b0b] border-neutral-800"
+                        }`}>
+                          <h3 className={`text-xs font-bold uppercase tracking-wider border-b pb-2 flex justify-between items-center ${
+                            isLight ? "border-black text-black" : "border-neutral-850 text-white"
+                          }`}>
+                            <span>// Campaign Roadmap &amp; Milestones</span>
+                            <span className="text-[9px] text-neutral-500 font-mono">COUNT: {safeMilestones.length}</span>
+                          </h3>
+
+                          <div className="space-y-3">
+                            {safeMilestones.map((m) => (
+                              <div key={m.id} className={`p-4 rounded-sm space-y-2 border ${
+                                isLight ? "bg-[#f9f8f5] border-black" : "bg-[#0c0c0c] border-neutral-800"
+                              }`}>
+                                <div className="flex justify-between items-center">
+                                  <span className={`text-xs font-bold uppercase ${isLight ? "text-black" : "text-white"}`}>{m.title}</span>
+                                  <span className="text-[10px] bg-volt text-black px-2 py-0.5 font-bold rounded-xs">{m.percentage}%</span>
+                                </div>
+                                <div className="w-full bg-neutral-900 h-1.5 rounded-full overflow-hidden border border-neutral-800">
+                                  <div className="bg-volt h-full transition-all" style={{ width: `${m.percentage}%` }} />
+                                </div>
+                                <p className={`text-[11px] ${isLight ? "text-neutral-700" : "text-neutral-450"}`}>{m.statusText}</p>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Right Column (5 Cols): Live Activity Feed & Quick Vault */}
+                      <div className="lg:col-span-5 space-y-5">
+                        {/* Live Feed Snippet */}
+                        <div className={`p-5 rounded-sm space-y-3 border-2 ${
+                          isLight ? "bg-white border-black shadow-[3px_3px_0px_#000]" : "bg-[#0c0c0c] border-neutral-800"
+                        }`}>
+                          <div className="flex justify-between items-center border-b pb-2 border-neutral-800">
+                            <span className={`text-xs font-extrabold uppercase ${isLight ? "text-black" : "text-white"}`}>
+                              ⚡ Real-Time Operations Feed
+                            </span>
+                            <button onClick={() => setActiveTab("feed")} className="text-[9px] text-volt font-bold hover:underline">
+                              Full Feed →
+                            </button>
+                          </div>
+
+                          <div className="space-y-2">
+                            {safeStatuses.slice(0, 3).map((s) => (
+                              <div key={s.id} className={`p-2.5 rounded-sm border text-xs space-y-1 ${
+                                isLight ? "bg-[#f4f3ef] border-black" : "bg-[#080808] border-neutral-800"
+                              }`}>
+                                <div className="flex justify-between items-center">
+                                  <span className="text-[9px] text-volt font-bold uppercase">{s.author || "Typtwo Ops"}</span>
+                                  <span className="text-[8px] text-neutral-500">{s.time}</span>
+                                </div>
+                                <p className={`text-[11px] ${isLight ? "text-black" : "text-neutral-300"}`}>{s.message}</p>
+                              </div>
+                            ))}
+
+                            {safeStatuses.length === 0 && (
+                              <div className="text-[10px] text-neutral-500 py-3 text-center uppercase font-mono">
+                                Operational logs will stream live as campaign milestones complete.
+                              </div>
+                            )}
+                          </div>
+                        </div>
+
+                        {/* Recent Shared Deliverables */}
+                        <div className={`p-5 rounded-sm space-y-3 border-2 ${
+                          isLight ? "bg-white border-black shadow-[3px_3px_0px_#000]" : "bg-[#0c0c0c] border-neutral-800"
+                        }`}>
+                          <div className="flex justify-between items-center border-b pb-2 border-neutral-800">
+                            <span className={`text-xs font-extrabold uppercase ${isLight ? "text-black" : "text-white"}`}>
+                              📁 Shared Deliverables Vault
+                            </span>
+                            <button onClick={() => setActiveTab("vault")} className="text-[9px] text-volt font-bold hover:underline">
+                              All Files →
+                            </button>
+                          </div>
+
+                          <div className="space-y-2">
+                            {safeFiles.slice(0, 3).map((f) => (
+                              <div key={f.name} className={`p-2.5 rounded-sm border flex items-center justify-between text-xs ${
+                                isLight ? "bg-[#f4f3ef] border-black" : "bg-[#080808] border-neutral-800"
+                              }`}>
+                                <span className={`truncate font-bold max-w-[160px] ${isLight ? "text-black" : "text-white"}`}>{f.name}</span>
+                                <button
+                                  onClick={() => safeDownloadOrOpenDoc(f.url, f.name)}
+                                  className="text-[9px] bg-volt text-black px-2 py-0.5 font-bold uppercase rounded-xs"
+                                >
+                                  Get ↗
+                                </button>
+                              </div>
+                            ))}
+
+                            {safeFiles.length === 0 && (
+                              <div className="text-[10px] text-neutral-500 py-3 text-center uppercase font-mono">
+                                Vault documents will appear here once uploaded by your account director.
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                );
+              })()}
+
+              {/* 02 / ACTION ITEMS TAB */}
               {activeTab === "requirements" && (() => {
                 const brandReqs = activeInputReqs.filter(r => r.id.includes("brand") || r.id.includes("icp") || r.id.includes("competitor") || r.id.includes("founder") || r.id.includes("product"));
                 const socialReqs = activeInputReqs.filter(r => r.id.includes("social"));
