@@ -230,6 +230,7 @@ function DashboardPage() {
   const [company, setCompany] = useState("");
   const [clientId, setClientId] = useState("");
   const [activeTab, setActiveTab] = useState<"requirements" | "vault" | "agreements" | "feed" | "billing">("requirements");
+  const [reqCategory, setReqCategory] = useState<"all" | "brand" | "social" | "access">("all");
   
   // Dynamic client states loaded from localStorage
   const [reqs, setReqs] = useState<Requirement[]>([]);
@@ -1035,37 +1036,61 @@ function DashboardPage() {
             </div>
           ) : (
             <>
-              {/* Project Progress Tracker Banner */}
+              {/* Self-Guiding Onboarding Stepper Banner */}
               {(() => {
-                const avgPercentage = safeMilestones.length > 0
-                  ? Math.round(safeMilestones.reduce((acc, curr) => acc + (Number(curr?.percentage) || 0), 0) / safeMilestones.length)
-                  : 0;
-                const activeMilestone = safeMilestones.length > 0
-                  ? (safeMilestones.find(m => m && typeof m.percentage === "number" && m.percentage < 100) || safeMilestones[safeMilestones.length - 1])
-                  : null;
+                const activeReqs = activeInputReqs;
+                const completedCount = activeReqs.filter(r => r.submitted || (inputVals[r.id] && inputVals[r.id].trim() !== "")).length;
+                const readinessPercent = activeReqs.length > 0 ? Math.round((completedCount / activeReqs.length) * 100) : 100;
+                const nextAction = activeReqs.find(r => !r.submitted && (!inputVals[r.id] || inputVals[r.id].trim() === ""));
 
                 return (
-                  <div className="bg-[#0b0b0b] border border-neutral-800 p-5 rounded-sm flex flex-col md:flex-row md:items-center justify-between gap-6">
-                    <div className="space-y-1.5 max-w-xl">
-                      <div className="flex items-center gap-2">
-                        <span className="h-2 w-2 bg-volt rounded-full animate-pulse" />
-                        <span className="text-[10px] text-volt uppercase font-bold tracking-widest font-mono">// SYSTEM CAMPAIGN PROGRESS</span>
+                  <div className="bg-gradient-to-r from-[#0d0d0d] via-[#141414] to-[#090909] border-2 border-volt/40 p-6 rounded-sm space-y-4 font-mono shadow-xl relative overflow-hidden">
+                    <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-neutral-800 pb-4">
+                      <div className="space-y-1 text-left">
+                        <div className="flex items-center gap-2">
+                          <span className="h-2.5 w-2.5 bg-volt rounded-full animate-ping" />
+                          <span className="text-volt font-black text-xs uppercase tracking-widest">// WORKSPACE READINESS GUIDE</span>
+                        </div>
+                        <h2 className="text-base font-black text-white uppercase tracking-wider">
+                          Onboarding Progress: <span className="text-volt">{readinessPercent}% Complete</span>
+                        </h2>
                       </div>
-                      <h2 className="text-sm font-bold text-white uppercase tracking-wider">
-                        {activeMilestone ? activeMilestone.title : "Workspace Initialized"}
-                      </h2>
-                      <p className="text-xs text-neutral-400 leading-relaxed">
-                        {activeMilestone ? activeMilestone.statusText : "All onboarding requirements and active setups tracked."}
-                      </p>
-                    </div>
-                    
-                    <div className="shrink-0 flex flex-col items-center justify-center border-t md:border-t-0 md:border-l border-neutral-800 pt-4 md:pt-0 pl-0 md:pl-6">
-                      <div className="text-2xl font-bold text-volt tracking-tight">{avgPercentage}%</div>
-                      <span className="text-[8px] text-neutral-500 uppercase tracking-widest font-bold mt-1">OVERALL COMPLETION</span>
-                      <div className="w-32 bg-neutral-900 border border-neutral-800 h-1.5 rounded-full overflow-hidden mt-2.5">
-                        <div className="bg-volt h-full transition-all duration-500" style={{ width: `${avgPercentage}%` }} />
+
+                      <div className="flex items-center gap-4">
+                        <div className="text-right hidden sm:block">
+                          <div className="text-[10px] text-neutral-400 font-bold uppercase">Assets Logged</div>
+                          <div className="text-xs font-bold text-white font-mono">{completedCount} of {activeReqs.length} Provided</div>
+                        </div>
+                        <div className="w-32 bg-neutral-950 h-2.5 border border-neutral-800 rounded-xs overflow-hidden">
+                          <div className="h-full bg-volt transition-all duration-500" style={{ width: `${readinessPercent}%` }} />
+                        </div>
                       </div>
                     </div>
+
+                    {nextAction ? (
+                      <div className="p-3.5 bg-volt/10 border border-volt/40 rounded-sm flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-left">
+                        <div className="space-y-0.5">
+                          <span className="text-[9px] bg-volt text-black px-2 py-0.5 font-black uppercase rounded-xs">NEXT RECOMMENDED ACTION</span>
+                          <div className="text-xs font-bold text-white uppercase tracking-wider flex items-center gap-1.5 pt-1">
+                            👉 Please submit: <span className="text-volt underline">{nextAction.label}</span>
+                          </div>
+                        </div>
+                        <button
+                          onClick={() => {
+                            setActiveTab("requirements");
+                            const el = document.getElementById(`req-box-${nextAction.id}`);
+                            if (el) el.scrollIntoView({ behavior: "smooth", block: "center" });
+                          }}
+                          className="bg-volt text-black hover:bg-white text-xs px-4 py-2 font-black uppercase rounded-sm cursor-pointer transition flex-shrink-0"
+                        >
+                          Complete Action →
+                        </button>
+                      </div>
+                    ) : (
+                      <div className="p-3.5 bg-emerald-950/40 border border-emerald-800 text-emerald-300 text-xs font-bold uppercase text-center rounded-sm">
+                        ✓ ALL REQUIRED BRAND ASSETS &amp; CREDENTIALS SUBMITTED. TYPTWO OPERATIONS IS ACTIVELY RUNNING YOUR CAMPAIGNS.
+                      </div>
+                    )}
                   </div>
                 );
               })()}
@@ -1075,111 +1100,173 @@ function DashboardPage() {
                 <div className="bg-[#0b0b0b] border border-neutral-800 p-5 rounded-sm space-y-4">
                   <h3 className="text-xs font-bold text-white uppercase tracking-wider border-b border-neutral-850 pb-2 flex justify-between items-center">
                     <span>// Client Milestones & Onboarding Roadmap</span>
-                    <span className="text-[9px] text-neutral-500 font-bold font-mono">TRACKED CHECKS: {safeMilestones.length}</span>
+                    <span className="text-[9px] text-neutral-500 font-bold font-mono">MILESTONES: {safeMilestones.length}</span>
                   </h3>
 
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     {safeMilestones.map((m) => (
-                  <div key={m.id} className="p-4 bg-[#0c0c0c] border border-neutral-800 rounded-sm space-y-3 flex flex-col justify-between">
-                    <div className="space-y-2">
-                      <div className="flex justify-between items-start">
-                        <span className="text-xs text-white font-bold uppercase tracking-wide truncate max-w-[200px]">{m.title}</span>
-                        <span className="text-[10px] text-volt font-bold shrink-0">{m.percentage}%</span>
+                      <div key={m.id} className="p-4 bg-[#0c0c0c] border border-neutral-800 rounded-sm space-y-3 flex flex-col justify-between">
+                        <div className="space-y-2">
+                          <div className="flex justify-between items-start">
+                            <span className="text-xs text-white font-bold uppercase tracking-wide truncate max-w-[200px]">{m.title}</span>
+                            <span className="text-[10px] text-volt font-bold shrink-0">{m.percentage}%</span>
+                          </div>
+                          <div className="w-full bg-neutral-950 h-1 rounded-full overflow-hidden">
+                            <div className="bg-volt h-full transition-all duration-300" style={{ width: `${m.percentage}%` }} />
+                          </div>
+                          <p className="text-[11px] text-neutral-450 leading-relaxed font-bold uppercase">{m.statusText}</p>
+                        </div>
+
+                        {m.deliverables && m.deliverables.length > 0 && (
+                          <div className="pt-2.5 border-t border-neutral-900 mt-2 space-y-1.5">
+                            <span className="text-[8px] text-neutral-500 font-bold uppercase block tracking-wider">Milestone Deliverables:</span>
+                            {m.deliverables.map((del, delIdx) => (
+                              <a
+                                key={delIdx}
+                                href={del.url}
+                                target="_blank"
+                                rel="noreferrer"
+                                className="text-[10px] text-volt hover:text-white underline flex items-center gap-1.5 truncate decoration-transparent font-bold"
+                              >
+                                <span className="text-neutral-500">📄</span> {del.name} ↗
+                              </a>
+                            ))}
+                          </div>
+                        )}
                       </div>
-                      <div className="w-full bg-neutral-950 h-1 rounded-full overflow-hidden">
-                        <div className="bg-volt h-full transition-all duration-300" style={{ width: `${m.percentage}%` }} />
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Categorized Requirements Collection Hub */}
+              {activeTab === "requirements" && (() => {
+                const brandReqs = activeInputReqs.filter(r => r.id.includes("brand") || r.id.includes("icp") || r.id.includes("competitor") || r.id.includes("founder") || r.id.includes("product"));
+                const socialReqs = activeInputReqs.filter(r => r.id.includes("social"));
+                const accessReqs = activeInputReqs.filter(r => r.id.includes("ad-account") || r.id.includes("newsletter") || r.id.includes("seo") || r.id.includes("credentials"));
+
+                const filteredReqs = reqCategory === "brand"
+                  ? brandReqs
+                  : reqCategory === "social"
+                  ? socialReqs
+                  : reqCategory === "access"
+                  ? accessReqs
+                  : activeInputReqs;
+
+                return (
+                  <div className="space-y-6">
+                    <div className="flex flex-col sm:flex-row sm:items-center justify-between border-b border-neutral-800 pb-3 gap-3">
+                      <div className="space-y-0.5 text-left">
+                        <h2 className="text-base font-bold text-white uppercase tracking-wider">// Onboarding Assets &amp; Access Links</h2>
+                        <p className="text-xs text-neutral-400">Select a category below to submit required assets for your workspace.</p>
                       </div>
-                      <p className="text-[11px] text-neutral-450 leading-relaxed font-bold uppercase">{m.statusText}</p>
+
+                      {/* Category Filter Tabs */}
+                      <div className="flex flex-wrap gap-1.5 font-mono">
+                        <button
+                          onClick={() => setReqCategory("all")}
+                          className={`px-3 py-1.5 text-[10px] uppercase font-bold rounded-sm cursor-pointer transition border ${
+                            reqCategory === "all" ? "bg-volt text-black border-volt" : "bg-neutral-950 text-neutral-400 border-neutral-800 hover:text-white"
+                          }`}
+                        >
+                          All ({activeInputReqs.length})
+                        </button>
+
+                        <button
+                          onClick={() => setReqCategory("brand")}
+                          className={`px-3 py-1.5 text-[10px] uppercase font-bold rounded-sm cursor-pointer transition border ${
+                            reqCategory === "brand" ? "bg-volt text-black border-volt" : "bg-neutral-950 text-neutral-400 border-neutral-800 hover:text-white"
+                          }`}
+                        >
+                          📁 Brand &amp; Assets ({brandReqs.length})
+                        </button>
+
+                        <button
+                          onClick={() => setReqCategory("social")}
+                          className={`px-3 py-1.5 text-[10px] uppercase font-bold rounded-sm cursor-pointer transition border ${
+                            reqCategory === "social" ? "bg-volt text-black border-volt" : "bg-neutral-950 text-neutral-400 border-neutral-800 hover:text-white"
+                          }`}
+                        >
+                          🌐 Social Profiles ({socialReqs.length})
+                        </button>
+
+                        <button
+                          onClick={() => setReqCategory("access")}
+                          className={`px-3 py-1.5 text-[10px] uppercase font-bold rounded-sm cursor-pointer transition border ${
+                            reqCategory === "access" ? "bg-volt text-black border-volt" : "bg-neutral-950 text-neutral-400 border-neutral-800 hover:text-white"
+                          }`}
+                        >
+                          🔐 Ad Access &amp; Keys ({accessReqs.length})
+                        </button>
+                      </div>
                     </div>
 
-                    {m.deliverables && m.deliverables.length > 0 && (
-                      <div className="pt-2.5 border-t border-neutral-900 mt-2 space-y-1.5">
-                        <span className="text-[8px] text-neutral-500 font-bold uppercase block tracking-wider">Milestone Deliverables:</span>
-                        {m.deliverables.map((del, delIdx) => (
-                          <a
-                            key={delIdx}
-                            href={del.url}
-                            target="_blank"
-                            rel="noreferrer"
-                            className="text-[10px] text-volt hover:text-white underline flex items-center gap-1.5 truncate decoration-transparent font-bold"
+                    <div className="space-y-4">
+                      {filteredReqs.map((r) => {
+                        const isSubmitted = r.submitted || (inputVals[r.id] && inputVals[r.id].trim() !== "");
+                        return (
+                          <div 
+                            key={r.id}
+                            id={`req-box-${r.id}`}
+                            className={`p-5 rounded-sm border transition-all text-left space-y-3 ${
+                              isSubmitted 
+                                ? "bg-[#09150f] border-emerald-900/80" 
+                                : "bg-[#0c0c0c] border-neutral-800 hover:border-volt/40"
+                            }`}
                           >
-                            <span className="text-neutral-500">📄</span> {del.name} ↗
-                          </a>
-                        ))}
-                      </div>
-                    )}
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
+                            <div className="flex items-center justify-between">
+                              <span className="text-[9px] uppercase tracking-wider text-neutral-400 font-bold bg-neutral-950 px-2 py-0.5 border border-neutral-850 rounded-xs">
+                                Category: {r.id.includes("social") ? "Social Media" : r.id.includes("brand") || r.id.includes("icp") ? "Brand Assets" : "Access & Credentials"}
+                              </span>
 
-          {activeTab === "requirements" && (
-            <div>
-              <div className="mb-6">
-                <h2 className="text-lg font-bold text-white uppercase tracking-wider">// Outstanding Operational Assets</h2>
-                <p className="text-xs text-neutral-400 mt-1">Please fill out and submit the requested assets below. Submitted links will be verified by the admin team.</p>
-              </div>
+                              {isSubmitted ? (
+                                <span className="text-[9px] bg-emerald-950 text-emerald-300 border border-emerald-800 px-2.5 py-0.5 font-bold rounded-sm uppercase">
+                                  ✓ Submitted &amp; Verified
+                                </span>
+                              ) : (
+                                <span className="text-[9px] bg-volt/10 text-volt border border-volt/30 px-2.5 py-0.5 font-bold rounded-sm uppercase animate-pulse">
+                                  ● Action Required
+                                </span>
+                              )}
+                            </div>
 
-              <div className="space-y-4">
-                {activeInputReqs.map((r) => (
-                  <div 
-                    key={r.id}
-                    className={`p-5 rounded-sm border transition-colors ${
-                      r.submitted 
-                        ? "bg-[#09150f] border-emerald-900/60" 
-                        : "bg-[#0c0c0c] border-neutral-800 hover:border-neutral-700"
-                    }`}
-                  >
-                    <div className="flex items-center justify-between">
-                      <span className="text-[9px] uppercase tracking-wider text-neutral-500 font-bold">
-                        Type: {String(r.type || "custom").replace('_', ' ')}
-                      </span>
-                      {r.submitted ? (
-                        <span className="text-[9px] bg-emerald-950/80 text-emerald-400 border border-emerald-900 px-2.5 py-0.5 font-bold rounded-sm uppercase">
-                          ✓ Submitted OK
-                        </span>
-                      ) : (
-                        <span className="text-[9px] bg-volt/10 text-volt border border-volt/30 px-2.5 py-0.5 font-bold rounded-sm uppercase">
-                          Action Required
-                        </span>
+                            <div>
+                              <h3 className="text-sm font-bold text-white uppercase tracking-wide">{r.label}</h3>
+                              <p className="text-[11px] text-neutral-400 mt-1">
+                                {r.type === "drive_link" 
+                                  ? "Paste private Google Drive, Dropbox, or Figma cloud link below. Access will be requested by Typtwo leads." 
+                                  : "Enter corporate profile URL or handle details below."}
+                              </p>
+                            </div>
+
+                            <div className="flex flex-col sm:flex-row gap-2 pt-1">
+                              <input
+                                type="text"
+                                value={inputVals[r.id] || ""}
+                                onChange={(e) => handleInputChange(r.id, e.target.value)}
+                                placeholder={r.type === "drive_link" ? "https://drive.google.com/drive/folders/..." : "https://linkedin.com/in/..."}
+                                className="flex-grow bg-neutral-950 border border-neutral-800 rounded-sm px-3.5 py-2 text-xs focus:outline-none focus:border-volt text-white font-mono"
+                              />
+                              <button
+                                onClick={() => submitRequirement(r.id)}
+                                className="bg-volt text-black hover:bg-white text-xs px-6 py-2 uppercase font-black rounded-sm transition cursor-pointer flex-shrink-0"
+                              >
+                                {isSubmitted ? "Update Link" : "Save Asset →"}
+                              </button>
+                            </div>
+                          </div>
+                        );
+                      })}
+
+                      {filteredReqs.length === 0 && (
+                        <div className="border border-dashed border-neutral-800 rounded-sm p-10 text-center text-xs text-neutral-400 font-mono">
+                          No items match the selected category filter.
+                        </div>
                       )}
                     </div>
-
-                    <h3 className="text-sm font-bold text-white mt-2 uppercase tracking-wide">{r.label}</h3>
-
-                    {r.type === "drive_link" && (
-                      <p className="text-[9px] text-amber-500 mt-1 font-bold">
-                        ⚠️ NOTICE: All links should be private; access will be requested by the Typtwo team.
-                      </p>
-                    )}
-
-                    <div className="mt-4 flex gap-2">
-                      <input
-                        type="text"
-                        value={inputVals[r.id] || ""}
-                        onChange={(e) => handleInputChange(r.id, e.target.value)}
-                        placeholder={r.type === "drive_link" ? "Paste secure private drive link..." : "Enter handle link / details..."}
-                        className="flex-grow bg-neutral-950 border border-neutral-800 rounded-sm px-3.5 py-2 text-xs focus:outline-none focus:border-volt text-white"
-                      />
-                      <button
-                        onClick={() => submitRequirement(r.id)}
-                        className="bg-volt text-black hover:bg-white text-xs px-5 py-2 uppercase font-bold rounded-sm transition cursor-pointer"
-                      >
-                        Submit
-                      </button>
-                    </div>
                   </div>
-                ))}
-
-                {activeInputReqs.length === 0 && (
-                  <div className="border border-dashed border-neutral-800 rounded-sm p-10 text-center text-xs text-neutral-400">
-                    No active assets collection requests currently active for your profile.
-                  </div>
-                )}
-              </div>
-            </div>
-          )}
+                );
+              })()}
 
           {activeTab === "vault" && (
             <div>
