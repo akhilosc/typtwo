@@ -231,6 +231,24 @@ function DashboardPage() {
   const [clientId, setClientId] = useState("");
   const [activeTab, setActiveTab] = useState<"requirements" | "vault" | "agreements" | "feed" | "billing">("requirements");
   const [reqCategory, setReqCategory] = useState<"all" | "brand" | "social" | "access">("all");
+  const [theme, setTheme] = useState<"dark" | "light">("dark");
+
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      const savedTheme = localStorage.getItem("t2_dashboard_theme") as "dark" | "light";
+      if (savedTheme) {
+        setTheme(savedTheme);
+      }
+    }
+  }, []);
+
+  const toggleTheme = () => {
+    const nextTheme = theme === "dark" ? "light" : "dark";
+    setTheme(nextTheme);
+    localStorage.setItem("t2_dashboard_theme", nextTheme);
+  };
+
+  const isLight = theme === "light";
   
   // Dynamic client states loaded from localStorage
   const [reqs, setReqs] = useState<Requirement[]>([]);
@@ -854,31 +872,31 @@ function DashboardPage() {
   }
 
   return (
-    <div className="flex min-h-screen bg-[#0a0a0a] text-neutral-100 font-mono">
+    <div className={`flex min-h-screen font-mono transition-colors duration-300 ${isLight ? "bg-[#f4f3ef] text-[#0a0a0a]" : "bg-[#0a0a0a] text-neutral-100"}`}>
       {/* Left Navigation Sidebar */}
-      <aside className="w-64 border-r border-neutral-800 bg-[#0e0e0e] flex flex-col justify-between p-6 shrink-0 text-left">
+      <aside className={`w-64 flex flex-col justify-between p-6 shrink-0 text-left transition-colors duration-300 ${isLight ? "border-r-2 border-black bg-[#eeebe3]" : "border-r border-neutral-800 bg-[#0e0e0e]"}`}>
         <div>
           {/* Brand Logo */}
-          <Link to="/" className="flex items-center gap-2 pb-6 border-b border-neutral-800 mb-8">
+          <Link to="/" className={`flex items-center gap-2 pb-6 mb-8 border-b ${isLight ? "border-black" : "border-neutral-800"}`}>
             <span className="h-2 w-2 bg-volt rounded-full blink" />
-            <span className="font-bold text-sm tracking-widest text-white uppercase">TYPTWO // OPS</span>
+            <span className={`font-bold text-sm tracking-widest uppercase ${isLight ? "text-black font-extrabold" : "text-white"}`}>TYPTWO // OPS</span>
           </Link>
 
           {/* User Organization context card */}
-          <div className="bg-neutral-900 border border-neutral-800 p-4 rounded-sm mb-8">
-            <span className="text-[9px] text-volt uppercase font-bold tracking-wider">// Account Space</span>
-            <div className="text-white text-xs font-bold truncate mt-1">{company}</div>
-            <div className="text-[10px] text-neutral-400 truncate mt-0.5">{email}</div>
+          <div className={`p-4 rounded-sm mb-8 transition-colors ${isLight ? "bg-white border-2 border-black shadow-[3px_3px_0px_#000000]" : "bg-neutral-900 border border-neutral-800"}`}>
+            <span className={`text-[9px] uppercase font-bold tracking-wider ${isLight ? "text-black" : "text-volt"}`}>// Account Space</span>
+            <div className={`text-xs font-bold truncate mt-1 ${isLight ? "text-black" : "text-white"}`}>{company}</div>
+            <div className={`text-[10px] truncate mt-0.5 ${isLight ? "text-neutral-700" : "text-neutral-400"}`}>{email}</div>
           </div>
 
           {/* Navigation Menu */}
-          <nav className="space-y-1.5">
+          <nav className="space-y-2">
             <button
               onClick={() => setActiveTab("requirements")}
-              className={`w-full flex items-center justify-between px-3 py-2 text-xs uppercase tracking-wider rounded-sm transition cursor-pointer font-bold ${
+              className={`w-full flex items-center justify-between px-3.5 py-2.5 text-xs uppercase tracking-wider rounded-sm transition cursor-pointer font-bold ${
                 activeTab === "requirements" 
-                  ? "bg-volt text-black" 
-                  : "text-neutral-400 hover:bg-neutral-950 hover:text-white"
+                  ? isLight ? "bg-volt text-black border-2 border-black shadow-[2px_2px_0px_#000]" : "bg-volt text-black" 
+                  : isLight ? "text-neutral-800 hover:bg-[#e2dec9] hover:text-black border border-transparent" : "text-neutral-400 hover:bg-neutral-950 hover:text-white"
               }`}
             >
               <span>01 / Action Items</span>
@@ -888,10 +906,10 @@ function DashboardPage() {
             {isVaultActive && (
               <button
                 onClick={() => setActiveTab("vault")}
-                className={`w-full flex items-center justify-between px-3 py-2 text-xs uppercase tracking-wider rounded-sm transition cursor-pointer font-bold ${
+                className={`w-full flex items-center justify-between px-3.5 py-2.5 text-xs uppercase tracking-wider rounded-sm transition cursor-pointer font-bold ${
                   activeTab === "vault" 
-                    ? "bg-volt text-black" 
-                    : "text-neutral-400 hover:bg-neutral-950 hover:text-white"
+                    ? isLight ? "bg-volt text-black border-2 border-black shadow-[2px_2px_0px_#000]" : "bg-volt text-black" 
+                    : isLight ? "text-neutral-800 hover:bg-[#e2dec9] hover:text-black border border-transparent" : "text-neutral-400 hover:bg-neutral-950 hover:text-white"
                 }`}
               >
                 <span>02 / Vault Docs</span>
@@ -901,10 +919,10 @@ function DashboardPage() {
 
             <button
               onClick={() => setActiveTab("agreements")}
-              className={`w-full flex items-center justify-between px-3 py-2 text-xs uppercase tracking-wider rounded-sm transition cursor-pointer font-bold ${
+              className={`w-full flex items-center justify-between px-3.5 py-2.5 text-xs uppercase tracking-wider rounded-sm transition cursor-pointer font-bold ${
                 activeTab === "agreements" 
-                  ? "bg-volt text-black" 
-                  : "text-neutral-400 hover:bg-neutral-950 hover:text-white"
+                  ? isLight ? "bg-volt text-black border-2 border-black shadow-[2px_2px_0px_#000]" : "bg-volt text-black" 
+                  : isLight ? "text-neutral-800 hover:bg-[#e2dec9] hover:text-black border border-transparent" : "text-neutral-400 hover:bg-neutral-950 hover:text-white"
               }`}
             >
               <span>03 / Agreements</span>
@@ -914,10 +932,10 @@ function DashboardPage() {
             {isStatusActive && (
               <button
                 onClick={() => setActiveTab("feed")}
-                className={`w-full flex items-center justify-between px-3 py-2 text-xs uppercase tracking-wider rounded-sm transition cursor-pointer font-bold ${
+                className={`w-full flex items-center justify-between px-3.5 py-2.5 text-xs uppercase tracking-wider rounded-sm transition cursor-pointer font-bold ${
                   activeTab === "feed" 
-                    ? "bg-volt text-black" 
-                    : "text-neutral-400 hover:bg-neutral-950 hover:text-white"
+                    ? isLight ? "bg-volt text-black border-2 border-black shadow-[2px_2px_0px_#000]" : "bg-volt text-black" 
+                    : isLight ? "text-neutral-800 hover:bg-[#e2dec9] hover:text-black border border-transparent" : "text-neutral-400 hover:bg-neutral-950 hover:text-white"
                 }`}
               >
                 <span>04 / Operations Feed</span>
@@ -927,10 +945,10 @@ function DashboardPage() {
 
             <button
               onClick={() => setActiveTab("billing")}
-              className={`w-full flex items-center justify-between px-3 py-2 text-xs uppercase tracking-wider rounded-sm transition cursor-pointer font-bold ${
+              className={`w-full flex items-center justify-between px-3.5 py-2.5 text-xs uppercase tracking-wider rounded-sm transition cursor-pointer font-bold ${
                 activeTab === "billing" 
-                  ? "bg-volt text-black" 
-                  : "text-neutral-400 hover:bg-neutral-950 hover:text-white"
+                  ? isLight ? "bg-volt text-black border-2 border-black shadow-[2px_2px_0px_#000]" : "bg-volt text-black" 
+                  : isLight ? "text-neutral-800 hover:bg-[#e2dec9] hover:text-black border border-transparent" : "text-neutral-400 hover:bg-neutral-950 hover:text-white"
               }`}
             >
               <span>05 / Billing & Invoices</span>
@@ -939,11 +957,26 @@ function DashboardPage() {
           </nav>
         </div>
 
-        {/* Logout bottom area */}
-        <div className="pt-6 border-t border-neutral-800">
+        {/* Theme Switcher & Logout bottom area */}
+        <div className={`pt-6 border-t space-y-2 ${isLight ? "border-black" : "border-neutral-800"}`}>
+          <button
+            onClick={toggleTheme}
+            className={`w-full text-xs py-2 text-center transition cursor-pointer uppercase font-black rounded-sm border-2 ${
+              isLight 
+                ? "bg-black text-white border-black hover:bg-neutral-800" 
+                : "bg-volt text-black border-volt hover:bg-white"
+            }`}
+          >
+            {isLight ? "🌙 Switch to Dark Mode" : "☀️ Switch to Light Paper"}
+          </button>
+
           <button
             onClick={handleLogout}
-            className="w-full bg-neutral-900 border border-neutral-800 hover:bg-neutral-950 hover:border-volt text-neutral-300 text-xs py-2 text-center transition cursor-pointer uppercase font-bold"
+            className={`w-full text-xs py-2 text-center transition cursor-pointer uppercase font-bold border ${
+              isLight 
+                ? "bg-white text-black border-black hover:bg-black hover:text-white" 
+                : "bg-neutral-900 border-neutral-800 hover:bg-neutral-950 text-neutral-300"
+            }`}
           >
             ← Exit Workspace
           </button>
@@ -951,22 +984,38 @@ function DashboardPage() {
       </aside>
 
       {/* Main Mainframe Workspace */}
-      <main className="flex-grow flex flex-col min-w-0 bg-[#070707] text-left">
+      <main className={`flex-grow flex flex-col min-w-0 text-left transition-colors duration-300 ${isLight ? "bg-[#f4f3ef]" : "bg-[#070707]"}`}>
         {/* Work top header bar */}
-        <header className="h-14 border-b border-neutral-800 px-8 flex items-center justify-between bg-[#0b0b0b] shrink-0">
+        <header className={`h-14 border-b px-8 flex items-center justify-between shrink-0 transition-colors ${
+          isLight ? "bg-white border-b-2 border-black" : "bg-[#0b0b0b] border-b border-neutral-800"
+        }`}>
           <div className="flex items-center gap-3">
-            <span className="text-xs uppercase tracking-widest text-neutral-400">// Active Node:</span>
-            <span className="text-xs text-white uppercase font-bold bg-neutral-900 px-2 py-0.5 border border-neutral-800 rounded-sm">
+            <span className={`text-xs uppercase tracking-widest font-bold ${isLight ? "text-neutral-700" : "text-neutral-400"}`}>// Active Node:</span>
+            <span className={`text-xs uppercase font-extrabold px-2.5 py-0.5 border rounded-sm ${
+              isLight ? "bg-volt text-black border-black shadow-[2px_2px_0px_#000]" : "bg-neutral-900 text-white border-neutral-800"
+            }`}>
               UAE_EDGE_T2_{clientId.toUpperCase()}
             </span>
           </div>
-          <div className="flex items-center gap-4">
-            <div className="hidden sm:block text-[10px] text-neutral-400">
-              SYSTEM_SECURE // TLS_1.3_ACTIVE
-            </div>
+          <div className="flex items-center gap-3">
+            <button
+              onClick={toggleTheme}
+              className={`px-3 py-1 text-xs font-black uppercase rounded-sm border-2 cursor-pointer transition ${
+                isLight 
+                  ? "bg-black text-white border-black hover:bg-neutral-800" 
+                  : "bg-volt text-black border-volt hover:bg-white"
+              }`}
+            >
+              {isLight ? "🌙 Dark Mode" : "☀️ Light Paper Mode"}
+            </button>
+
             <button
               onClick={handleLogout}
-              className="bg-neutral-900 border border-neutral-800 hover:border-red-500/80 hover:text-red-400 text-neutral-300 text-xs px-3 py-1.5 text-center transition cursor-pointer uppercase font-bold rounded-sm"
+              className={`text-xs px-3 py-1.5 text-center transition cursor-pointer uppercase font-bold rounded-sm border ${
+                isLight 
+                  ? "bg-white border-black text-black hover:bg-black hover:text-white" 
+                  : "bg-neutral-900 border-neutral-800 hover:border-red-500/80 hover:text-red-400 text-neutral-300"
+              }`}
             >
               ← Exit / Logout
             </button>
@@ -1044,35 +1093,41 @@ function DashboardPage() {
                 const nextAction = activeReqs.find(r => !r.submitted && (!inputVals[r.id] || inputVals[r.id].trim() === ""));
 
                 return (
-                  <div className="bg-gradient-to-r from-[#0d0d0d] via-[#141414] to-[#090909] border-2 border-volt/40 p-6 rounded-sm space-y-4 font-mono shadow-xl relative overflow-hidden">
-                    <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-neutral-800 pb-4">
+                  <div className={`p-6 rounded-sm space-y-4 font-mono shadow-xl relative overflow-hidden transition-all border-2 ${
+                    isLight 
+                      ? "bg-white border-black text-black shadow-[5px_5px_0px_#000]" 
+                      : "bg-gradient-to-r from-[#0d0d0d] via-[#141414] to-[#090909] border-volt/40 text-white"
+                  }`}>
+                    <div className={`flex flex-col md:flex-row md:items-center justify-between gap-4 border-b pb-4 ${isLight ? "border-black" : "border-neutral-800"}`}>
                       <div className="space-y-1 text-left">
                         <div className="flex items-center gap-2">
-                          <span className="h-2.5 w-2.5 bg-volt rounded-full animate-ping" />
-                          <span className="text-volt font-black text-xs uppercase tracking-widest">// WORKSPACE READINESS GUIDE</span>
+                          <span className={`h-2.5 w-2.5 rounded-full animate-ping ${isLight ? "bg-black" : "bg-volt"}`} />
+                          <span className={`font-black text-xs uppercase tracking-widest ${isLight ? "text-black" : "text-volt"}`}>// WORKSPACE READINESS GUIDE</span>
                         </div>
-                        <h2 className="text-base font-black text-white uppercase tracking-wider">
-                          Onboarding Progress: <span className="text-volt">{readinessPercent}% Complete</span>
+                        <h2 className={`text-base font-black uppercase tracking-wider ${isLight ? "text-black" : "text-white"}`}>
+                          Onboarding Progress: <span className={isLight ? "bg-volt px-1.5 py-0.5 border border-black text-black font-extrabold" : "text-volt"}>{readinessPercent}% Complete</span>
                         </h2>
                       </div>
 
                       <div className="flex items-center gap-4">
                         <div className="text-right hidden sm:block">
-                          <div className="text-[10px] text-neutral-400 font-bold uppercase">Assets Logged</div>
-                          <div className="text-xs font-bold text-white font-mono">{completedCount} of {activeReqs.length} Provided</div>
+                          <div className={`text-[10px] font-bold uppercase ${isLight ? "text-neutral-700" : "text-neutral-400"}`}>Assets Logged</div>
+                          <div className={`text-xs font-bold font-mono ${isLight ? "text-black" : "text-white"}`}>{completedCount} of {activeReqs.length} Provided</div>
                         </div>
-                        <div className="w-32 bg-neutral-950 h-2.5 border border-neutral-800 rounded-xs overflow-hidden">
+                        <div className={`w-32 h-3 border rounded-xs overflow-hidden ${isLight ? "bg-neutral-200 border-black" : "bg-neutral-950 border-neutral-800"}`}>
                           <div className="h-full bg-volt transition-all duration-500" style={{ width: `${readinessPercent}%` }} />
                         </div>
                       </div>
                     </div>
 
                     {nextAction ? (
-                      <div className="p-3.5 bg-volt/10 border border-volt/40 rounded-sm flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-left">
+                      <div className={`p-3.5 rounded-sm flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-left border ${
+                        isLight ? "bg-[#f4f3ef] border-black text-black" : "bg-volt/10 border-volt/40 text-white"
+                      }`}>
                         <div className="space-y-0.5">
-                          <span className="text-[9px] bg-volt text-black px-2 py-0.5 font-black uppercase rounded-xs">NEXT RECOMMENDED ACTION</span>
-                          <div className="text-xs font-bold text-white uppercase tracking-wider flex items-center gap-1.5 pt-1">
-                            👉 Please submit: <span className="text-volt underline">{nextAction.label}</span>
+                          <span className={`text-[9px] px-2 py-0.5 font-black uppercase rounded-xs ${isLight ? "bg-black text-white" : "bg-volt text-black"}`}>NEXT RECOMMENDED ACTION</span>
+                          <div className={`text-xs font-bold uppercase tracking-wider flex items-center gap-1.5 pt-1 ${isLight ? "text-black" : "text-white"}`}>
+                            👉 Please submit: <span className="underline font-extrabold">{nextAction.label}</span>
                           </div>
                         </div>
                         <button
@@ -1081,13 +1136,17 @@ function DashboardPage() {
                             const el = document.getElementById(`req-box-${nextAction.id}`);
                             if (el) el.scrollIntoView({ behavior: "smooth", block: "center" });
                           }}
-                          className="bg-volt text-black hover:bg-white text-xs px-4 py-2 font-black uppercase rounded-sm cursor-pointer transition flex-shrink-0"
+                          className={`text-xs px-4 py-2 font-black uppercase rounded-sm cursor-pointer transition flex-shrink-0 border-2 ${
+                            isLight ? "bg-volt text-black border-black hover:bg-black hover:text-white" : "bg-volt text-black border-volt hover:bg-white"
+                          }`}
                         >
                           Complete Action →
                         </button>
                       </div>
                     ) : (
-                      <div className="p-3.5 bg-emerald-950/40 border border-emerald-800 text-emerald-300 text-xs font-bold uppercase text-center rounded-sm">
+                      <div className={`p-3.5 text-xs font-bold uppercase text-center rounded-sm border ${
+                        isLight ? "bg-emerald-100 border-black text-emerald-950" : "bg-emerald-950/40 border-emerald-800 text-emerald-300"
+                      }`}>
                         ✓ ALL REQUIRED BRAND ASSETS &amp; CREDENTIALS SUBMITTED. TYPTWO OPERATIONS IS ACTIVELY RUNNING YOUR CAMPAIGNS.
                       </div>
                     )}
@@ -1097,38 +1156,42 @@ function DashboardPage() {
 
               {/* Onboarding & Campaign Roadmap Grid */}
               {activeTab === "requirements" && (
-                <div className="bg-[#0b0b0b] border border-neutral-800 p-5 rounded-sm space-y-4">
-                  <h3 className="text-xs font-bold text-white uppercase tracking-wider border-b border-neutral-850 pb-2 flex justify-between items-center">
+                <div className={`p-5 rounded-sm space-y-4 border ${isLight ? "bg-white border-2 border-black shadow-[4px_4px_0px_#000]" : "bg-[#0b0b0b] border-neutral-800"}`}>
+                  <h3 className={`text-xs font-bold uppercase tracking-wider border-b pb-2 flex justify-between items-center ${isLight ? "border-black text-black" : "border-neutral-850 text-white"}`}>
                     <span>// Client Milestones & Onboarding Roadmap</span>
-                    <span className="text-[9px] text-neutral-500 font-bold font-mono">MILESTONES: {safeMilestones.length}</span>
+                    <span className={`text-[9px] font-bold font-mono ${isLight ? "text-neutral-700" : "text-neutral-500"}`}>MILESTONES: {safeMilestones.length}</span>
                   </h3>
 
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     {safeMilestones.map((m) => (
-                      <div key={m.id} className="p-4 bg-[#0c0c0c] border border-neutral-800 rounded-sm space-y-3 flex flex-col justify-between">
-                        <div className="space-y-2">
+                      <div key={m.id} className={`p-4 rounded-sm space-y-3 flex flex-col justify-between border ${
+                        isLight ? "bg-[#f9f8f5] border-black" : "bg-[#0c0c0c] border-neutral-800"
+                      }`}>
+                        <div className="space-y-2 text-left">
                           <div className="flex justify-between items-start">
-                            <span className="text-xs text-white font-bold uppercase tracking-wide truncate max-w-[200px]">{m.title}</span>
-                            <span className="text-[10px] text-volt font-bold shrink-0">{m.percentage}%</span>
+                            <span className={`text-xs font-bold uppercase tracking-wide truncate max-w-[200px] ${isLight ? "text-black" : "text-white"}`}>{m.title}</span>
+                            <span className={`text-[10px] font-bold shrink-0 ${isLight ? "text-black bg-volt px-1 border border-black" : "text-volt"}`}>{m.percentage}%</span>
                           </div>
-                          <div className="w-full bg-neutral-950 h-1 rounded-full overflow-hidden">
+                          <div className={`w-full h-1.5 rounded-full overflow-hidden border ${isLight ? "bg-neutral-200 border-black" : "bg-neutral-950 border-neutral-850"}`}>
                             <div className="bg-volt h-full transition-all duration-300" style={{ width: `${m.percentage}%` }} />
                           </div>
-                          <p className="text-[11px] text-neutral-450 leading-relaxed font-bold uppercase">{m.statusText}</p>
+                          <p className={`text-[11px] leading-relaxed font-bold uppercase ${isLight ? "text-neutral-700" : "text-neutral-450"}`}>{m.statusText}</p>
                         </div>
 
                         {m.deliverables && m.deliverables.length > 0 && (
-                          <div className="pt-2.5 border-t border-neutral-900 mt-2 space-y-1.5">
-                            <span className="text-[8px] text-neutral-500 font-bold uppercase block tracking-wider">Milestone Deliverables:</span>
+                          <div className={`pt-2.5 border-t mt-2 space-y-1.5 text-left ${isLight ? "border-black" : "border-neutral-900"}`}>
+                            <span className={`text-[8px] font-bold uppercase block tracking-wider ${isLight ? "text-neutral-600" : "text-neutral-500"}`}>Milestone Deliverables:</span>
                             {m.deliverables.map((del, delIdx) => (
                               <a
                                 key={delIdx}
                                 href={del.url}
                                 target="_blank"
                                 rel="noreferrer"
-                                className="text-[10px] text-volt hover:text-white underline flex items-center gap-1.5 truncate decoration-transparent font-bold"
+                                className={`text-[10px] underline flex items-center gap-1.5 truncate font-bold ${
+                                  isLight ? "text-black hover:text-neutral-600" : "text-volt hover:text-white"
+                                }`}
                               >
-                                <span className="text-neutral-500">📄</span> {del.name} ↗
+                                <span>📄</span> {del.name} ↗
                               </a>
                             ))}
                           </div>
@@ -1155,18 +1218,20 @@ function DashboardPage() {
 
                 return (
                   <div className="space-y-6">
-                    <div className="flex flex-col sm:flex-row sm:items-center justify-between border-b border-neutral-800 pb-3 gap-3">
+                    <div className={`flex flex-col sm:flex-row sm:items-center justify-between border-b pb-3 gap-3 ${isLight ? "border-black" : "border-neutral-800"}`}>
                       <div className="space-y-0.5 text-left">
-                        <h2 className="text-base font-bold text-white uppercase tracking-wider">// Onboarding Assets &amp; Access Links</h2>
-                        <p className="text-xs text-neutral-400">Select a category below to submit required assets for your workspace.</p>
+                        <h2 className={`text-base font-bold uppercase tracking-wider ${isLight ? "text-black font-extrabold" : "text-white"}`}>// Onboarding Assets &amp; Access Links</h2>
+                        <p className={`text-xs ${isLight ? "text-neutral-700" : "text-neutral-400"}`}>Select a category below to submit required assets for your workspace.</p>
                       </div>
 
                       {/* Category Filter Tabs */}
                       <div className="flex flex-wrap gap-1.5 font-mono">
                         <button
                           onClick={() => setReqCategory("all")}
-                          className={`px-3 py-1.5 text-[10px] uppercase font-bold rounded-sm cursor-pointer transition border ${
-                            reqCategory === "all" ? "bg-volt text-black border-volt" : "bg-neutral-950 text-neutral-400 border-neutral-800 hover:text-white"
+                          className={`px-3 py-1.5 text-[10px] uppercase font-bold rounded-sm cursor-pointer transition border-2 ${
+                            reqCategory === "all" 
+                              ? "bg-volt text-black border-black shadow-[2px_2px_0px_#000]" 
+                              : isLight ? "bg-white text-black border-black hover:bg-neutral-200" : "bg-neutral-950 text-neutral-400 border-neutral-800 hover:text-white"
                           }`}
                         >
                           All ({activeInputReqs.length})
@@ -1174,8 +1239,10 @@ function DashboardPage() {
 
                         <button
                           onClick={() => setReqCategory("brand")}
-                          className={`px-3 py-1.5 text-[10px] uppercase font-bold rounded-sm cursor-pointer transition border ${
-                            reqCategory === "brand" ? "bg-volt text-black border-volt" : "bg-neutral-950 text-neutral-400 border-neutral-800 hover:text-white"
+                          className={`px-3 py-1.5 text-[10px] uppercase font-bold rounded-sm cursor-pointer transition border-2 ${
+                            reqCategory === "brand" 
+                              ? "bg-volt text-black border-black shadow-[2px_2px_0px_#000]" 
+                              : isLight ? "bg-white text-black border-black hover:bg-neutral-200" : "bg-neutral-950 text-neutral-400 border-neutral-800 hover:text-white"
                           }`}
                         >
                           📁 Brand &amp; Assets ({brandReqs.length})
@@ -1183,8 +1250,10 @@ function DashboardPage() {
 
                         <button
                           onClick={() => setReqCategory("social")}
-                          className={`px-3 py-1.5 text-[10px] uppercase font-bold rounded-sm cursor-pointer transition border ${
-                            reqCategory === "social" ? "bg-volt text-black border-volt" : "bg-neutral-950 text-neutral-400 border-neutral-800 hover:text-white"
+                          className={`px-3 py-1.5 text-[10px] uppercase font-bold rounded-sm cursor-pointer transition border-2 ${
+                            reqCategory === "social" 
+                              ? "bg-volt text-black border-black shadow-[2px_2px_0px_#000]" 
+                              : isLight ? "bg-white text-black border-black hover:bg-neutral-200" : "bg-neutral-950 text-neutral-400 border-neutral-800 hover:text-white"
                           }`}
                         >
                           🌐 Social Profiles ({socialReqs.length})
@@ -1192,8 +1261,10 @@ function DashboardPage() {
 
                         <button
                           onClick={() => setReqCategory("access")}
-                          className={`px-3 py-1.5 text-[10px] uppercase font-bold rounded-sm cursor-pointer transition border ${
-                            reqCategory === "access" ? "bg-volt text-black border-volt" : "bg-neutral-950 text-neutral-400 border-neutral-800 hover:text-white"
+                          className={`px-3 py-1.5 text-[10px] uppercase font-bold rounded-sm cursor-pointer transition border-2 ${
+                            reqCategory === "access" 
+                              ? "bg-volt text-black border-black shadow-[2px_2px_0px_#000]" 
+                              : isLight ? "bg-white text-black border-black hover:bg-neutral-200" : "bg-neutral-950 text-neutral-400 border-neutral-800 hover:text-white"
                           }`}
                         >
                           🔐 Ad Access &amp; Keys ({accessReqs.length})
@@ -1208,31 +1279,37 @@ function DashboardPage() {
                           <div 
                             key={r.id}
                             id={`req-box-${r.id}`}
-                            className={`p-5 rounded-sm border transition-all text-left space-y-3 ${
+                            className={`p-5 rounded-sm border-2 transition-all text-left space-y-3 ${
                               isSubmitted 
-                                ? "bg-[#09150f] border-emerald-900/80" 
-                                : "bg-[#0c0c0c] border-neutral-800 hover:border-volt/40"
+                                ? isLight ? "bg-emerald-50 border-black shadow-[3px_3px_0px_#000]" : "bg-[#09150f] border-emerald-900/80" 
+                                : isLight ? "bg-white border-black shadow-[3px_3px_0px_#000]" : "bg-[#0c0c0c] border-neutral-800 hover:border-volt/40"
                             }`}
                           >
                             <div className="flex items-center justify-between">
-                              <span className="text-[9px] uppercase tracking-wider text-neutral-400 font-bold bg-neutral-950 px-2 py-0.5 border border-neutral-850 rounded-xs">
+                              <span className={`text-[9px] uppercase tracking-wider font-bold px-2 py-0.5 border rounded-xs ${
+                                isLight ? "bg-[#eeebe3] text-black border-black" : "bg-neutral-950 text-neutral-400 border-neutral-850"
+                              }`}>
                                 Category: {r.id.includes("social") ? "Social Media" : r.id.includes("brand") || r.id.includes("icp") ? "Brand Assets" : "Access & Credentials"}
                               </span>
 
                               {isSubmitted ? (
-                                <span className="text-[9px] bg-emerald-950 text-emerald-300 border border-emerald-800 px-2.5 py-0.5 font-bold rounded-sm uppercase">
+                                <span className={`text-[9px] px-2.5 py-0.5 font-bold rounded-sm uppercase border ${
+                                  isLight ? "bg-emerald-200 text-black border-black" : "bg-emerald-950 text-emerald-300 border-emerald-800"
+                                }`}>
                                   ✓ Submitted &amp; Verified
                                 </span>
                               ) : (
-                                <span className="text-[9px] bg-volt/10 text-volt border border-volt/30 px-2.5 py-0.5 font-bold rounded-sm uppercase animate-pulse">
+                                <span className={`text-[9px] px-2.5 py-0.5 font-bold rounded-sm uppercase border animate-pulse ${
+                                  isLight ? "bg-volt text-black border-black" : "bg-volt/10 text-volt border-volt/30"
+                                }`}>
                                   ● Action Required
                                 </span>
                               )}
                             </div>
 
                             <div>
-                              <h3 className="text-sm font-bold text-white uppercase tracking-wide">{r.label}</h3>
-                              <p className="text-[11px] text-neutral-400 mt-1">
+                              <h3 className={`text-sm font-bold uppercase tracking-wide ${isLight ? "text-black" : "text-white"}`}>{r.label}</h3>
+                              <p className={`text-[11px] mt-1 ${isLight ? "text-neutral-700 font-medium" : "text-neutral-400"}`}>
                                 {r.type === "drive_link" 
                                   ? "Paste private Google Drive, Dropbox, or Figma cloud link below. Access will be requested by Typtwo leads." 
                                   : "Enter corporate profile URL or handle details below."}
@@ -1245,11 +1322,15 @@ function DashboardPage() {
                                 value={inputVals[r.id] || ""}
                                 onChange={(e) => handleInputChange(r.id, e.target.value)}
                                 placeholder={r.type === "drive_link" ? "https://drive.google.com/drive/folders/..." : "https://linkedin.com/in/..."}
-                                className="flex-grow bg-neutral-950 border border-neutral-800 rounded-sm px-3.5 py-2 text-xs focus:outline-none focus:border-volt text-white font-mono"
+                                className={`flex-grow border rounded-sm px-3.5 py-2 text-xs focus:outline-none focus:border-volt font-mono ${
+                                  isLight ? "bg-white border-black text-black placeholder:text-neutral-500" : "bg-neutral-950 border-neutral-800 text-white"
+                                }`}
                               />
                               <button
                                 onClick={() => submitRequirement(r.id)}
-                                className="bg-volt text-black hover:bg-white text-xs px-6 py-2 uppercase font-black rounded-sm transition cursor-pointer flex-shrink-0"
+                                className={`text-xs px-6 py-2 uppercase font-black rounded-sm transition cursor-pointer flex-shrink-0 border-2 ${
+                                  isLight ? "bg-volt text-black border-black hover:bg-black hover:text-white" : "bg-volt text-black border-volt hover:bg-white"
+                                }`}
                               >
                                 {isSubmitted ? "Update Link" : "Save Asset →"}
                               </button>
@@ -1259,7 +1340,9 @@ function DashboardPage() {
                       })}
 
                       {filteredReqs.length === 0 && (
-                        <div className="border border-dashed border-neutral-800 rounded-sm p-10 text-center text-xs text-neutral-400 font-mono">
+                        <div className={`border-2 border-dashed rounded-sm p-10 text-center text-xs font-mono ${
+                          isLight ? "border-black text-neutral-700 bg-white" : "border-neutral-800 text-neutral-400"
+                        }`}>
                           No items match the selected category filter.
                         </div>
                       )}
