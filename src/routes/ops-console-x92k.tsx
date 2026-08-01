@@ -508,6 +508,26 @@ function AdminPage() {
   const [memberSearchQuery, setMemberSearchQuery] = useState("");
   const [otpLogs, setOtpLogs] = useState<any[]>([]);
 
+  // Live Resend Email Tester States
+  const [testEmail, setTestEmail] = useState("");
+  const [testResult, setTestResult] = useState("");
+  const [testLoading, setTestLoading] = useState(false);
+
+  const handleTestEmailDispatch = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!testEmail.trim()) return;
+    setTestLoading(true);
+    setTestResult("");
+    const testCode = Math.floor(100000 + Math.random() * 900000).toString();
+    const res = await sendOtpEmail(testEmail.trim(), testCode);
+    if (res.success) {
+      setTestResult(`✓ SUCCESS: 6-Digit Test OTP (${testCode}) dispatched to ${testEmail.trim()} via Resend API.`);
+    } else {
+      setTestResult(`❌ DISPATCH FAILED: ${res.error || "Unknown Resend API error"}`);
+    }
+    setTestLoading(false);
+  };
+
   // Load clients list dynamically & real-time OTP tracking
   useEffect(() => {
     const fetchClients = async () => {
