@@ -1211,28 +1211,54 @@ function DashboardPage() {
                         </div>
                       </div>
 
-                      {/* Graphical Horizontal Phase Stepper */}
-                      <div className="space-y-2 text-left">
-                        <div className={`text-xs uppercase tracking-wider font-black ${isLight ? "text-black" : "text-neutral-400"}`}>// Campaign Operational Pipeline</div>
+                      {/* Recurring Marketing Agency Campaign Pipeline Stepper */}
+                      <div className="space-y-3 text-left">
+                        <div className="flex items-center justify-between">
+                          <div className={`text-xs uppercase tracking-wider font-black ${isLight ? "text-black" : "text-neutral-400"}`}>
+                            // RECURRING MARKETING AGENCY CAMPAIGN LIFECYCLE
+                          </div>
+                          <span className="text-[10px] text-volt font-mono font-bold uppercase bg-neutral-900 px-2 py-0.5 border border-neutral-800 rounded-xs">
+                            🔁 RECURRING ENGINE
+                          </span>
+                        </div>
+
                         <div className="grid grid-cols-1 sm:grid-cols-4 gap-3 font-mono">
-                          <div className={`p-3 rounded-sm text-xs font-black uppercase flex items-center gap-2 ${
+                          <div className={`p-3 rounded-sm text-xs font-black uppercase flex flex-col justify-between space-y-2 ${
                             isLight ? "bg-emerald-100 border-2 border-black text-emerald-950 shadow-[2px_2px_0px_#000]" : "bg-emerald-950/40 border border-emerald-800 text-emerald-400"
                           }`}>
-                            <span>✓</span> 1. Onboarding
+                            <div className="flex items-center justify-between">
+                              <span>01. Strategy &amp; Research</span>
+                              <span className="text-[9px] bg-black text-white px-1.5 py-0.5 rounded-xs">✓ DONE</span>
+                            </div>
+                            <span className="text-[9px] opacity-80 font-normal normal-case">ICP &amp; Competitor Positioning</span>
                           </div>
-                          <div className="p-3 bg-volt text-black border-2 border-black rounded-sm text-xs font-black uppercase flex items-center justify-between shadow-[2px_2px_0px_#000]">
-                            <span>● 2. Strategy Setup</span>
-                            <span className="text-[9px] bg-black text-white px-1.5 py-0.5 rounded-xs font-black">ACTIVE</span>
+
+                          <div className="p-3 bg-volt text-black border-2 border-black rounded-sm text-xs font-black uppercase flex flex-col justify-between space-y-2 shadow-[3px_3px_0px_#000]">
+                            <div className="flex items-center justify-between">
+                              <span>● 02. Creative &amp; Production</span>
+                              <span className="text-[9px] bg-black text-white px-1.5 py-0.5 rounded-xs font-black">ACTIVE</span>
+                            </div>
+                            <span className="text-[9px] opacity-90 font-bold normal-case">AI Video Ads &amp; Copy Sourcing</span>
                           </div>
-                          <div className={`p-3 rounded-sm text-xs font-bold uppercase ${
+
+                          <div className={`p-3 rounded-sm text-xs font-bold uppercase flex flex-col justify-between space-y-2 ${
                             isLight ? "bg-white border-2 border-black text-neutral-800 shadow-[2px_2px_0px_#000]" : "bg-neutral-950 border border-neutral-800 text-neutral-500"
                           }`}>
-                            ○ 3. Production
+                            <div className="flex items-center justify-between">
+                              <span>03. Media Execution</span>
+                              <span className="text-[9px] bg-neutral-800 text-neutral-400 px-1.5 py-0.5 rounded-xs">SCHEDULED</span>
+                            </div>
+                            <span className="text-[9px] opacity-70 font-normal normal-case">Meta, Google &amp; Ad Ops Flighting</span>
                           </div>
-                          <div className={`p-3 rounded-sm text-xs font-bold uppercase ${
+
+                          <div className={`p-3 rounded-sm text-xs font-bold uppercase flex flex-col justify-between space-y-2 ${
                             isLight ? "bg-white border-2 border-black text-neutral-800 shadow-[2px_2px_0px_#000]" : "bg-neutral-950 border border-neutral-800 text-neutral-500"
                           }`}>
-                            ○ 4. Launch
+                            <div className="flex items-center justify-between">
+                              <span>04. Analytics &amp; Scaling</span>
+                              <span className="text-[9px] bg-neutral-800 text-neutral-400 px-1.5 py-0.5 rounded-xs">RECURRING</span>
+                            </div>
+                            <span className="text-[9px] opacity-70 font-normal normal-case">ROAS Optimization &amp; Growth</span>
                           </div>
                         </div>
                       </div>
