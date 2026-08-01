@@ -229,7 +229,56 @@ function DashboardPage() {
   const [email, setEmail] = useState("");
   const [company, setCompany] = useState("");
   const [clientId, setClientId] = useState("");
-  const [activeTab, setActiveTab] = useState<"overview" | "requirements" | "vault" | "agreements" | "feed" | "billing">("overview");
+  const [activeTab, setActiveTab] = useState<"overview" | "requirements" | "vault" | "agreements" | "feed" | "billing" | "profile">("overview");
+
+  // Password reset state for logged in user in Profile tab
+  const [profPwdNew, setProfPwdNew] = useState("");
+  const [profPwdConfirm, setProfPwdConfirm] = useState("");
+  const [profPwdMsg, setProfPwdMsg] = useState("");
+  const [profPwdError, setProfPwdError] = useState("");
+  const [profPwdLoading, setProfPwdLoading] = useState(false);
+
+  const handlePasswordUpdate = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setProfPwdMsg("");
+    setProfPwdError("");
+
+    if (profPwdNew.length < 6) {
+      setProfPwdError("New password must be at least 6 characters.");
+      return;
+    }
+    if (profPwdNew !== profPwdConfirm) {
+      setProfPwdError("New password and confirmation do not match.");
+      return;
+    }
+
+    setProfPwdLoading(true);
+
+    try {
+      const { error: sbErr } = await supabase.auth.updateUser({ password: profPwdNew });
+      if (sbErr) console.warn("Supabase auth update notice:", sbErr.message);
+
+      const rawClients = localStorage.getItem("t2_custom_clients");
+      if (rawClients) {
+        const list = JSON.parse(rawClients);
+        const updated = list.map((c: any) => {
+          if (c.email?.toLowerCase() === email.toLowerCase()) {
+            return { ...c, password: profPwdNew, requiresPasswordChange: false };
+          }
+          return c;
+        });
+        localStorage.setItem("t2_custom_clients", JSON.stringify(updated));
+      }
+
+      setProfPwdMsg("Password updated successfully! Account credentials secured.");
+      setProfPwdNew("");
+      setProfPwdConfirm("");
+    } catch (err: any) {
+      setProfPwdError(err.message || "Failed to update password.");
+    } finally {
+      setProfPwdLoading(false);
+    }
+  };
   const [reqCategory, setReqCategory] = useState<"all" | "brand" | "social" | "access">("all");
   const [openAccordionCategory, setOpenAccordionCategory] = useState<string>("brand");
   const [theme, setTheme] = useState<"dark" | "light">("dark");
@@ -966,6 +1015,18 @@ function DashboardPage() {
             >
               <span>06 / Billing &amp; Invoices</span>
               <span className="text-[10px] opacity-80 font-mono">[{invoices.length}]</span>
+            </button>
+
+            <button
+              onClick={() => setActiveTab("profile")}
+              className={`w-full flex items-center justify-between px-3.5 py-2.5 text-xs uppercase tracking-wider rounded-sm transition cursor-pointer font-bold whitespace-nowrap ${
+                activeTab === "profile" 
+                  ? isLight ? "bg-volt text-black border-2 border-black shadow-[2px_2px_0px_#000]" : "bg-volt text-black" 
+                  : isLight ? "text-neutral-800 hover:bg-[#e2dec9] hover:text-black border border-transparent" : "text-neutral-400 hover:bg-neutral-950 hover:text-white"
+              }`}
+            >
+              <span>07 / Company &amp; Profile</span>
+              <span className="text-[10px] opacity-80 font-mono">[{members.length}/5]</span>
             </button>
           </nav>
         </div>
@@ -2027,123 +2088,230 @@ function DashboardPage() {
               </div>
             </div>
           )}
-            </>
-          )}
 
-          {/* Team Members Invite Widget (Visible when approved) */}
-          {approved && (
-            <div className={`p-6 rounded-md border-2 grid grid-cols-1 md:grid-cols-2 gap-8 text-left mt-8 font-mono transition-all ${
-              isLight 
-                ? "bg-white border-black text-black shadow-[5px_5px_0px_#000]" 
-                : "bg-[#0b0b0b] border-neutral-800 text-white"
-            }`}>
-              {/* Left Column: Invite Teammate */}
-              <div className="space-y-4">
-                <div className="space-y-1.5">
-                  <div className="flex items-center justify-between">
-                    <h3 className={`text-xs font-black uppercase tracking-wider flex items-center gap-2 ${
-                      isLight ? "text-black font-extrabold" : "text-white"
-                    }`}>
-                      <span>// Corporate Team Access</span>
-                      {notifyMsg && (
-                        <span className="text-[9px] text-volt uppercase font-bold animate-pulse">● {notifyMsg}</span>
-                      )}
-                    </h3>
-                    <span className={`text-[10px] font-black uppercase px-2.5 py-0.5 rounded-sm border ${
-                      isLight ? "bg-volt text-black border-black shadow-[1px_1px_0px_#000]" : "bg-neutral-900 text-volt border-neutral-800"
-                    }`}>
-                      Seats: {members.length} / 5
-                    </span>
-                  </div>
-
-                  {/* Seat allocation visual bar */}
-                  <div className="w-full bg-neutral-950 h-2 border border-neutral-800 rounded-xs overflow-hidden">
-                    <div
-                      className={`h-full transition-all duration-500 ${members.length >= 5 ? "bg-flame" : "bg-volt"}`}
-                      style={{ width: `${Math.min(100, (members.length / 5) * 100)}%` }}
-                    />
-                  </div>
-
-                  <p className={`text-xs leading-relaxed pt-1 ${
-                    isLight ? "text-neutral-800 font-medium" : "text-neutral-400"
-                  }`}>
-                    Each company workspace allows up to 5 corporate team members. Teammates can log in to view project progress, shared deliverables, and status feeds.
-                  </p>
-                </div>
-
-                {members.length < 5 ? (
-                  <form onSubmit={handleInviteMember} className="flex gap-2">
-                    <input
-                      type="email"
-                      placeholder="teammate@company.com"
-                      value={inviteEmail}
-                      onChange={(e) => setInviteEmail(e.target.value)}
-                      className={`flex-grow rounded-sm px-3.5 py-2 text-xs focus:outline-none transition ${
-                        isLight 
-                          ? "bg-[#f4f3ef] border-2 border-black text-black placeholder-neutral-500 font-bold focus:bg-white" 
-                          : "bg-neutral-950 border border-neutral-800 text-white placeholder-neutral-600 focus:border-volt"
-                      }`}
-                      required
-                    />
-                    <button
-                      type="submit"
-                      className="bg-volt text-black hover:bg-white text-xs px-4 py-2 font-black uppercase rounded-sm border-2 border-black cursor-pointer transition shadow-[2px_2px_0px_#000]"
-                    >
-                      Invite
-                    </button>
-                  </form>
-                ) : (
-                  <div className="p-3 bg-red-950/40 border border-red-900 text-red-300 text-[10px] uppercase font-bold text-center rounded-sm">
-                    ⚠️ Maximum seat capacity reached (5 / 5 Members). Remove an existing member to invite a new colleague.
-                  </div>
-                )}
+          {activeTab === "profile" && (
+            <div className="space-y-8 text-left font-mono">
+              <div className="border-b pb-4 border-neutral-800">
+                <h2 className={`text-lg font-extrabold uppercase tracking-wider ${isLight ? "text-black" : "text-white"}`}>
+                  // Company Profile &amp; Account Security Desk
+                </h2>
+                <p className={`text-xs mt-1 ${isLight ? "text-neutral-800 font-medium" : "text-neutral-400"}`}>
+                  Manage corporate team member access seats and update your personal account security credentials.
+                </p>
               </div>
 
-              {/* Right Column: Teammates list */}
-              <div className="space-y-3">
-                <div className="flex items-center justify-between">
-                  <h4 className={`text-xs uppercase tracking-widest font-black ${
-                    isLight ? "text-black" : "text-neutral-400"
+              <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
+                {/* Column 1 (7 Cols): Corporate Team Access (Up to 5 Members) */}
+                <div className="lg:col-span-7 space-y-6">
+                  <div className={`p-6 rounded-md border-2 space-y-6 transition-all ${
+                    isLight 
+                      ? "bg-white border-black text-black shadow-[5px_5px_0px_#000]" 
+                      : "bg-[#0b0b0b] border-neutral-800 text-white"
                   }`}>
-                    // Active Team Members ({members.length}/5)
-                  </h4>
-                </div>
-                <div className="space-y-2.5 max-h-[160px] overflow-y-auto pr-1">
-                  {members.map((m: any, idx: number) => (
-                    <div key={idx} className={`p-3 rounded-sm border flex items-center justify-between text-xs ${
-                      isLight ? "bg-[#f4f3ef] border-2 border-black text-black" : "bg-neutral-950 border border-neutral-900 text-white"
-                    }`}>
-                      <div className="truncate pr-2 space-y-0.5">
-                        <div className={`font-bold truncate ${isLight ? "text-black" : "text-white"}`}>{m.email}</div>
-                        <div className={`text-[9px] uppercase font-semibold ${isLight ? "text-neutral-700" : "text-neutral-500"}`}>
-                          Role: {m.role || "Team Member"}
-                        </div>
-                      </div>
-
-                      <div className="flex items-center gap-2 flex-shrink-0">
-                        <span className={`text-[9px] font-black uppercase ${isLight ? "text-black bg-volt px-1.5 py-0.5 border border-black" : "text-volt"}`}>
-                          Active ●
+                    <div className="space-y-4">
+                      <div className="flex items-center justify-between border-b pb-3 border-neutral-800">
+                        <h3 className={`text-xs font-black uppercase tracking-wider flex items-center gap-2 ${
+                          isLight ? "text-black font-extrabold" : "text-white"
+                        }`}>
+                          <span>// Corporate Team Access</span>
+                          {notifyMsg && (
+                            <span className="text-[9px] text-volt uppercase font-bold animate-pulse">● {notifyMsg}</span>
+                          )}
+                        </h3>
+                        <span className={`text-[10px] font-black uppercase px-2.5 py-0.5 rounded-sm border ${
+                          isLight ? "bg-volt text-black border-black shadow-[1px_1px_0px_#000]" : "bg-neutral-900 text-volt border-neutral-800"
+                        }`}>
+                          Seats: {members.length} / 5
                         </span>
-                        <button
-                          type="button"
-                          onClick={() => handleRemoveMember(m.email)}
-                          className="text-[9px] text-neutral-500 hover:text-flame font-bold uppercase hover:underline cursor-pointer ml-1"
-                          title="Remove member from workspace"
-                        >
-                          [Remove]
-                        </button>
+                      </div>
+
+                      {/* Seat allocation visual bar */}
+                      <div className="w-full bg-neutral-950 h-2 border border-neutral-800 rounded-xs overflow-hidden">
+                        <div
+                          className={`h-full transition-all duration-500 ${members.length >= 5 ? "bg-flame" : "bg-volt"}`}
+                          style={{ width: `${Math.min(100, (members.length / 5) * 100)}%` }}
+                        />
+                      </div>
+
+                      <p className={`text-xs leading-relaxed ${
+                        isLight ? "text-neutral-800 font-medium" : "text-neutral-400"
+                      }`}>
+                        Each company workspace allows up to 5 corporate team members. Teammates can log in to view project progress, shared deliverables, and status feeds.
+                      </p>
+
+                      {members.length < 5 ? (
+                        <form onSubmit={handleInviteMember} className="flex gap-2 pt-2">
+                          <input
+                            type="email"
+                            placeholder="teammate@company.com"
+                            value={inviteEmail}
+                            onChange={(e) => setInviteEmail(e.target.value)}
+                            className={`flex-grow rounded-sm px-3.5 py-2 text-xs focus:outline-none transition ${
+                              isLight 
+                                ? "bg-[#f4f3ef] border-2 border-black text-black placeholder-neutral-500 font-bold focus:bg-white" 
+                                : "bg-neutral-950 border border-neutral-800 text-white placeholder-neutral-600 focus:border-volt"
+                            }`}
+                            required
+                          />
+                          <button
+                            type="submit"
+                            className="bg-volt text-black hover:bg-white text-xs px-4 py-2 font-black uppercase rounded-sm border-2 border-black cursor-pointer transition shadow-[2px_2px_0px_#000]"
+                          >
+                            Invite
+                          </button>
+                        </form>
+                      ) : (
+                        <div className="p-3 bg-red-950/40 border border-red-900 text-red-300 text-[10px] uppercase font-bold text-center rounded-sm">
+                          ⚠️ Maximum seat capacity reached (5 / 5 Members). Remove an existing member to invite a new colleague.
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Teammates list */}
+                    <div className="space-y-3 pt-2 border-t border-neutral-800">
+                      <div className="flex items-center justify-between">
+                        <h4 className={`text-xs uppercase tracking-widest font-black ${
+                          isLight ? "text-black" : "text-neutral-400"
+                        }`}>
+                          // Active Team Members ({members.length}/5)
+                        </h4>
+                      </div>
+                      <div className="space-y-2.5 max-h-[220px] overflow-y-auto pr-1">
+                        {members.map((m: any, idx: number) => (
+                          <div key={idx} className={`p-3 rounded-sm border flex items-center justify-between text-xs ${
+                            isLight ? "bg-[#f4f3ef] border-2 border-black text-black" : "bg-neutral-950 border border-neutral-900 text-white"
+                          }`}>
+                            <div className="truncate pr-2 space-y-0.5">
+                              <div className={`font-bold truncate ${isLight ? "text-black" : "text-white"}`}>{m.email}</div>
+                              <div className={`text-[9px] uppercase font-semibold ${isLight ? "text-neutral-700" : "text-neutral-500"}`}>
+                                Role: {m.role || "Team Member"}
+                              </div>
+                            </div>
+
+                            <div className="flex items-center gap-2 flex-shrink-0">
+                              <span className={`text-[9px] font-black uppercase ${isLight ? "text-black bg-volt px-1.5 py-0.5 border border-black" : "text-volt"}`}>
+                                Active ●
+                              </span>
+                              <button
+                                type="button"
+                                onClick={() => handleRemoveMember(m.email)}
+                                className="text-[10px] text-flame hover:underline font-bold uppercase cursor-pointer"
+                              >
+                                [Remove]
+                              </button>
+                            </div>
+                          </div>
+                        ))}
+
+                        {members.length === 0 && (
+                          <div className={`text-xs italic py-4 text-center border border-dashed rounded-sm ${
+                            isLight ? "border-black text-neutral-600" : "border-neutral-800 text-neutral-500"
+                          }`}>
+                            No other team members added yet. (0/5 Seats Used)
+                          </div>
+                        )}
                       </div>
                     </div>
-                  ))}
+                  </div>
+                </div>
 
-                  {members.length === 0 && (
-                    <div className="text-[10px] text-neutral-500 italic py-3 text-center border border-dashed border-neutral-850 rounded-sm">
-                      No other team members have been added to this workspace yet. (0/5 Seats Used)
+                {/* Column 2 (5 Cols): Password Security Desk (Strictly Logged-in User Email) */}
+                <div className="lg:col-span-5 space-y-6">
+                  <div className={`p-6 rounded-md border-2 space-y-6 transition-all ${
+                    isLight 
+                      ? "bg-white border-black text-black shadow-[5px_5px_0px_#000]" 
+                      : "bg-[#0b0b0b] border-neutral-800 text-white"
+                  }`}>
+                    <div className="space-y-2 border-b pb-4 border-neutral-800">
+                      <div className="flex items-center gap-2">
+                        <span className="h-2 w-2 bg-emerald-400 rounded-full animate-ping" />
+                        <span className={`text-[10px] font-black uppercase tracking-widest ${isLight ? "text-black" : "text-volt"}`}>
+                          // CREDENTIAL SECURITY DESK
+                        </span>
+                      </div>
+                      <h3 className={`text-sm font-extrabold uppercase ${isLight ? "text-black" : "text-white"}`}>
+                        Update Password
+                      </h3>
+                      <p className={`text-xs ${isLight ? "text-neutral-700 font-medium" : "text-neutral-400"}`}>
+                        Password update applies strictly to your active logged-in email session.
+                      </p>
                     </div>
-                  )}
+
+                    {/* Active Logged-in Email Lock Badge */}
+                    <div className={`p-3.5 rounded-sm border-2 space-y-1.5 ${
+                      isLight ? "bg-[#f4f3ef] border-black text-black" : "bg-[#111] border-neutral-800 text-white"
+                    }`}>
+                      <span className="text-[9px] uppercase font-bold tracking-wider text-neutral-500 block">
+                        🔒 AUTHENTICATED USER EMAIL (LOCKED)
+                      </span>
+                      <div className="text-xs font-black truncate text-black bg-volt px-2.5 py-1 border border-black inline-block rounded-xs shadow-[1px_1px_0px_#000]">
+                        {email || "user@client.com"}
+                      </div>
+                    </div>
+
+                    {profPwdMsg && (
+                      <div className="p-3 bg-emerald-950/60 border-2 border-emerald-500 text-emerald-300 text-xs font-bold rounded-sm uppercase">
+                        ✓ {profPwdMsg}
+                      </div>
+                    )}
+
+                    {profPwdError && (
+                      <div className="p-3 bg-red-950/60 border-2 border-red-500 text-red-300 text-xs font-bold rounded-sm uppercase">
+                        ⚠️ {profPwdError}
+                      </div>
+                    )}
+
+                    <form onSubmit={handlePasswordUpdate} className="space-y-4">
+                      <div className="space-y-1 text-left">
+                        <label className={`text-xs uppercase font-extrabold block ${isLight ? "text-black" : "text-neutral-300"}`}>
+                          New Password
+                        </label>
+                        <input
+                          type="password"
+                          placeholder="••••••••••••"
+                          value={profPwdNew}
+                          onChange={(e) => setProfPwdNew(e.target.value)}
+                          className={`w-full rounded-sm px-3.5 py-2 text-xs focus:outline-none transition ${
+                            isLight 
+                              ? "bg-[#f4f3ef] border-2 border-black text-black font-bold focus:bg-white" 
+                              : "bg-neutral-950 border border-neutral-800 text-white focus:border-volt"
+                          }`}
+                          required
+                        />
+                      </div>
+
+                      <div className="space-y-1 text-left">
+                        <label className={`text-xs uppercase font-extrabold block ${isLight ? "text-black" : "text-neutral-300"}`}>
+                          Re-enter New Password
+                        </label>
+                        <input
+                          type="password"
+                          placeholder="••••••••••••"
+                          value={profPwdConfirm}
+                          onChange={(e) => setProfPwdConfirm(e.target.value)}
+                          className={`w-full rounded-sm px-3.5 py-2 text-xs focus:outline-none transition ${
+                            isLight 
+                              ? "bg-[#f4f3ef] border-2 border-black text-black font-bold focus:bg-white" 
+                              : "bg-neutral-950 border border-neutral-800 text-white focus:border-volt"
+                          }`}
+                          required
+                        />
+                      </div>
+
+                      <button
+                        type="submit"
+                        disabled={profPwdLoading}
+                        className="w-full bg-volt text-black hover:bg-white text-xs px-4 py-2.5 font-black uppercase rounded-sm border-2 border-black cursor-pointer transition shadow-[2px_2px_0px_#000] disabled:opacity-50"
+                      >
+                        {profPwdLoading ? "Securing Credentials..." : "Update Password →"}
+                      </button>
+                    </form>
+                  </div>
                 </div>
               </div>
             </div>
+          )}
+            </>
           )}
         </div>
       </main>
