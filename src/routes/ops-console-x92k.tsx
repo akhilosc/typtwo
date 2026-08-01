@@ -203,7 +203,7 @@ export interface MarketingCampaignProject {
 const DEFAULT_MARKETING_CAMPAIGNS: MarketingCampaignProject[] = [
   {
     id: "proj-meta-ugc",
-    name: "📢 Campaign 01: Q3 Meta & UGC Paid Acquisition",
+    name: "📢 Q3 Meta & UGC Ads",
     category: "Paid Performance Sourcing & UGC Scaling",
     activeStageIndex: 1,
     progressPercent: 45,
@@ -218,7 +218,7 @@ const DEFAULT_MARKETING_CAMPAIGNS: MarketingCampaignProject[] = [
   },
   {
     id: "proj-linkedin-authority",
-    name: "🚀 Campaign 02: Founder LinkedIn Authority & Content",
+    name: "🚀 Founder LinkedIn Content",
     category: "Organic Growth & Thought Leadership",
     activeStageIndex: 2,
     progressPercent: 75,
@@ -233,7 +233,7 @@ const DEFAULT_MARKETING_CAMPAIGNS: MarketingCampaignProject[] = [
   },
   {
     id: "proj-google-search",
-    name: "🔍 Campaign 03: Google Search & Commercial SEO",
+    name: "🔍 Google Search & SEO",
     category: "Search & Commercial Intent Sourcing",
     activeStageIndex: 3,
     progressPercent: 90,

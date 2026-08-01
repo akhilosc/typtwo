@@ -202,7 +202,7 @@ interface MarketingCampaignProject {
 const DEFAULT_MARKETING_CAMPAIGNS: MarketingCampaignProject[] = [
   {
     id: "proj-meta-performance",
-    name: "📢 Campaign 01: Q3 Meta & UGC Paid Acquisition",
+    name: "📢 Q3 Meta & UGC Ads",
     category: "Paid Performance Ads & Creative Sourcing",
     activeStageIndex: 1,
     progressPercent: 45,
@@ -217,7 +217,7 @@ const DEFAULT_MARKETING_CAMPAIGNS: MarketingCampaignProject[] = [
   },
   {
     id: "proj-linkedin-growth",
-    name: "🚀 Campaign 02: Founder LinkedIn Authority & Content",
+    name: "🚀 Founder LinkedIn Content",
     category: "Organic Growth & Thought Leadership",
     activeStageIndex: 2,
     progressPercent: 75,
@@ -232,7 +232,7 @@ const DEFAULT_MARKETING_CAMPAIGNS: MarketingCampaignProject[] = [
   },
   {
     id: "proj-google-search",
-    name: "🔍 Campaign 03: Google Search & Commercial SEO",
+    name: "🔍 Google Search & SEO",
     category: "Search & Commercial Intent Sourcing",
     activeStageIndex: 3,
     progressPercent: 90,
@@ -1291,48 +1291,46 @@ function DashboardPage() {
                       </div>
 
                       {/* Multi-Campaign Marketing Project Pipeline Engine */}
-                      <div className="space-y-4 text-left">
-                        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b pb-3 border-neutral-800">
+                      <div className="space-y-3 text-left">
+                        <div className="flex flex-col md:flex-row md:items-center justify-between gap-3 border-b pb-3 border-neutral-800">
                           <div className="space-y-0.5">
-                            <div className={`text-xs uppercase tracking-wider font-black ${isLight ? "text-black" : "text-neutral-400"}`}>
-                              // ACTIVE MARKETING CAMPAIGN PIPELINES ({campaignProjects.length})
+                            <div className={`text-xs uppercase tracking-wider font-black flex items-center gap-2 ${isLight ? "text-black" : "text-neutral-300"}`}>
+                              <span>// ACTIVE CAMPAIGNS ({campaignProjects.length})</span>
                             </div>
                             <p className={`text-[11px] ${isLight ? "text-neutral-800 font-medium" : "text-neutral-400"}`}>
-                              Each active marketing campaign operates on Typtwo's 4-stage recurring growth lifecycle.
+                              Select a campaign to switch live lifecycle tracking.
                             </p>
                           </div>
 
-                          <span className="text-[10px] text-volt font-mono font-bold uppercase bg-neutral-900 px-2.5 py-1 border border-neutral-800 rounded-xs shrink-0">
-                            🔁 RECURRING AGENCY ENGINE
-                          </span>
-                        </div>
+                          {/* Ultra-Compact Campaign Selector Pills */}
+                          <div className="flex flex-wrap items-center gap-1.5 shrink-0">
+                            {campaignProjects.map(cp => {
+                              const isSelected = cp.id === selectedCampaignId;
+                              const displayName = cp.name.replace(/Campaign\s*\d+\s*:\s*/gi, "").trim();
 
-                        {/* Campaign Selector Tabs */}
-                        <div className="flex flex-wrap gap-2">
-                          {campaignProjects.map(cp => {
-                            const isSelected = cp.id === selectedCampaignId;
-                            return (
-                              <button
-                                key={cp.id}
-                                type="button"
-                                onClick={() => setSelectedCampaignId(cp.id)}
-                                className={`px-3.5 py-2 rounded-sm text-xs font-black uppercase transition cursor-pointer flex items-center gap-2 border-2 ${
-                                  isSelected
-                                    ? "bg-volt text-black border-black shadow-[3px_3px_0px_#000]"
-                                    : isLight
-                                      ? "bg-[#f4f3ef] text-black border-black hover:bg-white"
-                                      : "bg-neutral-950 text-neutral-400 border-neutral-800 hover:border-neutral-700 hover:text-white"
-                                }`}
-                              >
-                                <span>{cp.name}</span>
-                                <span className={`text-[9px] px-1.5 py-0.5 rounded-xs font-bold ${
-                                  isSelected ? "bg-black text-white" : "bg-neutral-900 text-neutral-400"
-                                }`}>
-                                  {cp.progressPercent}%
-                                </span>
-                              </button>
-                            );
-                          })}
+                              return (
+                                <button
+                                  key={cp.id}
+                                  type="button"
+                                  onClick={() => setSelectedCampaignId(cp.id)}
+                                  className={`px-2.5 py-1 rounded-sm text-[11px] font-extrabold uppercase transition cursor-pointer flex items-center gap-1.5 border-2 ${
+                                    isSelected
+                                      ? "bg-volt text-black border-black shadow-[2px_2px_0px_#000]"
+                                      : isLight
+                                        ? "bg-[#f4f3ef] text-black border-black hover:bg-white"
+                                        : "bg-neutral-950 text-neutral-400 border-neutral-800 hover:border-neutral-700 hover:text-white"
+                                  }`}
+                                >
+                                  <span>{displayName}</span>
+                                  <span className={`text-[9px] px-1 py-0.2 rounded-xs font-black ${
+                                    isSelected ? "bg-black text-white" : "bg-neutral-900 text-neutral-400"
+                                  }`}>
+                                    {cp.progressPercent}%
+                                  </span>
+                                </button>
+                              );
+                            })}
+                          </div>
                         </div>
 
                         {/* Dynamic 4-Stage Stepper for Selected Campaign */}
