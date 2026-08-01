@@ -184,6 +184,69 @@ interface ProjectProgress {
   statusText: string;
 }
 
+interface MarketingCampaignProject {
+  id: string;
+  name: string;
+  category: string;
+  activeStageIndex: number;
+  progressPercent: number;
+  lastUpdated: string;
+  currentFocus: string;
+  stages: {
+    name: string;
+    subtext: string;
+    status: "DONE" | "ACTIVE" | "SCHEDULED" | "RECURRING";
+  }[];
+}
+
+const DEFAULT_MARKETING_CAMPAIGNS: MarketingCampaignProject[] = [
+  {
+    id: "proj-meta-performance",
+    name: "📢 Campaign 01: Q3 Meta & UGC Paid Acquisition",
+    category: "Paid Performance Ads & Creative Sourcing",
+    activeStageIndex: 1,
+    progressPercent: 45,
+    lastUpdated: "Today at 09:30 AM",
+    currentFocus: "A/B testing AI-generated hook variations & sourcing top UGC creators.",
+    stages: [
+      { name: "01. Strategy & Research", subtext: "Audience ICP & Hook Angle Matrix", status: "DONE" },
+      { name: "02. Creative & Production", subtext: "AI Video Ad Variations & UGC Sourcing", status: "ACTIVE" },
+      { name: "03. Media Execution", subtext: "Meta Ad Account Flighting & Scaling", status: "SCHEDULED" },
+      { name: "04. Analytics & Scaling", subtext: "ROAS Attribution Tracking & CPL Opts", status: "RECURRING" }
+    ]
+  },
+  {
+    id: "proj-linkedin-growth",
+    name: "🚀 Campaign 02: Founder LinkedIn Authority & Content",
+    category: "Organic Growth & Thought Leadership",
+    activeStageIndex: 2,
+    progressPercent: 75,
+    lastUpdated: "Yesterday at 04:15 PM",
+    currentFocus: "Daily distribution flighting & inbound lead capture optimization.",
+    stages: [
+      { name: "01. Strategy & Research", subtext: "Content Pillars & Founder Tone Guide", status: "DONE" },
+      { name: "02. Creative & Production", subtext: "Weekly Carousel & Article Drafting", status: "DONE" },
+      { name: "03. Media Execution", subtext: "Daily Distribution & Profile Flighting", status: "ACTIVE" },
+      { name: "04. Analytics & Scaling", subtext: "Engagement Sourcing & Inbound Pipeline", status: "RECURRING" }
+    ]
+  },
+  {
+    id: "proj-google-search",
+    name: "🔍 Campaign 03: Google Search & Commercial SEO",
+    category: "Search & Commercial Intent Sourcing",
+    activeStageIndex: 3,
+    progressPercent: 90,
+    lastUpdated: "2 days ago",
+    currentFocus: "Conversion Rate Optimization (CRO) & monthly keyword scaling.",
+    stages: [
+      { name: "01. Strategy & Research", subtext: "Commercial Keyword Audit", status: "DONE" },
+      { name: "02. Creative & Production", subtext: "High-Converting Landing Page Copy", status: "DONE" },
+      { name: "03. Media Execution", subtext: "Google Ads Campaign Launch", status: "DONE" },
+      { name: "04. Analytics & Scaling", subtext: "CRO Bidding & Monthly Scale Engine", status: "ACTIVE" }
+    ]
+  }
+];
+
 const DEFAULT_AGREEMENTS: AgreementDoc[] = [];
 
 const DEFAULT_PROGRESS: ProjectProgress = {
@@ -279,6 +342,9 @@ function DashboardPage() {
       setProfPwdLoading(false);
     }
   };
+
+  const [campaignProjects, setCampaignProjects] = useState<MarketingCampaignProject[]>(DEFAULT_MARKETING_CAMPAIGNS);
+  const [selectedCampaignId, setSelectedCampaignId] = useState<string>(DEFAULT_MARKETING_CAMPAIGNS[0].id);
   const [reqCategory, setReqCategory] = useState<"all" | "brand" | "social" | "access">("all");
   const [openAccordionCategory, setOpenAccordionCategory] = useState<string>("brand");
   const [theme, setTheme] = useState<"dark" | "light">("dark");
@@ -1149,6 +1215,7 @@ function DashboardPage() {
                 const readinessPercent = activeReqs.length > 0 ? Math.round((completedCount / activeReqs.length) * 100) : 100;
                 const pendingCount = activeReqs.length - completedCount;
                 const nextAction = activeReqs.find(r => !r.submitted && (!inputVals[r.id] || inputVals[r.id].trim() === ""));
+                const currentCampaign = campaignProjects.find(cp => cp.id === selectedCampaignId) || campaignProjects[0];
 
                 return (
                   <div className="space-y-6 font-mono text-left">
@@ -1211,54 +1278,128 @@ function DashboardPage() {
                         </div>
                       </div>
 
-                      {/* Recurring Marketing Agency Campaign Pipeline Stepper */}
-                      <div className="space-y-3 text-left">
-                        <div className="flex items-center justify-between">
-                          <div className={`text-xs uppercase tracking-wider font-black ${isLight ? "text-black" : "text-neutral-400"}`}>
-                            // RECURRING MARKETING AGENCY CAMPAIGN LIFECYCLE
+                      {/* Multi-Campaign Marketing Project Pipeline Engine */}
+                      <div className="space-y-4 text-left">
+                        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b pb-3 border-neutral-800">
+                          <div className="space-y-0.5">
+                            <div className={`text-xs uppercase tracking-wider font-black ${isLight ? "text-black" : "text-neutral-400"}`}>
+                              // ACTIVE MARKETING CAMPAIGN PIPELINES ({campaignProjects.length})
+                            </div>
+                            <p className={`text-[11px] ${isLight ? "text-neutral-800 font-medium" : "text-neutral-400"}`}>
+                              Each active marketing campaign operates on Typtwo's 4-stage recurring growth lifecycle.
+                            </p>
                           </div>
-                          <span className="text-[10px] text-volt font-mono font-bold uppercase bg-neutral-900 px-2 py-0.5 border border-neutral-800 rounded-xs">
-                            🔁 RECURRING ENGINE
+
+                          <span className="text-[10px] text-volt font-mono font-bold uppercase bg-neutral-900 px-2.5 py-1 border border-neutral-800 rounded-xs shrink-0">
+                            🔁 RECURRING AGENCY ENGINE
                           </span>
                         </div>
 
-                        <div className="grid grid-cols-1 sm:grid-cols-4 gap-3 font-mono">
-                          <div className={`p-3 rounded-sm text-xs font-black uppercase flex flex-col justify-between space-y-2 ${
-                            isLight ? "bg-emerald-100 border-2 border-black text-emerald-950 shadow-[2px_2px_0px_#000]" : "bg-emerald-950/40 border border-emerald-800 text-emerald-400"
-                          }`}>
-                            <div className="flex items-center justify-between">
-                              <span>01. Strategy &amp; Research</span>
-                              <span className="text-[9px] bg-black text-white px-1.5 py-0.5 rounded-xs">✓ DONE</span>
+                        {/* Campaign Selector Tabs */}
+                        <div className="flex flex-wrap gap-2">
+                          {campaignProjects.map(cp => {
+                            const isSelected = cp.id === selectedCampaignId;
+                            return (
+                              <button
+                                key={cp.id}
+                                type="button"
+                                onClick={() => setSelectedCampaignId(cp.id)}
+                                className={`px-3.5 py-2 rounded-sm text-xs font-black uppercase transition cursor-pointer flex items-center gap-2 border-2 ${
+                                  isSelected
+                                    ? "bg-volt text-black border-black shadow-[3px_3px_0px_#000]"
+                                    : isLight
+                                      ? "bg-[#f4f3ef] text-black border-black hover:bg-white"
+                                      : "bg-neutral-950 text-neutral-400 border-neutral-800 hover:border-neutral-700 hover:text-white"
+                                }`}
+                              >
+                                <span>{cp.name}</span>
+                                <span className={`text-[9px] px-1.5 py-0.5 rounded-xs font-bold ${
+                                  isSelected ? "bg-black text-white" : "bg-neutral-900 text-neutral-400"
+                                }`}>
+                                  {cp.progressPercent}%
+                                </span>
+                              </button>
+                            );
+                          })}
+                        </div>
+
+                        {/* Dynamic 4-Stage Stepper for Selected Campaign */}
+                        <div className={`p-5 rounded-sm border-2 space-y-4 transition-all ${
+                          isLight ? "bg-[#f4f3ef] border-black text-black shadow-[4px_4px_0px_#000]" : "bg-[#090909] border-neutral-800 text-white"
+                        }`}>
+                          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b pb-3 border-neutral-800">
+                            <div className="space-y-0.5">
+                              <div className="text-[10px] uppercase font-bold text-volt tracking-widest">// CAMPAIGN LIFECYCLE PIPELINE</div>
+                              <h3 className={`text-sm font-black uppercase ${isLight ? "text-black" : "text-white"}`}>{currentCampaign.name}</h3>
+                              <p className={`text-xs ${isLight ? "text-neutral-800 font-medium" : "text-neutral-400"}`}>{currentCampaign.category}</p>
                             </div>
-                            <span className="text-[9px] opacity-80 font-normal normal-case">ICP &amp; Competitor Positioning</span>
+
+                            <div className="flex items-center gap-3 shrink-0">
+                              <div className="text-right">
+                                <span className="text-[9px] text-neutral-500 block uppercase font-bold">Health Meter</span>
+                                <span className="text-xs font-black text-volt">{currentCampaign.progressPercent}% Complete</span>
+                              </div>
+                              <span className={`text-[10px] px-2 py-1 rounded-xs border font-bold ${
+                                isLight ? "bg-white text-black border-black shadow-[1px_1px_0px_#000]" : "bg-neutral-900 text-neutral-400 border-neutral-800"
+                              }`}>
+                                {currentCampaign.lastUpdated}
+                              </span>
+                            </div>
                           </div>
 
-                          <div className="p-3 bg-volt text-black border-2 border-black rounded-sm text-xs font-black uppercase flex flex-col justify-between space-y-2 shadow-[3px_3px_0px_#000]">
-                            <div className="flex items-center justify-between">
-                              <span>● 02. Creative &amp; Production</span>
-                              <span className="text-[9px] bg-black text-white px-1.5 py-0.5 rounded-xs font-black">ACTIVE</span>
-                            </div>
-                            <span className="text-[9px] opacity-90 font-bold normal-case">AI Video Ads &amp; Copy Sourcing</span>
+                          <div className="grid grid-cols-1 sm:grid-cols-4 gap-3 font-mono">
+                            {currentCampaign.stages.map((stg, idx) => {
+                              const isActive = idx === currentCampaign.activeStageIndex;
+                              const isPast = idx < currentCampaign.activeStageIndex;
+
+                              let cardClass = "";
+                              if (isActive) {
+                                cardClass = "bg-volt text-black border-2 border-black shadow-[3px_3px_0px_#000] font-black";
+                              } else if (isPast) {
+                                cardClass = isLight
+                                  ? "bg-emerald-100 border-2 border-black text-emerald-950 shadow-[2px_2px_0px_#000]"
+                                  : "bg-emerald-950/40 border border-emerald-800 text-emerald-400 font-bold";
+                              } else {
+                                cardClass = isLight
+                                  ? "bg-white border-2 border-black text-neutral-800 shadow-[2px_2px_0px_#000]"
+                                  : "bg-neutral-950 border border-neutral-800 text-neutral-500 font-normal";
+                              }
+
+                              return (
+                                <div key={idx} className={`p-3.5 rounded-sm text-xs uppercase flex flex-col justify-between space-y-2.5 ${cardClass}`}>
+                                  <div className="flex items-center justify-between">
+                                    <span>{stg.name}</span>
+                                    <span className={`text-[9px] px-1.5 py-0.5 rounded-xs font-black ${
+                                      isActive ? "bg-black text-white" : isPast ? "bg-black text-white" : "bg-neutral-800 text-neutral-400"
+                                    }`}>
+                                      {stg.status}
+                                    </span>
+                                  </div>
+                                  <span className={`text-[9px] normal-case leading-snug ${
+                                    isActive ? "font-bold opacity-90" : "opacity-80"
+                                  }`}>
+                                    {stg.subtext}
+                                  </span>
+                                </div>
+                              );
+                            })}
                           </div>
 
-                          <div className={`p-3 rounded-sm text-xs font-bold uppercase flex flex-col justify-between space-y-2 ${
-                            isLight ? "bg-white border-2 border-black text-neutral-800 shadow-[2px_2px_0px_#000]" : "bg-neutral-950 border border-neutral-800 text-neutral-500"
+                          {/* Active Focus Alert Banner */}
+                          <div className={`p-3.5 rounded-sm border-2 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs ${
+                            isLight ? "bg-white border-black text-black shadow-[2px_2px_0px_#000]" : "bg-neutral-950 border border-neutral-800 text-neutral-300"
                           }`}>
-                            <div className="flex items-center justify-between">
-                              <span>03. Media Execution</span>
-                              <span className="text-[9px] bg-neutral-800 text-neutral-400 px-1.5 py-0.5 rounded-xs">SCHEDULED</span>
+                            <div className="flex items-center gap-2.5">
+                              <span className="h-2.5 w-2.5 bg-volt rounded-full animate-ping shrink-0" />
+                              <span className="font-bold">
+                                <span className="text-volt font-black uppercase">// CURRENT STAGE FOCUS:</span> {currentCampaign.currentFocus}
+                              </span>
                             </div>
-                            <span className="text-[9px] opacity-70 font-normal normal-case">Meta, Google &amp; Ad Ops Flighting</span>
-                          </div>
-
-                          <div className={`p-3 rounded-sm text-xs font-bold uppercase flex flex-col justify-between space-y-2 ${
-                            isLight ? "bg-white border-2 border-black text-neutral-800 shadow-[2px_2px_0px_#000]" : "bg-neutral-950 border border-neutral-800 text-neutral-500"
-                          }`}>
-                            <div className="flex items-center justify-between">
-                              <span>04. Analytics &amp; Scaling</span>
-                              <span className="text-[9px] bg-neutral-800 text-neutral-400 px-1.5 py-0.5 rounded-xs">RECURRING</span>
-                            </div>
-                            <span className="text-[9px] opacity-70 font-normal normal-case">ROAS Optimization &amp; Growth</span>
+                            <span className={`text-[10px] uppercase font-black px-2 py-0.5 rounded-xs border shrink-0 ${
+                              isLight ? "bg-black text-white border-black" : "bg-neutral-900 text-volt border-neutral-800"
+                            }`}>
+                              Stage {currentCampaign.activeStageIndex + 1} of 4 Active
+                            </span>
                           </div>
                         </div>
                       </div>
