@@ -1101,24 +1101,26 @@ function DashboardPage() {
                         <div className="space-y-2 text-left">
                           <div className="flex items-center gap-2.5">
                             <span className="h-3 w-3 bg-volt rounded-full animate-ping" />
-                            <span className={`text-xs font-black uppercase tracking-widest ${isLight ? "text-black" : "text-volt"}`}>
+                            <span className={`text-xs font-black uppercase tracking-widest ${isLight ? "text-black bg-volt px-2 py-0.5 border border-black shadow-[1px_1px_0px_#000]" : "text-volt"}`}>
                               // EXECUTIVE CLIENT PORTAL
                             </span>
                           </div>
-                          <h1 className={`text-2xl font-black uppercase tracking-wide ${isLight ? "text-black" : "text-white"}`}>
+                          <h1 className={`text-2xl font-black uppercase tracking-wide ${isLight ? "text-black font-black" : "text-white"}`}>
                             {company} Operations Desk
                           </h1>
-                          <p className={`text-sm ${isLight ? "text-neutral-700 font-medium" : "text-neutral-400"}`}>
+                          <p className={`text-sm ${isLight ? "text-black font-medium" : "text-neutral-400"}`}>
                             Real-time growth campaign tracking, asset handshakes, and deliverables vault.
                           </p>
                         </div>
 
                         {/* Circular Animated SVG Radial Readiness Gauge */}
-                        <div className="flex items-center gap-6 shrink-0 bg-neutral-950/60 p-4 border border-neutral-800 rounded-sm">
+                        <div className={`flex items-center gap-6 shrink-0 p-4 rounded-sm transition-all ${
+                          isLight ? "bg-white border-2 border-black text-black shadow-[3px_3px_0px_#000]" : "bg-neutral-950/60 border border-neutral-800 text-white"
+                        }`}>
                           <div className="relative w-16 h-16 flex items-center justify-center">
                             <svg className="w-16 h-16 transform -rotate-90" viewBox="0 0 36 36">
                               <path
-                                className="text-neutral-800"
+                                className={isLight ? "text-neutral-300" : "text-neutral-800"}
                                 strokeWidth="3.5"
                                 stroke="currentColor"
                                 fill="none"
@@ -1133,11 +1135,11 @@ function DashboardPage() {
                                 d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"
                               />
                             </svg>
-                            <span className="absolute text-xs font-black text-white">{readinessPercent}%</span>
+                            <span className={`absolute text-xs font-black ${isLight ? "text-black" : "text-white"}`}>{readinessPercent}%</span>
                           </div>
 
                           <div className="space-y-1 text-left">
-                            <div className="text-[10px] text-neutral-400 font-bold uppercase">READINESS METER</div>
+                            <div className={`text-[10px] uppercase font-black ${isLight ? "text-black" : "text-neutral-400"}`}>READINESS METER</div>
                             <button
                               onClick={() => setActiveTab("requirements")}
                               className="bg-volt text-black text-xs px-4 py-1.5 uppercase font-black rounded-sm border-2 border-black hover:bg-white transition cursor-pointer shadow-[2px_2px_0px_#000]"
@@ -1150,19 +1152,25 @@ function DashboardPage() {
 
                       {/* Graphical Horizontal Phase Stepper */}
                       <div className="space-y-2 text-left">
-                        <div className="text-[10px] text-neutral-400 font-bold uppercase tracking-wider">// Campaign Operational Pipeline</div>
+                        <div className={`text-xs uppercase tracking-wider font-black ${isLight ? "text-black" : "text-neutral-400"}`}>// Campaign Operational Pipeline</div>
                         <div className="grid grid-cols-1 sm:grid-cols-4 gap-3 font-mono">
-                          <div className="p-3 bg-emerald-950/40 border border-emerald-800 rounded-sm text-emerald-400 text-xs font-bold uppercase flex items-center gap-2">
+                          <div className={`p-3 rounded-sm text-xs font-black uppercase flex items-center gap-2 ${
+                            isLight ? "bg-emerald-100 border-2 border-black text-emerald-950 shadow-[2px_2px_0px_#000]" : "bg-emerald-950/40 border border-emerald-800 text-emerald-400"
+                          }`}>
                             <span>✓</span> 1. Onboarding
                           </div>
                           <div className="p-3 bg-volt text-black border-2 border-black rounded-sm text-xs font-black uppercase flex items-center justify-between shadow-[2px_2px_0px_#000]">
                             <span>● 2. Strategy Setup</span>
-                            <span className="text-[9px] bg-black text-white px-1.5 py-0.5 rounded-xs">ACTIVE</span>
+                            <span className="text-[9px] bg-black text-white px-1.5 py-0.5 rounded-xs font-black">ACTIVE</span>
                           </div>
-                          <div className="p-3 bg-neutral-950 border border-neutral-800 rounded-sm text-neutral-500 text-xs font-bold uppercase">
+                          <div className={`p-3 rounded-sm text-xs font-bold uppercase ${
+                            isLight ? "bg-white border-2 border-black text-neutral-800 shadow-[2px_2px_0px_#000]" : "bg-neutral-950 border border-neutral-800 text-neutral-500"
+                          }`}>
                             ○ 3. Production
                           </div>
-                          <div className="p-3 bg-neutral-950 border border-neutral-800 rounded-sm text-neutral-500 text-xs font-bold uppercase">
+                          <div className={`p-3 rounded-sm text-xs font-bold uppercase ${
+                            isLight ? "bg-white border-2 border-black text-neutral-800 shadow-[2px_2px_0px_#000]" : "bg-neutral-950 border border-neutral-800 text-neutral-500"
+                          }`}>
                             ○ 4. Launch
                           </div>
                         </div>
@@ -1170,32 +1178,38 @@ function DashboardPage() {
 
                       {/* 4 Spacious Executive Key Indicator Tiles */}
                       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 pt-2">
-                        <div className={`p-5 rounded-sm border-2 ${isLight ? "bg-[#f4f3ef] border-black" : "bg-[#111111] border-neutral-800"}`}>
-                          <span className="text-[10px] text-neutral-400 uppercase font-bold tracking-wider block">// Stage Status</span>
+                        <div className={`p-5 rounded-sm border-2 ${isLight ? "bg-[#f4f3ef] border-black shadow-[3px_3px_0px_#000]" : "bg-[#111111] border-neutral-800"}`}>
+                          <span className={`text-xs uppercase font-black tracking-wider block ${isLight ? "text-black" : "text-neutral-400"}`}>// Stage Status</span>
                           <div className={`text-xl font-black uppercase mt-1 ${isLight ? "text-black" : "text-white"}`}>Phase 2</div>
-                          <span className="text-[10px] text-volt font-bold mt-1 block">● Active Operations</span>
+                          <span className={`text-[10px] font-black uppercase tracking-wider ${
+                            isLight ? "text-black bg-volt/80 px-1.5 py-0.5 border border-black inline-block mt-1.5" : "text-volt font-bold mt-1 block"
+                          }`}>● Active Operations</span>
                         </div>
 
-                        <div className={`p-5 rounded-sm border-2 ${isLight ? "bg-[#f4f3ef] border-black" : "bg-[#111111] border-neutral-800"}`}>
-                          <span className="text-[10px] text-neutral-400 uppercase font-bold tracking-wider block">// Readiness Gauge</span>
+                        <div className={`p-5 rounded-sm border-2 ${isLight ? "bg-[#f4f3ef] border-black shadow-[3px_3px_0px_#000]" : "bg-[#111111] border-neutral-800"}`}>
+                          <span className={`text-xs uppercase font-black tracking-wider block ${isLight ? "text-black" : "text-neutral-400"}`}>// Readiness Gauge</span>
                           <div className={`text-xl font-black uppercase mt-1 ${isLight ? "text-black" : "text-volt"}`}>{readinessPercent}%</div>
                           <div className="w-full bg-neutral-900 h-2 rounded-xs overflow-hidden mt-2 border border-neutral-800">
                             <div className="bg-volt h-full transition-all" style={{ width: `${readinessPercent}%` }} />
                           </div>
                         </div>
 
-                        <div className={`p-5 rounded-sm border-2 ${isLight ? "bg-[#f4f3ef] border-black" : "bg-[#111111] border-neutral-800"}`}>
-                          <span className="text-[10px] text-neutral-400 uppercase font-bold tracking-wider block">// Pending Action Items</span>
+                        <div className={`p-5 rounded-sm border-2 ${isLight ? "bg-[#f4f3ef] border-black shadow-[3px_3px_0px_#000]" : "bg-[#111111] border-neutral-800"}`}>
+                          <span className={`text-xs uppercase font-black tracking-wider block ${isLight ? "text-black" : "text-neutral-400"}`}>// Pending Action Items</span>
                           <div className={`text-xl font-black uppercase mt-1 ${isLight ? "text-black" : "text-white"}`}>{pendingCount} Items</div>
-                          <button onClick={() => setActiveTab("requirements")} className="text-xs text-volt hover:underline font-bold mt-1 block">
+                          <button onClick={() => setActiveTab("requirements")} className={`text-xs font-black mt-1 block ${
+                            isLight ? "text-black underline hover:text-neutral-700 font-extrabold" : "text-volt hover:underline"
+                          }`}>
                             Resolve Items →
                           </button>
                         </div>
 
-                        <div className={`p-5 rounded-sm border-2 ${isLight ? "bg-[#f4f3ef] border-black" : "bg-[#111111] border-neutral-800"}`}>
-                          <span className="text-[10px] text-neutral-400 uppercase font-bold tracking-wider block">// Shared Deliverables</span>
+                        <div className={`p-5 rounded-sm border-2 ${isLight ? "bg-[#f4f3ef] border-black shadow-[3px_3px_0px_#000]" : "bg-[#111111] border-neutral-800"}`}>
+                          <span className={`text-xs uppercase font-black tracking-wider block ${isLight ? "text-black" : "text-neutral-400"}`}>// Shared Deliverables</span>
                           <div className={`text-xl font-black uppercase mt-1 ${isLight ? "text-black" : "text-white"}`}>{files.length} Files</div>
-                          <button onClick={() => setActiveTab("vault")} className="text-xs text-volt hover:underline font-bold mt-1 block">
+                          <button onClick={() => setActiveTab("vault")} className={`text-xs font-black mt-1 block ${
+                            isLight ? "text-black underline hover:text-neutral-700 font-extrabold" : "text-volt hover:underline"
+                          }`}>
                             Open Vault →
                           </button>
                         </div>
@@ -2018,31 +2032,41 @@ function DashboardPage() {
 
           {/* Team Members Invite Widget (Visible when approved) */}
           {approved && (
-            <div className="bg-[#0b0b0b] border border-neutral-800 p-5 rounded-sm grid grid-cols-1 md:grid-cols-2 gap-8 text-left mt-8 font-mono">
+            <div className={`p-6 rounded-md border-2 grid grid-cols-1 md:grid-cols-2 gap-8 text-left mt-8 font-mono transition-all ${
+              isLight 
+                ? "bg-white border-black text-black shadow-[5px_5px_0px_#000]" 
+                : "bg-[#0b0b0b] border-neutral-800 text-white"
+            }`}>
               {/* Left Column: Invite Teammate */}
               <div className="space-y-4">
                 <div className="space-y-1.5">
                   <div className="flex items-center justify-between">
-                    <h3 className="text-xs font-bold text-white uppercase tracking-wider flex items-center gap-2">
+                    <h3 className={`text-xs font-black uppercase tracking-wider flex items-center gap-2 ${
+                      isLight ? "text-black font-extrabold" : "text-white"
+                    }`}>
                       <span>// Corporate Team Access</span>
                       {notifyMsg && (
                         <span className="text-[9px] text-volt uppercase font-bold animate-pulse">● {notifyMsg}</span>
                       )}
                     </h3>
-                    <span className="text-[10px] font-bold text-volt uppercase bg-neutral-900 border border-neutral-800 px-2 py-0.5 rounded-sm">
+                    <span className={`text-[10px] font-black uppercase px-2.5 py-0.5 rounded-sm border ${
+                      isLight ? "bg-volt text-black border-black shadow-[1px_1px_0px_#000]" : "bg-neutral-900 text-volt border-neutral-800"
+                    }`}>
                       Seats: {members.length} / 5
                     </span>
                   </div>
 
                   {/* Seat allocation visual bar */}
-                  <div className="w-full bg-neutral-950 h-2 border border-neutral-850 rounded-xs overflow-hidden">
+                  <div className="w-full bg-neutral-950 h-2 border border-neutral-800 rounded-xs overflow-hidden">
                     <div
                       className={`h-full transition-all duration-500 ${members.length >= 5 ? "bg-flame" : "bg-volt"}`}
                       style={{ width: `${Math.min(100, (members.length / 5) * 100)}%` }}
                     />
                   </div>
 
-                  <p className="text-[10px] text-neutral-450 font-bold uppercase pt-1">
+                  <p className={`text-xs leading-relaxed pt-1 ${
+                    isLight ? "text-neutral-800 font-medium" : "text-neutral-400"
+                  }`}>
                     Each company workspace allows up to 5 corporate team members. Teammates can log in to view project progress, shared deliverables, and status feeds.
                   </p>
                 </div>
@@ -2054,12 +2078,16 @@ function DashboardPage() {
                       placeholder="teammate@company.com"
                       value={inviteEmail}
                       onChange={(e) => setInviteEmail(e.target.value)}
-                      className="flex-grow bg-neutral-950 border border-neutral-800 rounded-sm px-3 py-1.5 text-xs text-white focus:outline-none focus:border-volt"
+                      className={`flex-grow rounded-sm px-3.5 py-2 text-xs focus:outline-none transition ${
+                        isLight 
+                          ? "bg-[#f4f3ef] border-2 border-black text-black placeholder-neutral-500 font-bold focus:bg-white" 
+                          : "bg-neutral-950 border border-neutral-800 text-white placeholder-neutral-600 focus:border-volt"
+                      }`}
                       required
                     />
                     <button
                       type="submit"
-                      className="bg-volt text-black hover:bg-white text-xs px-4 py-1.5 font-bold uppercase rounded-sm cursor-pointer transition"
+                      className="bg-volt text-black hover:bg-white text-xs px-4 py-2 font-black uppercase rounded-sm border-2 border-black cursor-pointer transition shadow-[2px_2px_0px_#000]"
                     >
                       Invite
                     </button>
@@ -2074,20 +2102,26 @@ function DashboardPage() {
               {/* Right Column: Teammates list */}
               <div className="space-y-3">
                 <div className="flex items-center justify-between">
-                  <h4 className="text-[9px] text-neutral-500 uppercase tracking-widest font-bold">// Active Team Members ({members.length}/5)</h4>
+                  <h4 className={`text-xs uppercase tracking-widest font-black ${
+                    isLight ? "text-black" : "text-neutral-400"
+                  }`}>
+                    // Active Team Members ({members.length}/5)
+                  </h4>
                 </div>
-                <div className="space-y-2 max-h-[160px] overflow-y-auto pr-1">
+                <div className="space-y-2.5 max-h-[160px] overflow-y-auto pr-1">
                   {members.map((m: any, idx: number) => (
-                    <div key={idx} className="bg-neutral-950 border border-neutral-900 px-3 py-2 rounded-sm flex items-center justify-between text-[11px]">
+                    <div key={idx} className={`p-3 rounded-sm border flex items-center justify-between text-xs ${
+                      isLight ? "bg-[#f4f3ef] border-2 border-black text-black" : "bg-neutral-950 border border-neutral-900 text-white"
+                    }`}>
                       <div className="truncate pr-2 space-y-0.5">
-                        <div className="text-white font-bold truncate">{m.email}</div>
-                        <div className="text-[9px] text-neutral-500 uppercase font-semibold">
+                        <div className={`font-bold truncate ${isLight ? "text-black" : "text-white"}`}>{m.email}</div>
+                        <div className={`text-[9px] uppercase font-semibold ${isLight ? "text-neutral-700" : "text-neutral-500"}`}>
                           Role: {m.role || "Team Member"}
                         </div>
                       </div>
 
                       <div className="flex items-center gap-2 flex-shrink-0">
-                        <span className="text-[9px] font-bold uppercase text-volt">
+                        <span className={`text-[9px] font-black uppercase ${isLight ? "text-black bg-volt px-1.5 py-0.5 border border-black" : "text-volt"}`}>
                           Active ●
                         </span>
                         <button
