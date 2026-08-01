@@ -231,6 +231,7 @@ function DashboardPage() {
   const [clientId, setClientId] = useState("");
   const [activeTab, setActiveTab] = useState<"requirements" | "vault" | "agreements" | "feed" | "billing">("requirements");
   const [reqCategory, setReqCategory] = useState<"all" | "brand" | "social" | "access">("all");
+  const [openAccordionCategory, setOpenAccordionCategory] = useState<string>("brand");
   const [theme, setTheme] = useState<"dark" | "light">("dark");
 
   useEffect(() => {
@@ -1085,267 +1086,342 @@ function DashboardPage() {
             </div>
           ) : (
             <>
-              {/* Self-Guiding Onboarding Stepper Banner */}
-              {(() => {
+              {/* Self-Guiding 2-Column Executive Workspace Layout */}
+              {activeTab === "requirements" && (() => {
+                const brandReqs = activeInputReqs.filter(r => r.id.includes("brand") || r.id.includes("icp") || r.id.includes("competitor") || r.id.includes("founder") || r.id.includes("product"));
+                const socialReqs = activeInputReqs.filter(r => r.id.includes("social"));
+                const accessReqs = activeInputReqs.filter(r => r.id.includes("ad-account") || r.id.includes("newsletter") || r.id.includes("seo") || r.id.includes("credentials"));
+
+                const brandDone = brandReqs.every(r => r.submitted || (inputVals[r.id] && inputVals[r.id].trim() !== ""));
+                const socialDone = socialReqs.every(r => r.submitted || (inputVals[r.id] && inputVals[r.id].trim() !== ""));
+                const accessDone = accessReqs.every(r => r.submitted || (inputVals[r.id] && inputVals[r.id].trim() !== ""));
+
                 const activeReqs = activeInputReqs;
                 const completedCount = activeReqs.filter(r => r.submitted || (inputVals[r.id] && inputVals[r.id].trim() !== "")).length;
                 const readinessPercent = activeReqs.length > 0 ? Math.round((completedCount / activeReqs.length) * 100) : 100;
                 const nextAction = activeReqs.find(r => !r.submitted && (!inputVals[r.id] || inputVals[r.id].trim() === ""));
 
                 return (
-                  <div className={`p-6 rounded-sm space-y-4 font-mono shadow-xl relative overflow-hidden transition-all border-2 ${
-                    isLight 
-                      ? "bg-white border-black text-black shadow-[5px_5px_0px_#000]" 
-                      : "bg-gradient-to-r from-[#0d0d0d] via-[#141414] to-[#090909] border-volt/40 text-white"
-                  }`}>
-                    <div className={`flex flex-col md:flex-row md:items-center justify-between gap-4 border-b pb-4 ${isLight ? "border-black" : "border-neutral-800"}`}>
-                      <div className="space-y-1 text-left">
-                        <div className="flex items-center gap-2">
-                          <span className={`h-2.5 w-2.5 rounded-full animate-ping ${isLight ? "bg-black" : "bg-volt"}`} />
-                          <span className={`font-black text-xs uppercase tracking-widest ${isLight ? "text-black" : "text-volt"}`}>// WORKSPACE READINESS GUIDE</span>
-                        </div>
-                        <h2 className={`text-base font-black uppercase tracking-wider ${isLight ? "text-black" : "text-white"}`}>
-                          Onboarding Progress: <span className={isLight ? "bg-volt px-1.5 py-0.5 border border-black text-black font-extrabold" : "text-volt"}>{readinessPercent}% Complete</span>
-                        </h2>
-                      </div>
-
-                      <div className="flex items-center gap-4">
-                        <div className="text-right hidden sm:block">
-                          <div className={`text-[10px] font-bold uppercase ${isLight ? "text-neutral-700" : "text-neutral-400"}`}>Assets Logged</div>
-                          <div className={`text-xs font-bold font-mono ${isLight ? "text-black" : "text-white"}`}>{completedCount} of {activeReqs.length} Provided</div>
-                        </div>
-                        <div className={`w-32 h-3 border rounded-xs overflow-hidden ${isLight ? "bg-neutral-200 border-black" : "bg-neutral-950 border-neutral-800"}`}>
-                          <div className="h-full bg-volt transition-all duration-500" style={{ width: `${readinessPercent}%` }} />
-                        </div>
-                      </div>
-                    </div>
-
-                    {nextAction ? (
-                      <div className={`p-3.5 rounded-sm flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-left border ${
-                        isLight ? "bg-[#f4f3ef] border-black text-black" : "bg-volt/10 border-volt/40 text-white"
+                  <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start font-mono">
+                    {/* LEFT COLUMN (7 Cols) - Guided Task Accordion Wizard */}
+                    <div className="lg:col-span-7 space-y-5 text-left">
+                      {/* Executive Readiness Card */}
+                      <div className={`p-5 rounded-sm space-y-3 transition-all border-2 ${
+                        isLight 
+                          ? "bg-white border-black text-black shadow-[4px_4px_0px_#000]" 
+                          : "bg-[#0c0c0c] border-volt/40 text-white"
                       }`}>
-                        <div className="space-y-0.5">
-                          <span className={`text-[9px] px-2 py-0.5 font-black uppercase rounded-xs ${isLight ? "bg-black text-white" : "bg-volt text-black"}`}>NEXT RECOMMENDED ACTION</span>
-                          <div className={`text-xs font-bold uppercase tracking-wider flex items-center gap-1.5 pt-1 ${isLight ? "text-black" : "text-white"}`}>
-                            👉 Please submit: <span className="underline font-extrabold">{nextAction.label}</span>
+                        <div className="flex justify-between items-center border-b pb-3 border-neutral-800">
+                          <div>
+                            <span className={`text-[9px] font-black uppercase tracking-widest ${isLight ? "text-black" : "text-volt"}`}>
+                              // ONBOARDING PROGRESS
+                            </span>
+                            <h2 className={`text-sm font-extrabold uppercase mt-0.5 ${isLight ? "text-black" : "text-white"}`}>
+                              Workspace Readiness: <span className={isLight ? "bg-volt px-1.5 py-0.5 border border-black font-black" : "text-volt"}>{readinessPercent}%</span>
+                            </h2>
+                          </div>
+
+                          <div className="w-24 bg-neutral-900 border border-neutral-800 h-2 rounded-xs overflow-hidden">
+                            <div className="h-full bg-volt transition-all duration-500" style={{ width: `${readinessPercent}%` }} />
                           </div>
                         </div>
-                        <button
-                          onClick={() => {
-                            setActiveTab("requirements");
-                            const el = document.getElementById(`req-box-${nextAction.id}`);
-                            if (el) el.scrollIntoView({ behavior: "smooth", block: "center" });
-                          }}
-                          className={`text-xs px-4 py-2 font-black uppercase rounded-sm cursor-pointer transition flex-shrink-0 border-2 ${
-                            isLight ? "bg-volt text-black border-black hover:bg-black hover:text-white" : "bg-volt text-black border-volt hover:bg-white"
-                          }`}
-                        >
-                          Complete Action →
-                        </button>
-                      </div>
-                    ) : (
-                      <div className={`p-3.5 text-xs font-bold uppercase text-center rounded-sm border ${
-                        isLight ? "bg-emerald-100 border-black text-emerald-950" : "bg-emerald-950/40 border-emerald-800 text-emerald-300"
-                      }`}>
-                        ✓ ALL REQUIRED BRAND ASSETS &amp; CREDENTIALS SUBMITTED. TYPTWO OPERATIONS IS ACTIVELY RUNNING YOUR CAMPAIGNS.
-                      </div>
-                    )}
-                  </div>
-                );
-              })()}
 
-              {/* Onboarding & Campaign Roadmap Grid */}
-              {activeTab === "requirements" && (
-                <div className={`p-5 rounded-sm space-y-4 border ${isLight ? "bg-white border-2 border-black shadow-[4px_4px_0px_#000]" : "bg-[#0b0b0b] border-neutral-800"}`}>
-                  <h3 className={`text-xs font-bold uppercase tracking-wider border-b pb-2 flex justify-between items-center ${isLight ? "border-black text-black" : "border-neutral-850 text-white"}`}>
-                    <span>// Client Milestones & Onboarding Roadmap</span>
-                    <span className={`text-[9px] font-bold font-mono ${isLight ? "text-neutral-700" : "text-neutral-500"}`}>MILESTONES: {safeMilestones.length}</span>
-                  </h3>
-
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    {safeMilestones.map((m) => (
-                      <div key={m.id} className={`p-4 rounded-sm space-y-3 flex flex-col justify-between border ${
-                        isLight ? "bg-[#f9f8f5] border-black" : "bg-[#0c0c0c] border-neutral-800"
-                      }`}>
-                        <div className="space-y-2 text-left">
-                          <div className="flex justify-between items-start">
-                            <span className={`text-xs font-bold uppercase tracking-wide truncate max-w-[200px] ${isLight ? "text-black" : "text-white"}`}>{m.title}</span>
-                            <span className={`text-[10px] font-bold shrink-0 ${isLight ? "text-black bg-volt px-1 border border-black" : "text-volt"}`}>{m.percentage}%</span>
-                          </div>
-                          <div className={`w-full h-1.5 rounded-full overflow-hidden border ${isLight ? "bg-neutral-200 border-black" : "bg-neutral-950 border-neutral-850"}`}>
-                            <div className="bg-volt h-full transition-all duration-300" style={{ width: `${m.percentage}%` }} />
-                          </div>
-                          <p className={`text-[11px] leading-relaxed font-bold uppercase ${isLight ? "text-neutral-700" : "text-neutral-450"}`}>{m.statusText}</p>
-                        </div>
-
-                        {m.deliverables && m.deliverables.length > 0 && (
-                          <div className={`pt-2.5 border-t mt-2 space-y-1.5 text-left ${isLight ? "border-black" : "border-neutral-900"}`}>
-                            <span className={`text-[8px] font-bold uppercase block tracking-wider ${isLight ? "text-neutral-600" : "text-neutral-500"}`}>Milestone Deliverables:</span>
-                            {m.deliverables.map((del, delIdx) => (
-                              <a
-                                key={delIdx}
-                                href={del.url}
-                                target="_blank"
-                                rel="noreferrer"
-                                className={`text-[10px] underline flex items-center gap-1.5 truncate font-bold ${
-                                  isLight ? "text-black hover:text-neutral-600" : "text-volt hover:text-white"
-                                }`}
-                              >
-                                <span>📄</span> {del.name} ↗
-                              </a>
-                            ))}
+                        {nextAction && (
+                          <div className={`p-3 text-xs rounded-sm border flex items-center justify-between gap-2 ${
+                            isLight ? "bg-[#f4f3ef] border-black text-black" : "bg-volt/10 border-volt/30 text-white"
+                          }`}>
+                            <span className="truncate font-bold">👉 Next Step: Submit {nextAction.label}</span>
+                            <button
+                              onClick={() => {
+                                if (brandReqs.some(r => r.id === nextAction.id)) setOpenAccordionCategory("brand");
+                                else if (socialReqs.some(r => r.id === nextAction.id)) setOpenAccordionCategory("social");
+                                else setOpenAccordionCategory("access");
+                              }}
+                              className="text-[10px] bg-volt text-black font-extrabold px-2.5 py-1 uppercase rounded-xs cursor-pointer flex-shrink-0"
+                            >
+                              Expand →
+                            </button>
                           </div>
                         )}
                       </div>
-                    ))}
-                  </div>
-                </div>
-              )}
 
-              {/* Categorized Requirements Collection Hub */}
-              {activeTab === "requirements" && (() => {
-                const brandReqs = activeInputReqs.filter(r => r.id.includes("brand") || r.id.includes("icp") || r.id.includes("competitor") || r.id.includes("founder") || r.id.includes("product"));
-                const socialReqs = activeInputReqs.filter(r => r.id.includes("social"));
-                const accessReqs = activeInputReqs.filter(r => r.id.includes("ad-account") || r.id.includes("newsletter") || r.id.includes("seo") || r.id.includes("credentials"));
+                      {/* STEP 1 ACCORDION: Brand Identity Assets */}
+                      <div className={`rounded-sm border-2 transition-all ${
+                        isLight 
+                          ? "bg-white border-black shadow-[3px_3px_0px_#000]" 
+                          : "bg-[#0b0b0b] border-neutral-800"
+                      }`}>
+                        <button
+                          onClick={() => setOpenAccordionCategory(openAccordionCategory === "brand" ? "" : "brand")}
+                          className={`w-full p-4 flex items-center justify-between text-left cursor-pointer border-b ${
+                            isLight ? "border-black bg-[#faf8f2]" : "border-neutral-850 bg-[#0d0d0d]"
+                          }`}
+                        >
+                          <div className="flex items-center gap-3">
+                            <span className={`text-xs font-black uppercase px-2 py-0.5 border rounded-xs ${
+                              brandDone ? "bg-emerald-500 text-black border-black" : "bg-volt text-black border-black"
+                            }`}>
+                              {brandDone ? "✓ STEP 1 DONE" : "STEP 1"}
+                            </span>
+                            <span className={`text-sm font-extrabold uppercase ${isLight ? "text-black" : "text-white"}`}>
+                              📁 Brand Identity &amp; Assets
+                            </span>
+                          </div>
 
-                const filteredReqs = reqCategory === "brand"
-                  ? brandReqs
-                  : reqCategory === "social"
-                  ? socialReqs
-                  : reqCategory === "access"
-                  ? accessReqs
-                  : activeInputReqs;
+                          <div className="flex items-center gap-2">
+                            <span className={`text-[10px] font-bold ${isLight ? "text-neutral-700" : "text-neutral-400"}`}>
+                              {brandReqs.filter(r => r.submitted || inputVals[r.id]).length}/{brandReqs.length} Submitted
+                            </span>
+                            <span className="text-xs font-bold text-neutral-400">
+                              {openAccordionCategory === "brand" ? "▲" : "▼"}
+                            </span>
+                          </div>
+                        </button>
 
-                return (
-                  <div className="space-y-6">
-                    <div className={`flex flex-col sm:flex-row sm:items-center justify-between border-b pb-3 gap-3 ${isLight ? "border-black" : "border-neutral-800"}`}>
-                      <div className="space-y-0.5 text-left">
-                        <h2 className={`text-base font-bold uppercase tracking-wider ${isLight ? "text-black font-extrabold" : "text-white"}`}>// Onboarding Assets &amp; Access Links</h2>
-                        <p className={`text-xs ${isLight ? "text-neutral-700" : "text-neutral-400"}`}>Select a category below to submit required assets for your workspace.</p>
+                        {openAccordionCategory === "brand" && (
+                          <div className="p-4 space-y-3 border-t border-neutral-800">
+                            {brandReqs.map((r) => {
+                              const isSub = r.submitted || (inputVals[r.id] && inputVals[r.id].trim() !== "");
+                              return (
+                                <div key={r.id} className={`p-3.5 rounded-sm border space-y-2 ${
+                                  isLight ? "bg-[#f4f3ef] border-black" : "bg-[#0f0f0f] border-neutral-800"
+                                }`}>
+                                  <div className="flex justify-between items-center">
+                                    <h4 className={`text-xs font-bold uppercase ${isLight ? "text-black" : "text-white"}`}>{r.label}</h4>
+                                    {isSub && <span className="text-[9px] text-emerald-400 font-bold uppercase">✓ Saved</span>}
+                                  </div>
+                                  <div className="flex gap-2">
+                                    <input
+                                      type="text"
+                                      value={inputVals[r.id] || ""}
+                                      onChange={(e) => handleInputChange(r.id, e.target.value)}
+                                      placeholder="Paste Google Drive / Dropbox link..."
+                                      className={`flex-grow border rounded-sm px-3 py-1.5 text-xs font-mono ${
+                                        isLight ? "bg-white border-black text-black" : "bg-neutral-950 border-neutral-800 text-white"
+                                      }`}
+                                    />
+                                    <button
+                                      onClick={() => submitRequirement(r.id)}
+                                      className="bg-volt text-black text-xs px-4 py-1.5 uppercase font-bold rounded-sm cursor-pointer hover:bg-white transition"
+                                    >
+                                      Save
+                                    </button>
+                                  </div>
+                                </div>
+                              );
+                            })}
+                          </div>
+                        )}
                       </div>
 
-                      {/* Category Filter Tabs */}
-                      <div className="flex flex-wrap gap-1.5 font-mono">
+                      {/* STEP 2 ACCORDION: Social Profiles */}
+                      <div className={`rounded-sm border-2 transition-all ${
+                        isLight 
+                          ? "bg-white border-black shadow-[3px_3px_0px_#000]" 
+                          : "bg-[#0b0b0b] border-neutral-800"
+                      }`}>
                         <button
-                          onClick={() => setReqCategory("all")}
-                          className={`px-3 py-1.5 text-[10px] uppercase font-bold rounded-sm cursor-pointer transition border-2 ${
-                            reqCategory === "all" 
-                              ? "bg-volt text-black border-black shadow-[2px_2px_0px_#000]" 
-                              : isLight ? "bg-white text-black border-black hover:bg-neutral-200" : "bg-neutral-950 text-neutral-400 border-neutral-800 hover:text-white"
+                          onClick={() => setOpenAccordionCategory(openAccordionCategory === "social" ? "" : "social")}
+                          className={`w-full p-4 flex items-center justify-between text-left cursor-pointer border-b ${
+                            isLight ? "border-black bg-[#faf8f2]" : "border-neutral-850 bg-[#0d0d0d]"
                           }`}
                         >
-                          All ({activeInputReqs.length})
+                          <div className="flex items-center gap-3">
+                            <span className={`text-xs font-black uppercase px-2 py-0.5 border rounded-xs ${
+                              socialDone ? "bg-emerald-500 text-black border-black" : "bg-volt text-black border-black"
+                            }`}>
+                              {socialDone ? "✓ STEP 2 DONE" : "STEP 2"}
+                            </span>
+                            <span className={`text-sm font-extrabold uppercase ${isLight ? "text-black" : "text-white"}`}>
+                              🌐 Social Channels &amp; Profiles
+                            </span>
+                          </div>
+
+                          <div className="flex items-center gap-2">
+                            <span className={`text-[10px] font-bold ${isLight ? "text-neutral-700" : "text-neutral-400"}`}>
+                              {socialReqs.filter(r => r.submitted || inputVals[r.id]).length}/{socialReqs.length} Submitted
+                            </span>
+                            <span className="text-xs font-bold text-neutral-400">
+                              {openAccordionCategory === "social" ? "▲" : "▼"}
+                            </span>
+                          </div>
                         </button>
 
+                        {openAccordionCategory === "social" && (
+                          <div className="p-4 space-y-3 border-t border-neutral-800">
+                            {socialReqs.map((r) => {
+                              const isSub = r.submitted || (inputVals[r.id] && inputVals[r.id].trim() !== "");
+                              return (
+                                <div key={r.id} className={`p-3.5 rounded-sm border space-y-2 ${
+                                  isLight ? "bg-[#f4f3ef] border-black" : "bg-[#0f0f0f] border-neutral-800"
+                                }`}>
+                                  <div className="flex justify-between items-center">
+                                    <h4 className={`text-xs font-bold uppercase ${isLight ? "text-black" : "text-white"}`}>{r.label}</h4>
+                                    {isSub && <span className="text-[9px] text-emerald-400 font-bold uppercase">✓ Saved</span>}
+                                  </div>
+                                  <div className="flex gap-2">
+                                    <input
+                                      type="text"
+                                      value={inputVals[r.id] || ""}
+                                      onChange={(e) => handleInputChange(r.id, e.target.value)}
+                                      placeholder="https://linkedin.com/..."
+                                      className={`flex-grow border rounded-sm px-3 py-1.5 text-xs font-mono ${
+                                        isLight ? "bg-white border-black text-black" : "bg-neutral-950 border-neutral-800 text-white"
+                                      }`}
+                                    />
+                                    <button
+                                      onClick={() => submitRequirement(r.id)}
+                                      className="bg-volt text-black text-xs px-4 py-1.5 uppercase font-bold rounded-sm cursor-pointer hover:bg-white transition"
+                                    >
+                                      Save
+                                    </button>
+                                  </div>
+                                </div>
+                              );
+                            })}
+                          </div>
+                        )}
+                      </div>
+
+                      {/* STEP 3 ACCORDION: Ad Accounts & Access */}
+                      <div className={`rounded-sm border-2 transition-all ${
+                        isLight 
+                          ? "bg-white border-black shadow-[3px_3px_0px_#000]" 
+                          : "bg-[#0b0b0b] border-neutral-800"
+                      }`}>
                         <button
-                          onClick={() => setReqCategory("brand")}
-                          className={`px-3 py-1.5 text-[10px] uppercase font-bold rounded-sm cursor-pointer transition border-2 ${
-                            reqCategory === "brand" 
-                              ? "bg-volt text-black border-black shadow-[2px_2px_0px_#000]" 
-                              : isLight ? "bg-white text-black border-black hover:bg-neutral-200" : "bg-neutral-950 text-neutral-400 border-neutral-800 hover:text-white"
+                          onClick={() => setOpenAccordionCategory(openAccordionCategory === "access" ? "" : "access")}
+                          className={`w-full p-4 flex items-center justify-between text-left cursor-pointer border-b ${
+                            isLight ? "border-black bg-[#faf8f2]" : "border-neutral-850 bg-[#0d0d0d]"
                           }`}
                         >
-                          📁 Brand &amp; Assets ({brandReqs.length})
+                          <div className="flex items-center gap-3">
+                            <span className={`text-xs font-black uppercase px-2 py-0.5 border rounded-xs ${
+                              accessDone ? "bg-emerald-500 text-black border-black" : "bg-volt text-black border-black"
+                            }`}>
+                              {accessDone ? "✓ STEP 3 DONE" : "STEP 3"}
+                            </span>
+                            <span className={`text-sm font-extrabold uppercase ${isLight ? "text-black" : "text-white"}`}>
+                              🔐 Ad Access &amp; Credentials
+                            </span>
+                          </div>
+
+                          <div className="flex items-center gap-2">
+                            <span className={`text-[10px] font-bold ${isLight ? "text-neutral-700" : "text-neutral-400"}`}>
+                              {accessReqs.filter(r => r.submitted || inputVals[r.id]).length}/{accessReqs.length} Submitted
+                            </span>
+                            <span className="text-xs font-bold text-neutral-400">
+                              {openAccordionCategory === "access" ? "▲" : "▼"}
+                            </span>
+                          </div>
                         </button>
 
-                        <button
-                          onClick={() => setReqCategory("social")}
-                          className={`px-3 py-1.5 text-[10px] uppercase font-bold rounded-sm cursor-pointer transition border-2 ${
-                            reqCategory === "social" 
-                              ? "bg-volt text-black border-black shadow-[2px_2px_0px_#000]" 
-                              : isLight ? "bg-white text-black border-black hover:bg-neutral-200" : "bg-neutral-950 text-neutral-400 border-neutral-800 hover:text-white"
-                          }`}
-                        >
-                          🌐 Social Profiles ({socialReqs.length})
-                        </button>
-
-                        <button
-                          onClick={() => setReqCategory("access")}
-                          className={`px-3 py-1.5 text-[10px] uppercase font-bold rounded-sm cursor-pointer transition border-2 ${
-                            reqCategory === "access" 
-                              ? "bg-volt text-black border-black shadow-[2px_2px_0px_#000]" 
-                              : isLight ? "bg-white text-black border-black hover:bg-neutral-200" : "bg-neutral-950 text-neutral-400 border-neutral-800 hover:text-white"
-                          }`}
-                        >
-                          🔐 Ad Access &amp; Keys ({accessReqs.length})
-                        </button>
+                        {openAccordionCategory === "access" && (
+                          <div className="p-4 space-y-3 border-t border-neutral-800">
+                            {accessReqs.map((r) => {
+                              const isSub = r.submitted || (inputVals[r.id] && inputVals[r.id].trim() !== "");
+                              return (
+                                <div key={r.id} className={`p-3.5 rounded-sm border space-y-2 ${
+                                  isLight ? "bg-[#f4f3ef] border-black" : "bg-[#0f0f0f] border-neutral-800"
+                                }`}>
+                                  <div className="flex justify-between items-center">
+                                    <h4 className={`text-xs font-bold uppercase ${isLight ? "text-black" : "text-white"}`}>{r.label}</h4>
+                                    {isSub && <span className="text-[9px] text-emerald-400 font-bold uppercase">✓ Saved</span>}
+                                  </div>
+                                  <div className="flex gap-2">
+                                    <input
+                                      type="text"
+                                      value={inputVals[r.id] || ""}
+                                      onChange={(e) => handleInputChange(r.id, e.target.value)}
+                                      placeholder="Enter access details or drive link..."
+                                      className={`flex-grow border rounded-sm px-3 py-1.5 text-xs font-mono ${
+                                        isLight ? "bg-white border-black text-black" : "bg-neutral-950 border-neutral-800 text-white"
+                                      }`}
+                                    />
+                                    <button
+                                      onClick={() => submitRequirement(r.id)}
+                                      className="bg-volt text-black text-xs px-4 py-1.5 uppercase font-bold rounded-sm cursor-pointer hover:bg-white transition"
+                                    >
+                                      Save
+                                    </button>
+                                  </div>
+                                </div>
+                              );
+                            })}
+                          </div>
+                        )}
                       </div>
                     </div>
 
-                    <div className="space-y-4">
-                      {filteredReqs.map((r) => {
-                        const isSubmitted = r.submitted || (inputVals[r.id] && inputVals[r.id].trim() !== "");
-                        return (
-                          <div 
-                            key={r.id}
-                            id={`req-box-${r.id}`}
-                            className={`p-5 rounded-sm border-2 transition-all text-left space-y-3 ${
-                              isSubmitted 
-                                ? isLight ? "bg-emerald-50 border-black shadow-[3px_3px_0px_#000]" : "bg-[#09150f] border-emerald-900/80" 
-                                : isLight ? "bg-white border-black shadow-[3px_3px_0px_#000]" : "bg-[#0c0c0c] border-neutral-800 hover:border-volt/40"
-                            }`}
+                    {/* RIGHT COLUMN (5 Cols) - Executive Desk & Quick Vault Sidebar */}
+                    <div className="lg:col-span-5 space-y-5 text-left">
+                      {/* Active Milestone Card */}
+                      <div className={`p-5 rounded-sm space-y-3 border-2 ${
+                        isLight ? "bg-white border-black shadow-[3px_3px_0px_#000]" : "bg-[#0c0c0c] border-neutral-800"
+                      }`}>
+                        <div className="flex items-center gap-2">
+                          <span className="h-2 w-2 bg-volt rounded-full animate-ping" />
+                          <span className={`text-[9px] font-black uppercase tracking-widest ${isLight ? "text-black" : "text-volt"}`}>
+                            // ACTIVE CAMPAIGN STAGE
+                          </span>
+                        </div>
+                        <h3 className={`text-sm font-extrabold uppercase ${isLight ? "text-black" : "text-white"}`}>
+                          Phase 1: Brand &amp; Growth Alignment
+                        </h3>
+                        <p className={`text-xs leading-relaxed ${isLight ? "text-neutral-700" : "text-neutral-400"}`}>
+                          Typtwo operations is parsing your submitted brand kits to configure targeted campaign pipelines.
+                        </p>
+                      </div>
+
+                      {/* Quick Vault Deliverables */}
+                      <div className={`p-5 rounded-sm space-y-3 border-2 ${
+                        isLight ? "bg-white border-black shadow-[3px_3px_0px_#000]" : "bg-[#0c0c0c] border-neutral-800"
+                      }`}>
+                        <div className="flex justify-between items-center border-b pb-2 border-neutral-800">
+                          <span className={`text-xs font-extrabold uppercase ${isLight ? "text-black" : "text-white"}`}>
+                            📁 Shared Vault ({files.length})
+                          </span>
+                          <button
+                            onClick={() => setActiveTab("vault")}
+                            className="text-[9px] text-volt hover:underline uppercase font-bold"
                           >
-                            <div className="flex items-center justify-between">
-                              <span className={`text-[9px] uppercase tracking-wider font-bold px-2 py-0.5 border rounded-xs ${
-                                isLight ? "bg-[#eeebe3] text-black border-black" : "bg-neutral-950 text-neutral-400 border-neutral-850"
-                              }`}>
-                                Category: {r.id.includes("social") ? "Social Media" : r.id.includes("brand") || r.id.includes("icp") ? "Brand Assets" : "Access & Credentials"}
-                              </span>
+                            View All →
+                          </button>
+                        </div>
 
-                              {isSubmitted ? (
-                                <span className={`text-[9px] px-2.5 py-0.5 font-bold rounded-sm uppercase border ${
-                                  isLight ? "bg-emerald-200 text-black border-black" : "bg-emerald-950 text-emerald-300 border-emerald-800"
-                                }`}>
-                                  ✓ Submitted &amp; Verified
-                                </span>
-                              ) : (
-                                <span className={`text-[9px] px-2.5 py-0.5 font-bold rounded-sm uppercase border animate-pulse ${
-                                  isLight ? "bg-volt text-black border-black" : "bg-volt/10 text-volt border-volt/30"
-                                }`}>
-                                  ● Action Required
-                                </span>
-                              )}
-                            </div>
-
-                            <div>
-                              <h3 className={`text-sm font-bold uppercase tracking-wide ${isLight ? "text-black" : "text-white"}`}>{r.label}</h3>
-                              <p className={`text-[11px] mt-1 ${isLight ? "text-neutral-700 font-medium" : "text-neutral-400"}`}>
-                                {r.type === "drive_link" 
-                                  ? "Paste private Google Drive, Dropbox, or Figma cloud link below. Access will be requested by Typtwo leads." 
-                                  : "Enter corporate profile URL or handle details below."}
-                              </p>
-                            </div>
-
-                            <div className="flex flex-col sm:flex-row gap-2 pt-1">
-                              <input
-                                type="text"
-                                value={inputVals[r.id] || ""}
-                                onChange={(e) => handleInputChange(r.id, e.target.value)}
-                                placeholder={r.type === "drive_link" ? "https://drive.google.com/drive/folders/..." : "https://linkedin.com/in/..."}
-                                className={`flex-grow border rounded-sm px-3.5 py-2 text-xs focus:outline-none focus:border-volt font-mono ${
-                                  isLight ? "bg-white border-black text-black placeholder:text-neutral-500" : "bg-neutral-950 border-neutral-800 text-white"
-                                }`}
-                              />
+                        <div className="space-y-2">
+                          {files.slice(0, 3).map((f) => (
+                            <div key={f.name} className={`p-2.5 rounded-sm border flex items-center justify-between text-xs ${
+                              isLight ? "bg-[#f4f3ef] border-black" : "bg-[#080808] border-neutral-800"
+                            }`}>
+                              <span className={`truncate font-bold max-w-[160px] ${isLight ? "text-black" : "text-white"}`}>{f.name}</span>
                               <button
-                                onClick={() => submitRequirement(r.id)}
-                                className={`text-xs px-6 py-2 uppercase font-black rounded-sm transition cursor-pointer flex-shrink-0 border-2 ${
-                                  isLight ? "bg-volt text-black border-black hover:bg-black hover:text-white" : "bg-volt text-black border-volt hover:bg-white"
-                                }`}
+                                onClick={() => safeDownloadOrOpenDoc(f.url, f.name)}
+                                className="text-[9px] bg-volt text-black px-2 py-0.5 font-bold uppercase rounded-xs"
                               >
-                                {isSubmitted ? "Update Link" : "Save Asset →"}
+                                Get ↗
                               </button>
                             </div>
-                          </div>
-                        );
-                      })}
+                          ))}
 
-                      {filteredReqs.length === 0 && (
-                        <div className={`border-2 border-dashed rounded-sm p-10 text-center text-xs font-mono ${
-                          isLight ? "border-black text-neutral-700 bg-white" : "border-neutral-800 text-neutral-400"
-                        }`}>
-                          No items match the selected category filter.
+                          {files.length === 0 && (
+                            <div className="text-[10px] text-neutral-500 py-3 text-center uppercase font-mono">
+                              Vault documents will appear here once uploaded by your account director.
+                            </div>
+                          )}
                         </div>
-                      )}
+                      </div>
+
+                      {/* Assigned Account Lead Desk */}
+                      <div className={`p-5 rounded-sm space-y-2 border-2 ${
+                        isLight ? "bg-white border-black shadow-[3px_3px_0px_#000]" : "bg-[#0c0c0c] border-neutral-800"
+                      }`}>
+                        <span className={`text-[9px] font-black uppercase tracking-widest ${isLight ? "text-black" : "text-volt"}`}>
+                          // ACCOUNT DIRECTOR
+                        </span>
+                        <div className={`text-xs font-bold ${isLight ? "text-black" : "text-white"}`}>Typtwo Senior Growth Lead</div>
+                        <div className="text-[10px] text-neutral-500 font-mono">ops@typtwo.com • Priority Response Desk</div>
+                      </div>
                     </div>
                   </div>
                 );
