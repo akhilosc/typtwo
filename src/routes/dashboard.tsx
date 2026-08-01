@@ -596,6 +596,11 @@ function DashboardPage() {
 
             setMembers(parseJsonArray(data.members));
 
+            const rawCampaigns = parseJsonArray(data.campaigns || localStorage.getItem(`t2_campaigns_${id}`));
+            if (rawCampaigns.length > 0) {
+              setCampaignProjects(rawCampaigns);
+            }
+
             const rawMilestones = parseJsonArray(data.milestones);
             setMilestones(rawMilestones.length > 0 ? rawMilestones : [
               {
@@ -713,6 +718,13 @@ function DashboardPage() {
         ];
         setMilestones(defaultM);
         localStorage.setItem(milestonesKey, JSON.stringify(defaultM));
+      }
+
+      // 6. Load Marketing Campaigns
+      const storedCampaigns = localStorage.getItem(`t2_campaigns_${id}`);
+      if (storedCampaigns) {
+        const parsed = parseJsonArray(storedCampaigns);
+        if (parsed.length > 0) setCampaignProjects(parsed);
       }
 
       const storedAudits = localStorage.getItem(auditLogsKey);
@@ -1401,45 +1413,6 @@ function DashboardPage() {
                               Stage {currentCampaign.activeStageIndex + 1} of 4 Active
                             </span>
                           </div>
-                        </div>
-                      </div>
-
-                      {/* 4 Spacious Executive Key Indicator Tiles */}
-                      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 pt-2">
-                        <div className={`p-5 rounded-sm border-2 ${isLight ? "bg-[#f4f3ef] border-black shadow-[3px_3px_0px_#000]" : "bg-[#111111] border-neutral-800"}`}>
-                          <span className={`text-xs uppercase font-black tracking-wider block ${isLight ? "text-black" : "text-neutral-400"}`}>// Stage Status</span>
-                          <div className={`text-xl font-black uppercase mt-1 ${isLight ? "text-black" : "text-white"}`}>Phase 2</div>
-                          <span className={`text-[10px] font-black uppercase tracking-wider ${
-                            isLight ? "text-black bg-volt/80 px-1.5 py-0.5 border border-black inline-block mt-1.5" : "text-volt font-bold mt-1 block"
-                          }`}>● Active Operations</span>
-                        </div>
-
-                        <div className={`p-5 rounded-sm border-2 ${isLight ? "bg-[#f4f3ef] border-black shadow-[3px_3px_0px_#000]" : "bg-[#111111] border-neutral-800"}`}>
-                          <span className={`text-xs uppercase font-black tracking-wider block ${isLight ? "text-black" : "text-neutral-400"}`}>// Readiness Gauge</span>
-                          <div className={`text-xl font-black uppercase mt-1 ${isLight ? "text-black" : "text-volt"}`}>{readinessPercent}%</div>
-                          <div className="w-full bg-neutral-900 h-2 rounded-xs overflow-hidden mt-2 border border-neutral-800">
-                            <div className="bg-volt h-full transition-all" style={{ width: `${readinessPercent}%` }} />
-                          </div>
-                        </div>
-
-                        <div className={`p-5 rounded-sm border-2 ${isLight ? "bg-[#f4f3ef] border-black shadow-[3px_3px_0px_#000]" : "bg-[#111111] border-neutral-800"}`}>
-                          <span className={`text-xs uppercase font-black tracking-wider block ${isLight ? "text-black" : "text-neutral-400"}`}>// Pending Action Items</span>
-                          <div className={`text-xl font-black uppercase mt-1 ${isLight ? "text-black" : "text-white"}`}>{pendingCount} Items</div>
-                          <button onClick={() => setActiveTab("requirements")} className={`text-xs font-black mt-1 block ${
-                            isLight ? "text-black underline hover:text-neutral-700 font-extrabold" : "text-volt hover:underline"
-                          }`}>
-                            Resolve Items →
-                          </button>
-                        </div>
-
-                        <div className={`p-5 rounded-sm border-2 ${isLight ? "bg-[#f4f3ef] border-black shadow-[3px_3px_0px_#000]" : "bg-[#111111] border-neutral-800"}`}>
-                          <span className={`text-xs uppercase font-black tracking-wider block ${isLight ? "text-black" : "text-neutral-400"}`}>// Shared Deliverables</span>
-                          <div className={`text-xl font-black uppercase mt-1 ${isLight ? "text-black" : "text-white"}`}>{files.length} Files</div>
-                          <button onClick={() => setActiveTab("vault")} className={`text-xs font-black mt-1 block ${
-                            isLight ? "text-black underline hover:text-neutral-700 font-extrabold" : "text-volt hover:underline"
-                          }`}>
-                            Open Vault →
-                          </button>
                         </div>
                       </div>
                     </div>

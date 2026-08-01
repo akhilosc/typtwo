@@ -183,8 +183,70 @@ export interface Invoice {
     name: string;
     url: string;
   };
-  notes?: string;
 }
+
+export interface MarketingCampaignProject {
+  id: string;
+  name: string;
+  category: string;
+  activeStageIndex: number;
+  progressPercent: number;
+  lastUpdated: string;
+  currentFocus: string;
+  stages: {
+    name: string;
+    subtext: string;
+    status: string;
+  }[];
+}
+
+const DEFAULT_MARKETING_CAMPAIGNS: MarketingCampaignProject[] = [
+  {
+    id: "proj-meta-ugc",
+    name: "📢 Campaign 01: Q3 Meta & UGC Paid Acquisition",
+    category: "Paid Performance Sourcing & UGC Scaling",
+    activeStageIndex: 1,
+    progressPercent: 45,
+    lastUpdated: "Updated 2 hours ago",
+    currentFocus: "A/B testing AI-generated video hook variations & sourcing top UGC creators.",
+    stages: [
+      { name: "01. Strategy & Research", subtext: "Persona Mapping & Offer Architecture", status: "DONE" },
+      { name: "02. Creative & Production", subtext: "UGC Scripting & Dynamic Video Hooks", status: "ACTIVE" },
+      { name: "03. Media Execution", subtext: "Meta Ads Manager Flighting & CBO Setup", status: "SCHEDULED" },
+      { name: "04. Analytics & Scaling", subtext: "ROAS Optimization & Creative Fatigue Refresh", status: "RECURRING" }
+    ]
+  },
+  {
+    id: "proj-linkedin-authority",
+    name: "🚀 Campaign 02: Founder LinkedIn Authority & Content",
+    category: "Organic Growth & Thought Leadership",
+    activeStageIndex: 2,
+    progressPercent: 75,
+    lastUpdated: "Yesterday at 04:15 PM",
+    currentFocus: "Daily distribution flighting & inbound lead capture optimization.",
+    stages: [
+      { name: "01. Strategy & Research", subtext: "Content Pillars & Founder Tone Guide", status: "DONE" },
+      { name: "02. Creative & Production", subtext: "Weekly Carousel & Article Drafting", status: "DONE" },
+      { name: "03. Media Execution", subtext: "Daily Distribution & Profile Flighting", status: "ACTIVE" },
+      { name: "04. Analytics & Scaling", subtext: "Engagement Sourcing & Inbound Pipeline", status: "RECURRING" }
+    ]
+  },
+  {
+    id: "proj-google-search",
+    name: "🔍 Campaign 03: Google Search & Commercial SEO",
+    category: "Search & Commercial Intent Sourcing",
+    activeStageIndex: 3,
+    progressPercent: 90,
+    lastUpdated: "2 days ago",
+    currentFocus: "Conversion Rate Optimization (CRO) & monthly keyword scaling.",
+    stages: [
+      { name: "01. Strategy & Research", subtext: "Commercial Keyword Audit", status: "DONE" },
+      { name: "02. Creative & Production", subtext: "High-Converting Landing Page Copy", status: "DONE" },
+      { name: "03. Media Execution", subtext: "Google Ads Campaign Launch", status: "DONE" },
+      { name: "04. Analytics & Scaling", subtext: "CRO Bidding & Monthly Scale Engine", status: "ACTIVE" }
+    ]
+  }
+];
 
 const DEFAULT_CLIENTS: Client[] = [];
 
@@ -453,7 +515,13 @@ function AdminPage() {
   const [viewMode, setViewMode] = useState<"master" | "company">("master");
 
   // Tab selector for company management desk
-  const [activeFormTab, setActiveFormTab] = useState<"requirements" | "progress" | "agreements" | "members" | "invoices">("requirements");
+  const [activeFormTab, setActiveFormTab] = useState<"requirements" | "progress" | "agreements" | "members" | "invoices" | "campaigns">("requirements");
+
+  // Marketing Campaigns & Stage Lifecycles state
+  const [campaignProjects, setCampaignProjects] = useState<MarketingCampaignProject[]>(DEFAULT_MARKETING_CAMPAIGNS);
+  const [newCampName, setNewCampName] = useState("");
+  const [newCampCategory, setNewCampCategory] = useState("");
+  const [newCampFocus, setNewCampFocus] = useState("");
 
   // Invoices & Billing states
   const [invoices, setInvoices] = useState<Invoice[]>([]);
@@ -738,6 +806,10 @@ function AdminPage() {
             const dbInvoices = sysInvoices ? parseArray(sysInvoices.invoices) : parseArray(data.invoices);
             const localInvoices = parseArray(getSafeLocalStorage(`t2_invoices_${selectedClientId}`));
             setInvoices(dbInvoices.length > 0 ? dbInvoices : localInvoices);
+
+            const dbCampaigns = parseArray(data.campaigns);
+            const localCampaigns = parseArray(getSafeLocalStorage(`t2_campaigns_${selectedClientId}`));
+            setCampaignProjects(dbCampaigns.length > 0 ? dbCampaigns : (localCampaigns.length > 0 ? localCampaigns : DEFAULT_MARKETING_CAMPAIGNS));
             return;
           }
         } catch (err) {
@@ -772,6 +844,10 @@ function AdminPage() {
       // 4. Invoices Local Fallback
       const localInvoices = parseArray(getSafeLocalStorage(`t2_invoices_${selectedClientId}`));
       setInvoices(localInvoices);
+
+      // 5. Campaigns Local Fallback
+      const localCampaigns = parseArray(getSafeLocalStorage(`t2_campaigns_${selectedClientId}`));
+      setCampaignProjects(localCampaigns.length > 0 ? localCampaigns : DEFAULT_MARKETING_CAMPAIGNS);
     };
 
     loadData();
@@ -1312,6 +1388,97 @@ function AdminPage() {
     setNewFileUrl("");
     setNotifyMsg("FILE ADDED");
     setTimeout(() => setNotifyMsg(""), 2000);
+  };
+  // Save Marketing Campaigns
+  const saveCampaigns = async (updatedCampaigns: MarketingCampaignProject[]) => {
+    setCampaignProjects(updatedCampaigns);
+
+    if (isSupabaseConfigured()) {
+      try {
+        const { error } = await supabase
+          .from("clients")
+          .update({ campaigns: updatedCampaigns })
+          .eq("id", selectedClientId);
+
+        if (!error) {
+          setNotifyMsg("CAMPAIGNS SYNCED TO SUPABASE");
+          setTimeout(() => setNotifyMsg(""), 2000);
+        }
+      } catch (err) {
+        console.error(err);
+      }
+    }
+
+    setSafeLocalStorage(`t2_campaigns_${selectedClientId}`, JSON.stringify(updatedCampaigns));
+    window.dispatchEvent(new Event("storage"));
+    window.dispatchEvent(new Event("t2_storage_update"));
+    setNotifyMsg("CAMPAIGNS SYNCED");
+    setTimeout(() => setNotifyMsg(""), 2000);
+  };
+
+  const handleCreateCampaign = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newCampName.trim()) return;
+
+    const newCamp: MarketingCampaignProject = {
+      id: `proj-${Date.now()}`,
+      name: newCampName.trim(),
+      category: newCampCategory.trim() || "Marketing & Growth Engine",
+      activeStageIndex: 0,
+      progressPercent: 25,
+      lastUpdated: "Just now",
+      currentFocus: newCampFocus.trim() || "Strategy & Research phase initiated.",
+      stages: [
+        { name: "01. Strategy & Research", subtext: "Auditing & Growth Blueprint", status: "ACTIVE" },
+        { name: "02. Creative & Production", subtext: "Asset & Copy Development", status: "SCHEDULED" },
+        { name: "03. Media Execution", subtext: "Ad Channel Launch & Flighting", status: "SCHEDULED" },
+        { name: "04. Analytics & Scaling", subtext: "Optimization & Scaling Engine", status: "RECURRING" }
+      ]
+    };
+
+    const updated = [...campaignProjects, newCamp];
+    saveCampaigns(updated);
+    setNewCampName("");
+    setNewCampCategory("");
+    setNewCampFocus("");
+  };
+
+  const handleDeleteCampaign = (id: string) => {
+    const updated = campaignProjects.filter(cp => cp.id !== id);
+    saveCampaigns(updated);
+  };
+
+  const handleSetCampaignStage = (id: string, stageIndex: number) => {
+    const updated = campaignProjects.map(cp => {
+      if (cp.id === id) {
+        const progressPercent = Math.min(100, Math.round(((stageIndex + 1) / 4) * 100));
+        const updatedStages = cp.stages.map((stg, idx) => {
+          if (idx < stageIndex) return { ...stg, status: "DONE" };
+          if (idx === stageIndex) return { ...stg, status: "ACTIVE" };
+          return { ...stg, status: "SCHEDULED" };
+        });
+
+        return {
+          ...cp,
+          activeStageIndex: stageIndex,
+          progressPercent,
+          lastUpdated: "Updated just now by Admin",
+          stages: updatedStages
+        };
+      }
+      return cp;
+    });
+    saveCampaigns(updated);
+  };
+
+  const handleUpdateCampaignFocus = (id: string, newFocus: string) => {
+    const updated = campaignProjects.map(cp => {
+      if (cp.id === id) {
+        return { ...cp, currentFocus: newFocus, lastUpdated: "Updated just now by Admin" };
+      }
+      return cp;
+    });
+    saveCampaigns(updated);
   };
 
   // Reset database
@@ -2478,6 +2645,15 @@ function AdminPage() {
               >
                 05 / Billing & Invoices ({invoices.length})
               </button>
+
+              <button
+                onClick={() => setActiveFormTab("campaigns")}
+                className={`flex-1 text-center py-2.5 text-xs uppercase font-bold tracking-wider rounded-sm transition cursor-pointer ${
+                  activeFormTab === "campaigns" ? "bg-volt text-black font-extrabold" : "text-neutral-400 hover:text-white"
+                }`}
+              >
+                06 / Marketing Campaigns ({campaignProjects.length})
+              </button>
             </div>
 
             {/* SUB-TAB 1: CHECKLIST & ASSET REQUIREMENTS */}
@@ -3243,6 +3419,156 @@ function AdminPage() {
                       )}
                     </div>
                   </div>
+                </div>
+              </div>
+            )}
+
+            {/* SUB-TAB 6: MARKETING CAMPAIGNS & LIFECYCLE DESK */}
+            {activeFormTab === "campaigns" && (
+              <div className="space-y-6 w-full text-left font-mono">
+                {/* Admin Header */}
+                <div className="bg-[#0c0c0c] border border-neutral-800 p-6 rounded-sm space-y-4">
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between border-b border-neutral-800 pb-3 gap-3">
+                    <div>
+                      <h3 className="text-xs font-bold text-volt uppercase tracking-wider">// Marketing Campaigns &amp; Stage Lifecycle Desk</h3>
+                      <p className="text-[10px] text-neutral-400 mt-0.5">
+                        Add marketing projects, set active 4-stage growth lifecycles, and update real-time stage focus alerts for {selectedClient?.name || "client workspace"}.
+                      </p>
+                    </div>
+                    <span className="text-[10px] text-volt bg-neutral-900 border border-neutral-800 px-3 py-1 font-bold uppercase rounded-sm">
+                      Active Campaigns ({campaignProjects.length})
+                    </span>
+                  </div>
+
+                  {/* Form: Add New Campaign */}
+                  <form onSubmit={handleCreateCampaign} className="grid grid-cols-1 md:grid-cols-12 gap-3 pt-2">
+                    <div className="md:col-span-4">
+                      <label className="text-[9px] text-neutral-500 uppercase font-bold block mb-1">Campaign Title *</label>
+                      <input
+                        type="text"
+                        placeholder="e.g. 🎯 TikTok UGC Performance Sprint"
+                        value={newCampName}
+                        onChange={(e) => setNewCampName(e.target.value)}
+                        className="w-full bg-neutral-950 border border-neutral-800 rounded-sm px-3 py-2 text-xs text-white focus:outline-none focus:border-volt font-bold"
+                        required
+                      />
+                    </div>
+
+                    <div className="md:col-span-3">
+                      <label className="text-[9px] text-neutral-500 uppercase font-bold block mb-1">Category / Tag</label>
+                      <input
+                        type="text"
+                        placeholder="e.g. Short Form Video Scaling"
+                        value={newCampCategory}
+                        onChange={(e) => setNewCampCategory(e.target.value)}
+                        className="w-full bg-neutral-950 border border-neutral-800 rounded-sm px-3 py-2 text-xs text-white focus:outline-none focus:border-volt font-bold"
+                      />
+                    </div>
+
+                    <div className="md:col-span-3">
+                      <label className="text-[9px] text-neutral-500 uppercase font-bold block mb-1">Active Stage Focus Alert</label>
+                      <input
+                        type="text"
+                        placeholder="e.g. Scripting 10 high-converting UGC hooks..."
+                        value={newCampFocus}
+                        onChange={(e) => setNewCampFocus(e.target.value)}
+                        className="w-full bg-neutral-950 border border-neutral-800 rounded-sm px-3 py-2 text-xs text-white focus:outline-none focus:border-volt font-bold"
+                      />
+                    </div>
+
+                    <div className="md:col-span-2 flex items-end">
+                      <button
+                        type="submit"
+                        className="w-full bg-volt text-black hover:bg-white text-xs py-2 px-3 uppercase font-extrabold rounded-sm transition cursor-pointer"
+                      >
+                        + Create Campaign
+                      </button>
+                    </div>
+                  </form>
+                </div>
+
+                {/* Existing Campaigns Manager */}
+                <div className="space-y-4">
+                  {campaignProjects.map((cp) => (
+                    <div key={cp.id} className="bg-[#0c0c0c] border border-neutral-800 p-6 rounded-sm space-y-4 text-left">
+                      <div className="flex flex-col sm:flex-row sm:items-center justify-between border-b border-neutral-800 pb-3 gap-3">
+                        <div>
+                          <span className="text-[9px] text-volt uppercase font-bold tracking-widest">{cp.category}</span>
+                          <h4 className="text-sm font-extrabold text-white uppercase">{cp.name}</h4>
+                        </div>
+
+                        <div className="flex items-center gap-3">
+                          <span className="text-xs text-volt font-bold">{cp.progressPercent}% Complete</span>
+                          <button
+                            type="button"
+                            onClick={() => handleDeleteCampaign(cp.id)}
+                            className="text-[10px] text-flame border border-flame/30 hover:border-flame px-2.5 py-1 uppercase font-bold rounded-sm cursor-pointer"
+                          >
+                            [Delete Campaign]
+                          </button>
+                        </div>
+                      </div>
+
+                      {/* 4-Stage Stepper Control Buttons */}
+                      <div className="space-y-2">
+                        <label className="text-[10px] text-neutral-400 uppercase font-bold block">// Set Active Lifecycle Stage:</label>
+                        <div className="grid grid-cols-1 sm:grid-cols-4 gap-2">
+                          {cp.stages.map((stg, idx) => {
+                            const isActive = idx === cp.activeStageIndex;
+                            const isPast = idx < cp.activeStageIndex;
+
+                            return (
+                              <button
+                                key={idx}
+                                type="button"
+                                onClick={() => handleSetCampaignStage(cp.id, idx)}
+                                className={`p-3 rounded-sm text-left border transition cursor-pointer ${
+                                  isActive
+                                    ? "bg-volt text-black border-black font-black shadow-[2px_2px_0px_#000]"
+                                    : isPast
+                                      ? "bg-emerald-950/60 text-emerald-400 border-emerald-800 font-bold"
+                                      : "bg-neutral-950 text-neutral-400 border-neutral-850 hover:border-neutral-700"
+                                }`}
+                              >
+                                <div className="flex items-center justify-between text-[10px] uppercase">
+                                  <span>{stg.name}</span>
+                                  <span>{isActive ? "ACTIVE ●" : isPast ? "DONE ✓" : "NEXT"}</span>
+                                </div>
+                                <div className="text-[9px] mt-1 opacity-80 font-mono truncate">{stg.subtext}</div>
+                              </button>
+                            );
+                          })}
+                        </div>
+                      </div>
+
+                      {/* Edit Focus Text */}
+                      <div className="pt-2">
+                        <label className="text-[10px] text-neutral-400 uppercase font-bold block mb-1">
+                          // Active Focus Alert Banner (Displayed live on Client Dashboard):
+                        </label>
+                        <div className="flex gap-2">
+                          <input
+                            type="text"
+                            defaultValue={cp.currentFocus}
+                            onBlur={(e) => handleUpdateCampaignFocus(cp.id, e.target.value)}
+                            className="flex-grow bg-neutral-950 border border-neutral-800 px-3 py-2 text-xs text-white focus:outline-none focus:border-volt font-bold rounded-sm"
+                          />
+                          <button
+                            type="button"
+                            className="bg-neutral-900 border border-neutral-800 hover:border-volt text-volt text-xs px-4 py-2 font-bold uppercase rounded-sm transition cursor-pointer"
+                          >
+                            Save Focus
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+
+                  {campaignProjects.length === 0 && (
+                    <div className="text-xs text-neutral-500 italic py-8 text-center border border-dashed border-neutral-850 rounded-sm">
+                      No marketing campaign projects created for this workspace yet. Use the form above to add one.
+                    </div>
+                  )}
                 </div>
               </div>
             )}
