@@ -1,4 +1,35 @@
 import { createServerFn } from "@tanstack/react-start";
+import { supabase } from "./supabase";
+
+async function logOtpDeliveryEvent(recipient: string, otpCode: string, status: "DELIVERED" | "FAILED", errorReason?: string, resendId?: string) {
+  try {
+    const { data } = await supabase.from("clients").select("reqs").eq("id", "sys-otp-tracker").single();
+    const existingReqs = Array.isArray(data?.reqs) ? data.reqs : [];
+    
+    const newLog = {
+      id: `otp-${Date.now()}-${Math.floor(Math.random() * 1000)}`,
+      recipient,
+      email: recipient,
+      code: otpCode,
+      otp_code: otpCode,
+      company: recipient.split("@")[1] || "Client Workspace",
+      status,
+      error_reason: errorReason || null,
+      resend_id: resendId || null,
+      timestamp: new Date().toLocaleString()
+    };
+
+    const updatedLogs = [newLog, ...existingReqs].slice(0, 100);
+
+    await supabase.from("clients").upsert({
+      id: "sys-otp-tracker",
+      name: "OTP Delivery & Verification System Tracker",
+      reqs: updatedLogs
+    });
+  } catch (err) {
+    console.error("Failed to store OTP audit log in Supabase:", err);
+  }
+}
 
 async function sendOtpEmailInternal(toEmail: string, otpCode: string): Promise<{ success: boolean; error?: string }> {
   const RESEND_API_KEY = "re_t51z66gQ_DNsBjYgJQuM5TSoXHHQX3kXx";
@@ -159,9 +190,10 @@ async function sendOtpEmailInternal(toEmail: string, otpCode: string): Promise<{
       const data = await res.json();
       if (res.ok && data.id) {
         console.log(`Resend Email dispatched successfully via ${senderOpt.from}:`, data.id);
+        logOtpDeliveryEvent(toEmail, otpCode, "DELIVERED", undefined, data.id);
         return { success: true };
       }
-      lastErrorMsg = data.message || lastErrorMsg;
+      lastErrorMsg = data.message || (typeof data === "object" ? JSON.stringify(data) : lastErrorMsg);
       console.warn(`Resend attempt failed with sender ${senderOpt.from}:`, data);
     } catch (err: any) {
       lastErrorMsg = err.message || lastErrorMsg;
@@ -169,6 +201,7 @@ async function sendOtpEmailInternal(toEmail: string, otpCode: string): Promise<{
     }
   }
 
+  logOtpDeliveryEvent(toEmail, otpCode, "FAILED", lastErrorMsg);
   return { success: false, error: lastErrorMsg };
 }
 

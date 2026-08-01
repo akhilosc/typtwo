@@ -1,6 +1,7 @@
 import { useState, useEffect, Component, ReactNode } from "react";
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { supabase, isSupabaseConfigured } from "../lib/supabase";
+import { sendOtpEmail } from "../lib/resend";
 
 function safeDownloadOrOpenDoc(url?: string, fileName?: string) {
   const name = fileName || "Document";
@@ -2084,40 +2085,86 @@ function AdminPage() {
               );
             })()}
 
-            {/* Live OTP Dispatch Monitor Section */}
-            <div className="bg-[#0c0c0c] border border-neutral-800 p-6 rounded-sm space-y-4">
-              <div className="flex items-center justify-between border-b border-neutral-800 pb-3">
+            {/* Live OTP Dispatch Monitor Section & Resend Tester */}
+            <div className="bg-[#0c0c0c] border border-neutral-800 p-6 rounded-sm space-y-5 font-mono">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between border-b border-neutral-800 pb-3 gap-2">
                 <div className="flex items-center gap-2">
-                  <span className="h-2 w-2 bg-emerald-400 rounded-full animate-ping" />
-                  <h3 className="text-xs font-bold text-volt uppercase tracking-wider">// Live OTP Dispatch Monitor ({otpLogs.length})</h3>
+                  <span className="h-2.5 w-2.5 bg-emerald-400 rounded-full animate-ping" />
+                  <h3 className="text-xs font-bold text-volt uppercase tracking-wider">// Live Email Delivery & OTP Audit Logs ({otpLogs.length})</h3>
                 </div>
                 <span className="text-[9px] text-neutral-400 uppercase font-bold">Real-time authentication log feed & 6-digit access codes</span>
               </div>
 
+              {/* Live Email Delivery Diagnostic Tester */}
+              <div className="bg-neutral-950 border border-neutral-850 p-4 rounded-sm space-y-3 text-left">
+                <div className="flex items-center justify-between">
+                  <h4 className="text-[10px] font-bold text-white uppercase tracking-wider flex items-center gap-2">
+                    <span>🚀 Live Resend Email Delivery Diagnostic Tester</span>
+                  </h4>
+                  <span className="text-[9px] text-neutral-500 uppercase font-semibold">Verify email delivery to any inbox</span>
+                </div>
+
+                <form onSubmit={handleTestEmailDispatch} className="flex flex-col sm:flex-row gap-2">
+                  <input
+                    type="email"
+                    placeholder="Enter email address to test delivery (e.g. test@company.com)..."
+                    value={testEmail}
+                    onChange={(e) => setTestEmail(e.target.value)}
+                    className="flex-grow bg-black border border-neutral-800 px-3 py-2 text-xs text-white focus:outline-none focus:border-volt rounded-sm font-mono"
+                    required
+                  />
+                  <button
+                    type="submit"
+                    disabled={testLoading}
+                    className="bg-volt text-black hover:bg-white text-xs px-5 py-2 font-black uppercase rounded-sm cursor-pointer transition disabled:opacity-50 flex-shrink-0"
+                  >
+                    {testLoading ? "Dispatching Test Email..." : "Test Dispatch →"}
+                  </button>
+                </form>
+
+                {testResult && (
+                  <div className={`p-3 text-[10px] uppercase font-bold rounded-sm border ${testResult.startsWith("✓") ? "bg-emerald-950/60 border-emerald-800 text-emerald-300" : "bg-red-950/60 border-red-800 text-red-300"}`}>
+                    {testResult}
+                  </div>
+                )}
+              </div>
+
+              {/* Live Log Stream Cards */}
               {otpLogs.length === 0 ? (
-                <div className="p-4 text-center text-xs text-neutral-500 italic">
+                <div className="p-6 text-center text-xs text-neutral-500 italic border border-dashed border-neutral-850 rounded-sm">
                   No active OTP dispatches recorded yet. Any new login code requested anywhere in the world will stream here live.
                 </div>
               ) : (
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 max-h-64 overflow-y-auto pr-1">
-                  {otpLogs.slice(0, 12).map((log: any) => (
-                    <div key={log.id} className="bg-neutral-950 border border-neutral-800 p-3 rounded-sm space-y-2 text-left">
-                      <div className="flex items-center justify-between">
-                        <span className="text-[9px] text-neutral-500 font-mono">{log.timestamp}</span>
-                        <span className="bg-emerald-950 text-emerald-400 border border-emerald-900 text-[9px] px-1.5 py-0.2 font-bold uppercase rounded-sm">
-                          {log.status === "DELIVERED" ? "✓ DISPATCHED" : "LOGGED"}
-                        </span>
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 max-h-72 overflow-y-auto pr-1">
+                  {otpLogs.slice(0, 15).map((log: any) => {
+                    const isFailed = log.status === "FAILED" || log.error_reason;
+                    return (
+                      <div key={log.id} className={`bg-neutral-950 border p-3 rounded-sm space-y-2 text-left ${isFailed ? "border-red-900/80 bg-red-950/10" : "border-neutral-800"}`}>
+                        <div className="flex items-center justify-between">
+                          <span className="text-[9px] text-neutral-500 font-mono">{log.timestamp}</span>
+                          <span className={`text-[9px] px-1.5 py-0.5 font-bold uppercase rounded-sm border ${isFailed ? "bg-red-950 text-red-400 border-red-800" : "bg-emerald-950 text-emerald-400 border-emerald-900"}`}>
+                            {isFailed ? "❌ FAILED" : "✓ DELIVERED"}
+                          </span>
+                        </div>
+
+                        <div>
+                          <div className="text-xs font-bold text-white truncate">{log.recipient || log.email}</div>
+                          <div className="text-[10px] text-neutral-400 uppercase truncate">Domain / Co: {log.company || (log.recipient || log.email || "").split("@")[1]}</div>
+                        </div>
+
+                        {log.error_reason && (
+                          <div className="p-2 bg-red-950/80 border border-red-800 text-red-200 text-[9px] uppercase font-mono font-bold rounded-xs leading-relaxed break-words">
+                            !! ERROR: {log.error_reason}
+                          </div>
+                        )}
+
+                        <div className="flex items-center justify-between bg-black border border-neutral-800 p-2 rounded-sm mt-1">
+                          <span className="text-[9px] text-neutral-500 font-bold uppercase">Passcode:</span>
+                          <span className="text-sm font-black text-volt tracking-widest font-mono select-all">{log.otp_code || log.code}</span>
+                        </div>
                       </div>
-                      <div>
-                        <div className="text-xs font-bold text-white truncate">{log.email}</div>
-                        <div className="text-[10px] text-neutral-400 uppercase truncate">Company: {log.company}</div>
-                      </div>
-                      <div className="flex items-center justify-between bg-black border border-neutral-800 p-2 rounded-sm mt-1">
-                        <span className="text-[9px] text-neutral-500 font-bold uppercase">Passcode:</span>
-                        <span className="text-sm font-black text-volt tracking-widest font-mono">{log.code}</span>
-                      </div>
-                    </div>
-                  ))}
+                    );
+                  })}
                 </div>
               )}
             </div>
