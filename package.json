@@ -5,7 +5,9 @@
   "type": "module",
   "scripts": {
     "dev": "vite dev --port 3000",
+    "dev:typher": "npm --prefix apps/typher run dev -- --port 3001",
     "build": "vite build",
+    "build:typher": "npm --prefix apps/typher run build",
     "build:dev": "vite build --mode development",
     "preview": "vite preview",
     "lint": "eslint .",
